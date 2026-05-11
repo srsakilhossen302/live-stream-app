@@ -338,7 +338,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
             ),
           ),
           Positioned(
-            bottom: 120,
+            bottom: 170, // Increased to avoid overlap
             left: 20,
             child: _buildBadge(
               "LIVE BIDDING", 
