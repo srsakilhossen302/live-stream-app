@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
@@ -173,7 +174,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
                 RichText(
                   text: const TextSpan(
                     style: TextStyle(
-                      fontSize: 44,
+                      fontSize: 42,
                       fontWeight: FontWeight.w900,
                       height: 1.0,
                       fontFamily: 'Inter',
@@ -310,47 +311,59 @@ class OnboardingScreen extends GetView<OnboardingController> {
             child: Image.asset(imagePath, fit: BoxFit.cover),
           ),
           Positioned(
-            top: 20,
-            right: 20,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                image: const DecorationImage(
-                  image: AssetImage("assets/images/GoriImg- onboding3 ar.png"),
-                  fit: BoxFit.cover,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+            top: 60,
+            right: 0,
+            child: Transform.rotate(
+              angle: 8 * (math.pi / 180), // Tilted as requested
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 4),
+                  image: const DecorationImage(
+                    image: AssetImage("assets/images/GoriImg- onboding3 ar.png"),
+                    fit: BoxFit.cover,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.6),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           Positioned(
-            bottom: 80,
+            bottom: 120,
             left: 20,
-            child: _buildBadge("LIVE BIDDING", const Color(0xFF6200EE)),
+            child: _buildBadge(
+              "LIVE BIDDING", 
+              Colors.white, 
+              bgColor: const Color(0xFF5D2EEF),
+              icon: Icons.sensors_rounded,
+            ),
           ),
           Positioned(
-            bottom: 20,
+            bottom: 30,
             left: 20,
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.black45,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: Colors.white10),
               ),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("CURRENT BID", style: TextStyle(color: Colors.white38, fontSize: 10)),
-                  Text("\$12,450.00", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("CURRENT BID", style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 8),
+                  Text("\$12,450", style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 32, fontWeight: FontWeight.w900, height: 1.0)),
+                  Text(".00", style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 32, fontWeight: FontWeight.w900, height: 1.0)),
                 ],
               ),
             ),
@@ -361,9 +374,9 @@ class OnboardingScreen extends GetView<OnboardingController> {
     return Container();
   }
 
-  Widget _buildBadge(String text, Color dotColor, {Color? bgColor, Color? textColor}) {
+  Widget _buildBadge(String text, Color dotColor, {Color? bgColor, Color? textColor, IconData? icon}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: bgColor ?? Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(30),
@@ -372,11 +385,14 @@ class OnboardingScreen extends GetView<OnboardingController> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-          ),
+          if (icon != null)
+            Icon(icon, color: Colors.white, size: 16)
+          else
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+            ),
           const SizedBox(width: 10),
           Text(
             text,
