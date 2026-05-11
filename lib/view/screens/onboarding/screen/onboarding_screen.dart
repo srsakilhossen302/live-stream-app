@@ -204,7 +204,12 @@ class OnboardingScreen extends GetView<OnboardingController> {
                 Positioned(
                   top: 20,
                   left: 20,
-                  child: _buildBadge("LIVE NOW", Colors.red, bgColor: const Color(0xFFFF6B6B).withOpacity(0.6)),
+                  child: _buildBadge(
+                    "LIVE NOW", 
+                    const Color(0xFF4A0000), 
+                    bgColor: const Color(0xFFE57373),
+                    textColor: const Color(0xFF4A0000),
+                  ),
                 ),
               ],
             ),
@@ -356,26 +361,31 @@ class OnboardingScreen extends GetView<OnboardingController> {
     return Container();
   }
 
-  Widget _buildBadge(String text, Color dotColor, {Color? bgColor}) {
+  Widget _buildBadge(String text, Color dotColor, {Color? bgColor, Color? textColor}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: bgColor ?? Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(30),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 10,
+            height: 10,
             decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 10),
           Text(
             text,
-            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: textColor ?? Colors.white, 
+              fontSize: 13, 
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),
