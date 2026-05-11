@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/utils/app_images.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/onboarding_controller.dart';
 
@@ -224,7 +225,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("CURRENT BID", style: TextStyle(color: Colors.white38, fontSize: 10)),
-                  Text("$12,450.00", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("\$12,450.00", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
