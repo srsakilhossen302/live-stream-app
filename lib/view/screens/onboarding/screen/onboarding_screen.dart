@@ -45,14 +45,17 @@ class OnboardingScreen extends GetView<OnboardingController> {
                       _buildTitle(page.title, index),
                       const SizedBox(height: 24),
                       // Subtext
-                      Text(
-                        page.subtitle,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                          height: 1.5,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: Text(
+                          page.subtitle,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.4),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            height: 1.5,
+                          ),
                         ),
                       ),
                       if (page.description.isNotEmpty) ...[
@@ -94,7 +97,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
                     Text(
                       controller.currentPage.value == controller.onboardingPages.length - 1
                           ? "Get Started"
-                          : "Get Started", // Image shows Get Started on Screen 1 too
+                          : "Get Started",
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(width: 8),
@@ -152,30 +155,30 @@ class OnboardingScreen extends GetView<OnboardingController> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.gavel_rounded, color: Colors.white, size: 30),
-                    const SizedBox(width: 10),
+                    const Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
+                    const SizedBox(width: 8),
                     Text(
                       "AuctionLive",
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 RichText(
                   text: const TextSpan(
                     style: TextStyle(
-                      fontSize: 44,
+                      fontSize: 42,
                       fontWeight: FontWeight.w900,
                       height: 1.0,
                       fontFamily: 'Inter',
                     ),
                     children: [
                       TextSpan(text: "Welcome to\n", style: TextStyle(color: Colors.white)),
-                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF5D5FEF))), // Purple-blue color from image
+                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF6B7AFF))), // Refined blue-purple to match Figma exactly
                     ],
                   ),
                 ),
@@ -269,13 +272,13 @@ class OnboardingScreen extends GetView<OnboardingController> {
   Widget _buildTitle(String title, int index) {
     if (index == 0) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 14.0),
         child: Text(
           title,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 19,
+            fontSize: 18,
             fontWeight: FontWeight.w500,
             height: 1.4,
           ),
