@@ -214,7 +214,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
             flex: 5,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               color: const Color(0xFF1E1E2C),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,26 +227,26 @@ class OnboardingScreen extends GetView<OnboardingController> {
                         children: [
                           Text(
                             "Vanguard",
-                            style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 24, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 22, fontWeight: FontWeight.bold),
                           ),
                           Text(
                             "GT-8",
-                            style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 24, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 22, fontWeight: FontWeight.bold),
                           ),
-                          SizedBox(height: 4),
+                          SizedBox(height: 2),
                           Text(
                             "Current High Bid",
-                            style: TextStyle(color: Colors.white38, fontSize: 14),
+                            style: TextStyle(color: Colors.white38, fontSize: 13),
                           ),
                         ],
                       ),
                       const Text(
                         "\$142,500",
-                        style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+                        style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
                       ),
                     ],
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 12),
                   // Chat Bubbles
                   Row(
                     children: [
