@@ -17,7 +17,6 @@ class OnboardingScreen extends GetView<OnboardingController> {
             const SizedBox(height: 20),
             // Featured Content (PageView)
             Expanded(
-              flex: 5,
               child: PageView.builder(
                 controller: controller.pageController,
                 onPageChanged: controller.onPageChanged,
@@ -28,6 +27,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
                     children: [
                       // Featured Card
                       Expanded(
+                        flex: 6,
                         child: Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
@@ -37,20 +37,21 @@ class OnboardingScreen extends GetView<OnboardingController> {
                               fit: BoxFit.cover,
                             ),
                           ),
+                          child: _buildInternalCardUI(index),
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // Title
+                      // Title (Below Card)
                       _buildTitle(page.title, index),
                       const SizedBox(height: 16),
                       // Subtitle
                       Text(
                         page.subtitle,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                        style: TextStyle(
+                          color: index == 0 ? Colors.white38 : Colors.white70,
+                          fontSize: index == 0 ? 14 : 16,
+                          fontWeight: index == 0 ? FontWeight.normal : FontWeight.w500,
                           height: 1.4,
                         ),
                       ),
@@ -66,13 +67,12 @@ class OnboardingScreen extends GetView<OnboardingController> {
                           ),
                         ),
                       ],
+                      const SizedBox(height: 20),
                     ],
                   );
                 },
               ),
             ),
-            
-            const SizedBox(height: 32),
             
             // Buttons
             Obx(() => SizedBox(
@@ -124,6 +124,91 @@ class OnboardingScreen extends GetView<OnboardingController> {
     );
   }
 
+  Widget _buildInternalCardUI(int index) {
+    if (index == 0) {
+      return Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 20,
+            left: 20,
+            child: _buildBadge("LIVE EVENT", Colors.red),
+          ),
+          Positioned(
+            bottom: 40,
+            left: 24,
+            right: 24,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
+                    const SizedBox(width: 8),
+                    Text(
+                      "AuctionLive",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Welcome to\nAuctionLive",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    return Container();
+  }
+
+  Widget _buildBadge(String text, Color dotColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTitle(String title, int index) {
     if (index == 0) {
       return Text(
@@ -131,43 +216,36 @@ class OnboardingScreen extends GetView<OnboardingController> {
         textAlign: TextAlign.center,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 40,
-          fontWeight: FontWeight.w900,
-          height: 1.1,
-        ),
-      );
-    } else if (index == 1) {
-      return RichText(
-        textAlign: TextAlign.center,
-        text: const TextSpan(
-          style: TextStyle(
-            fontSize: 40,
-            fontWeight: FontWeight.w900,
-            height: 1.1,
-            fontFamily: 'Inter',
-          ),
-          children: [
-            TextSpan(text: "Bid ", style: TextStyle(color: Colors.white)),
-            TextSpan(text: "Instantly", style: TextStyle(color: Color(0xFF8B9BFF))),
-          ],
-        ),
-      );
-    } else {
-      return RichText(
-        textAlign: TextAlign.center,
-        text: const TextSpan(
-          style: TextStyle(
-            fontSize: 40,
-            fontWeight: FontWeight.w900,
-            height: 1.1,
-            fontFamily: 'Inter',
-          ),
-          children: [
-            TextSpan(text: "Sell & ", style: TextStyle(color: Colors.white)),
-            TextSpan(text: "Stream", style: TextStyle(color: Color(0xFFCC8BFF))),
-          ],
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          height: 1.3,
         ),
       );
     }
+    
+    String primary = "";
+    String secondary = "";
+    Color secondaryColor = Colors.white;
+    
+    if (index == 1) {
+      primary = "Bid ";
+      secondary = "Instantly";
+      secondaryColor = const Color(0xFF8B9BFF);
+    } else {
+      primary = "Sell & ";
+      secondary = "Stream";
+      secondaryColor = const Color(0xFFCC8BFF);
+    }
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, height: 1.1, fontFamily: 'Inter'),
+        children: [
+          TextSpan(text: primary, style: const TextStyle(color: Colors.white)),
+          TextSpan(text: secondary, style: TextStyle(color: secondaryColor)),
+        ],
+      ),
+    );
   }
 }

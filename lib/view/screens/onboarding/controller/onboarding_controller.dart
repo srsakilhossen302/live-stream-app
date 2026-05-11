@@ -9,15 +9,15 @@ class OnboardingController extends GetxController {
   List<OnboardingModel> onboardingPages = [
     OnboardingModel(
       image: AppImages.onboarding1,
-      title: "Welcome to\nAuctionLive",
-      subtitle: "Discover live auctions, explore unique items, and bid instantly — all in one place.",
-      description: "Join real-time events, connect with sellers, and never miss your next winning bid.",
+      title: "Discover live auctions, explore unique items, and bid instantly — all in one place.",
+      subtitle: "Join real-time events, connect with sellers, and never miss your next winning bid.",
+      description: "",
     ),
     OnboardingModel(
       image: AppImages.onboarding2,
       title: "Bid Instantly",
       subtitle: "Join auctions, chat live, and win exciting deals.",
-      description: "", // Description is empty for this one in the mockup
+      description: "",
     ),
     OnboardingModel(
       image: AppImages.onboarding3,
@@ -38,13 +38,11 @@ class OnboardingController extends GetxController {
         curve: Curves.easeIn,
       );
     } else {
-      // Navigate to Auth or Home
       Get.log("Navigate to Auth");
     }
   }
 
   void onSkip() {
-    // Navigate to Auth or Home
     Get.log("Skip Clicked");
   }
 
