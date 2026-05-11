@@ -178,7 +178,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
                     ),
                     children: [
                       TextSpan(text: "Welcome to\n", style: TextStyle(color: Colors.white)),
-                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF8B9BFF))), // Using the button's premium blue color
+                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF5D5FEF))), // Darker, more muted blue-purple
                     ],
                   ),
                 ),
