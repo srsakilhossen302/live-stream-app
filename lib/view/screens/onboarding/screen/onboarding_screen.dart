@@ -180,6 +180,58 @@ class OnboardingScreen extends GetView<OnboardingController> {
         ],
       );
     }
+    if (index == 2) {
+      return Stack(
+        children: [
+          Positioned(
+            top: 20,
+            right: 20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                image: const DecorationImage(
+                  image: AssetImage(AppImages.watchOverlay),
+                  fit: BoxFit.cover,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 80,
+            left: 20,
+            child: _buildBadge("LIVE BIDDING", const Color(0xFF6200EE)),
+          ),
+          Positioned(
+            bottom: 20,
+            left: 20,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black45,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("CURRENT BID", style: TextStyle(color: Colors.white38, fontSize: 10)),
+                  Text("$12,450.00", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     return Container();
   }
 
