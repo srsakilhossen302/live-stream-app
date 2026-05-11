@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/utils/app_images.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/onboarding_controller.dart';
 
@@ -42,18 +41,18 @@ class OnboardingScreen extends GetView<OnboardingController> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // Title (Below Card)
+                      // Main Text (Below Card)
                       _buildTitle(page.title, index),
-                      const SizedBox(height: 16),
-                      // Subtitle
+                      const SizedBox(height: 24),
+                      // Subtext
                       Text(
                         page.subtitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: index == 0 ? Colors.white38 : Colors.white70,
-                          fontSize: index == 0 ? 14 : 16,
-                          fontWeight: index == 0 ? FontWeight.normal : FontWeight.w500,
-                          height: 1.4,
+                          color: Colors.white.withOpacity(0.4),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5,
                         ),
                       ),
                       if (page.description.isNotEmpty) ...[
@@ -78,7 +77,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
             // Buttons
             Obx(() => SizedBox(
               width: double.infinity,
-              height: 64,
+              height: 62,
               child: ElevatedButton(
                 onPressed: () => controller.onGetStarted(),
                 style: ElevatedButton.styleFrom(
@@ -95,8 +94,8 @@ class OnboardingScreen extends GetView<OnboardingController> {
                     Text(
                       controller.currentPage.value == controller.onboardingPages.length - 1
                           ? "Get Started"
-                          : "Continue",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                          : "Get Started", // Image shows Get Started on Screen 1 too
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(width: 8),
                     const Icon(Icons.arrow_forward_rounded, weight: 800),
@@ -135,44 +134,49 @@ class OnboardingScreen extends GetView<OnboardingController> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
               ),
             ),
           ),
           Positioned(
-            top: 20,
-            left: 20,
+            top: 24,
+            left: 24,
             child: _buildBadge("LIVE EVENT", Colors.red),
           ),
           Positioned(
             bottom: 40,
-            left: 24,
-            right: 24,
+            left: 28,
+            right: 28,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.gavel_rounded, color: Colors.white, size: 30),
+                    const SizedBox(width: 10),
                     Text(
                       "AuctionLive",
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
-                        fontSize: 24,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Welcome to\nAuctionLive",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 42,
-                    fontWeight: FontWeight.w900,
-                    height: 1.1,
+                const SizedBox(height: 18),
+                RichText(
+                  text: const TextSpan(
+                    style: TextStyle(
+                      fontSize: 44,
+                      fontWeight: FontWeight.w900,
+                      height: 1.0,
+                      fontFamily: 'Inter',
+                    ),
+                    children: [
+                      TextSpan(text: "Welcome to\n", style: TextStyle(color: Colors.white)),
+                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF5D5FEF))), // Purple-blue color from image
+                    ],
                   ),
                 ),
               ],
@@ -182,7 +186,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
       );
     }
     if (index == 2) {
-      return Stack(
+       return Stack(
         children: [
           Positioned(
             top: 20,
@@ -193,7 +197,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 image: const DecorationImage(
-                  image: AssetImage(AppImages.watchOverlay),
+                  image: AssetImage("assets/images/GoriImg- onboding3 ar.png"),
                   fit: BoxFit.cover,
                 ),
                 boxShadow: [
@@ -238,11 +242,11 @@ class OnboardingScreen extends GetView<OnboardingController> {
 
   Widget _buildBadge(String text, Color dotColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.black38,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white24),
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -252,10 +256,10 @@ class OnboardingScreen extends GetView<OnboardingController> {
             height: 8,
             decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Text(
             text,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -264,14 +268,17 @@ class OnboardingScreen extends GetView<OnboardingController> {
 
   Widget _buildTitle(String title, int index) {
     if (index == 0) {
-      return Text(
-        title,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          height: 1.3,
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 19,
+            fontWeight: FontWeight.w500,
+            height: 1.4,
+          ),
         ),
       );
     }
@@ -293,7 +300,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w900, height: 1.1, fontFamily: 'Inter'),
+        style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, height: 1.1, fontFamily: 'Inter'),
         children: [
           TextSpan(text: primary, style: const TextStyle(color: Colors.white)),
           TextSpan(text: secondary, style: TextStyle(color: secondaryColor)),
