@@ -1,8 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
-import '../../../../core/utils/app_images.dart';
 import '../controller/onboarding_controller.dart';
 
 class OnboardingScreen extends GetView<OnboardingController> {
@@ -10,139 +8,74 @@ class OnboardingScreen extends GetView<OnboardingController> {
 
   @override
   Widget build(BuildContext context) {
-    Get.put(OnboardingController()); // Initialize controller
+    Get.put(OnboardingController());
     return CustomBackground(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // Featured Card
+            // Featured Content (PageView)
             Expanded(
               flex: 5,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32),
-                  image: const DecorationImage(
-                    image: AssetImage(AppImages.onboardingBg),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Gradient Overlay for readability
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(32),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.3),
-                            Colors.black.withOpacity(0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Live Event Badge
-                    Positioned(
-                      top: 20,
-                      left: 20,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black26,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "LIVE EVENT",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Logo and Title
-                    Positioned(
-                      bottom: 40,
-                      left: 24,
-                      right: 24,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
-                              const SizedBox(width: 8),
-                              Text(
-                                "AuctionLive",
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "Welcome to\nAuctionLive",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 42,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
+              child: PageView.builder(
+                controller: controller.pageController,
+                onPageChanged: controller.onPageChanged,
+                itemCount: controller.onboardingPages.length,
+                itemBuilder: (context, index) {
+                  final page = controller.onboardingPages[index];
+                  return Column(
+                    children: [
+                      // Featured Card
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(32),
+                            image: DecorationImage(
+                              image: AssetImage(page.image),
+                              fit: BoxFit.cover,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 32),
+                      // Title
+                      _buildTitle(page.title, index),
+                      const SizedBox(height: 16),
+                      // Subtitle
+                      Text(
+                        page.subtitle,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
+                      ),
+                      if (page.description.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          page.description,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
+            
             const SizedBox(height: 32),
-            // Subtitle
-            const Text(
-              "Discover live auctions, explore unique items, and bid instantly — all in one place.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "Join real-time events, connect with sellers, and never miss your next winning bid.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
-            const Spacer(),
+            
             // Buttons
-            SizedBox(
+            Obx(() => SizedBox(
               width: double.infinity,
               height: 64,
               child: ElevatedButton(
@@ -155,20 +88,24 @@ class OnboardingScreen extends GetView<OnboardingController> {
                   ),
                   elevation: 0,
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Get Started",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                      controller.currentPage.value == controller.onboardingPages.length - 1
+                          ? "Get Started"
+                          : "Continue",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                     ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded, weight: 800),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_rounded, weight: 800),
                   ],
                 ),
               ),
-            ),
+            )),
+            
             const SizedBox(height: 16),
+            
             TextButton(
               onPressed: () => controller.onSkip(),
               child: const Text(
@@ -185,5 +122,52 @@ class OnboardingScreen extends GetView<OnboardingController> {
         ),
       ),
     );
+  }
+
+  Widget _buildTitle(String title, int index) {
+    if (index == 0) {
+      return Text(
+        title,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 40,
+          fontWeight: FontWeight.w900,
+          height: 1.1,
+        ),
+      );
+    } else if (index == 1) {
+      return RichText(
+        textAlign: TextAlign.center,
+        text: const TextSpan(
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.w900,
+            height: 1.1,
+            fontFamily: 'Inter',
+          ),
+          children: [
+            TextSpan(text: "Bid ", style: TextStyle(color: Colors.white)),
+            TextSpan(text: "Instantly", style: TextStyle(color: Color(0xFF8B9BFF))),
+          ],
+        ),
+      );
+    } else {
+      return RichText(
+        textAlign: TextAlign.center,
+        text: const TextSpan(
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.w900,
+            height: 1.1,
+            fontFamily: 'Inter',
+          ),
+          children: [
+            TextSpan(text: "Sell & ", style: TextStyle(color: Colors.white)),
+            TextSpan(text: "Stream", style: TextStyle(color: Color(0xFFCC8BFF))),
+          ],
+        ),
+      );
+    }
   }
 }
