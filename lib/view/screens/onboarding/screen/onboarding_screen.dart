@@ -43,7 +43,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
                       const SizedBox(height: 32),
                       // Main Text (Below Card)
                       _buildTitle(page.title, index),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 18),
                       // Subtext
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -51,7 +51,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
                           page.subtitle,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withOpacity(0.5),
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
                             height: 1.5,
@@ -155,14 +155,14 @@ class OnboardingScreen extends GetView<OnboardingController> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
-                    const SizedBox(width: 8),
+                    const Icon(Icons.gavel_rounded, color: Color(0xFF8B9BFF), size: 30),
+                    const SizedBox(width: 10),
                     Text(
                       "AuctionLive",
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -171,14 +171,14 @@ class OnboardingScreen extends GetView<OnboardingController> {
                 RichText(
                   text: const TextSpan(
                     style: TextStyle(
-                      fontSize: 42,
+                      fontSize: 48,
                       fontWeight: FontWeight.w900,
                       height: 1.0,
                       fontFamily: 'Inter',
                     ),
                     children: [
                       TextSpan(text: "Welcome to\n", style: TextStyle(color: Colors.white)),
-                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF6B7AFF))), // Refined blue-purple to match Figma exactly
+                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF8B9BFF))), // Using the button's premium blue color
                     ],
                   ),
                 ),
@@ -279,7 +279,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             height: 1.4,
           ),
         ),
@@ -303,7 +303,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, height: 1.1, fontFamily: 'Inter'),
+        style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w900, height: 1.1, fontFamily: 'Inter'),
         children: [
           TextSpan(text: primary, style: const TextStyle(color: Colors.white)),
           TextSpan(text: secondary, style: TextStyle(color: secondaryColor)),
