@@ -31,13 +31,13 @@ class OnboardingScreen extends GetView<OnboardingController> {
                         child: Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E2C),
                             borderRadius: BorderRadius.circular(32),
-                            image: DecorationImage(
-                              image: AssetImage(page.image),
-                              fit: BoxFit.cover,
-                            ),
                           ),
-                          child: _buildInternalCardUI(index),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(32),
+                            child: _buildInternalCardUI(index, page.image),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -127,13 +127,15 @@ class OnboardingScreen extends GetView<OnboardingController> {
     );
   }
 
-  Widget _buildInternalCardUI(int index) {
+  Widget _buildInternalCardUI(int index, String imagePath) {
     if (index == 0) {
       return Stack(
         children: [
+          Positioned.fill(
+            child: Image.asset(imagePath, fit: BoxFit.cover),
+          ),
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(32),
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -155,14 +157,14 @@ class OnboardingScreen extends GetView<OnboardingController> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.gavel_rounded, color: Color(0xFF8B9BFF), size: 30),
-                    const SizedBox(width: 10),
+                    const Icon(Icons.gavel_rounded, color: Color(0xFF8B9BFF), size: 28),
+                    const SizedBox(width: 8),
                     Text(
                       "AuctionLive",
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -171,14 +173,14 @@ class OnboardingScreen extends GetView<OnboardingController> {
                 RichText(
                   text: const TextSpan(
                     style: TextStyle(
-                      fontSize: 48,
+                      fontSize: 44,
                       fontWeight: FontWeight.w900,
                       height: 1.0,
                       fontFamily: 'Inter',
                     ),
                     children: [
                       TextSpan(text: "Welcome to\n", style: TextStyle(color: Colors.white)),
-                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF5D5FEF))), // Darker, more muted blue-purple
+                      TextSpan(text: "AuctionLive", style: TextStyle(color: Color(0xFF5D5FEF))),
                     ],
                   ),
                 ),
@@ -188,9 +190,120 @@ class OnboardingScreen extends GetView<OnboardingController> {
         ],
       );
     }
+    if (index == 1) {
+      return Column(
+        children: [
+          // Top Image
+          Expanded(
+            flex: 4,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.asset(imagePath, fit: BoxFit.cover),
+                ),
+                Positioned(
+                  top: 20,
+                  left: 20,
+                  child: _buildBadge("LIVE NOW", Colors.red, bgColor: const Color(0xFFFF6B6B).withOpacity(0.6)),
+                ),
+              ],
+            ),
+          ),
+          // Bottom Content
+          Expanded(
+            flex: 5,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              color: const Color(0xFF1E1E2C),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Vanguard",
+                            style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            "GT-8",
+                            style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            "Current High Bid",
+                            style: TextStyle(color: Colors.white38, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const Text(
+                        "\$142,500",
+                        style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  // Chat Bubbles
+                  Row(
+                    children: [
+                      const CircleAvatar(radius: 16, backgroundImage: NetworkImage("https://i.pravatar.cc/150?u=1")),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text(
+                          "Just placed my bid! This\none is mine. 🚀",
+                          style: TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B4468),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Row(
+                            children: [
+                              Text(
+                                "Counter-bid incoming! 💎",
+                                style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const CircleAvatar(radius: 16, backgroundImage: NetworkImage("https://i.pravatar.cc/150?u=2")),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     if (index == 2) {
        return Stack(
         children: [
+          Positioned.fill(
+            child: Image.asset(imagePath, fit: BoxFit.cover),
+          ),
           Positioned(
             top: 20,
             right: 20,
@@ -243,11 +356,11 @@ class OnboardingScreen extends GetView<OnboardingController> {
     return Container();
   }
 
-  Widget _buildBadge(String text, Color dotColor) {
+  Widget _buildBadge(String text, Color dotColor, {Color? bgColor}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: bgColor ?? Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
@@ -279,7 +392,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             height: 1.4,
           ),
         ),
@@ -303,7 +416,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w900, height: 1.1, fontFamily: 'Inter'),
+        style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, height: 1.1, fontFamily: 'Inter'),
         children: [
           TextSpan(text: primary, style: const TextStyle(color: Colors.white)),
           TextSpan(text: secondary, style: TextStyle(color: secondaryColor)),
