@@ -76,9 +76,9 @@ class PurchasesScreen extends GetView<PurchasesController> {
               child: Obx(() => ListView.builder(
                 padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
                 physics: const BouncingScrollPhysics(),
-                itemCount: controller.purchases.length,
+                itemCount: controller.filteredPurchases.length,
                 itemBuilder: (context, index) {
-                  final order = controller.purchases[index];
+                  final order = controller.filteredPurchases[index];
                   return _buildOrderCard(order);
                 },
               )),

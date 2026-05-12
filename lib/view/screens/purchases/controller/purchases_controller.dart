@@ -45,4 +45,25 @@ class PurchasesController extends GetxController {
   void changeTab(int index) {
     selectedTab.value = index;
   }
+
+  List<PurchaseModel> get filteredPurchases {
+    if (selectedTab.value == 0) return purchases; // All
+    
+    OrderStatus targetStatus;
+    switch (selectedTab.value) {
+      case 1:
+        targetStatus = OrderStatus.inTransit;
+        break;
+      case 2:
+        targetStatus = OrderStatus.delivered;
+        break;
+      case 3:
+        targetStatus = OrderStatus.cancelled;
+        break;
+      default:
+        return purchases;
+    }
+    
+    return purchases.where((p) => p.status == targetStatus).toList();
+  }
 }
