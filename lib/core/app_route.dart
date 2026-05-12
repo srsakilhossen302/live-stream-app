@@ -3,7 +3,7 @@ import '../view/screens/onboarding/screen/onboarding_screen.dart';
 import '../view/screens/auth/screen/login_screen.dart';
 import '../view/screens/category/screen/category_screen.dart';
 import '../view/screens/main/screen/main_screen.dart';
-import '../view/screens/track_order/screen/track_order_screen.dart';
+import '../view/screens/purchases/screen/track_order/screen/track_order_screen.dart';
 
 class AppRoute {
   static const String onboarding = "/onboarding";

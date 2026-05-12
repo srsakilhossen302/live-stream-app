@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../../../global/widgets/custom_background.dart';
-import '../../purchases/model/purchase_model.dart';
+import '../../../../../../global/widgets/custom_background.dart';
+import '../../../model/purchase_model.dart';
 
 class TrackOrderScreen extends StatelessWidget {
   const TrackOrderScreen({super.key});
@@ -17,24 +17,25 @@ class TrackOrderScreen extends StatelessWidget {
             // Header
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              child: Row(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        "Order ${order.id}",
-                        style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
-                      ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Icon(Icons.close, color: Colors.white, size: 24.sp),
                     ),
                   ),
-                  SizedBox(width: 24.w),
+                  Text(
+                    "Order ${order.id}",
+                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),
+            
+            const Divider(color: Colors.white10, thickness: 1),
             
             Expanded(
               child: SingleChildScrollView(
@@ -43,6 +44,7 @@ class TrackOrderScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(height: 24.h),
                     // Map Section
                     _buildMapSection(order),
                     
@@ -54,8 +56,8 @@ class TrackOrderScreen extends StatelessWidget {
                     SizedBox(height: 32.h),
                     
                     // Journey Updates
-                    Text("JOURNEY UPDATES", style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                    SizedBox(height: 20.h),
+                    Text("JOURNEY UPDATES", style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                    SizedBox(height: 24.h),
                     _buildJourneyTimeline(),
                     
                     SizedBox(height: 32.h),
@@ -70,7 +72,7 @@ class TrackOrderScreen extends StatelessWidget {
                       children: [
                         Expanded(child: _buildButton("View Receipt", const Color(0xFF8B9BFF), Colors.black)),
                         SizedBox(width: 16.w),
-                        Expanded(child: _buildButton("Contact Seller", const Color(0xFF1E1E2C), Colors.white)),
+                        Expanded(child: _buildButton("Contact Seller", const Color(0xFF1E1E2C).withOpacity(0.9), Colors.white)),
                       ],
                     ),
                     
@@ -87,14 +89,14 @@ class TrackOrderScreen extends StatelessWidget {
 
   Widget _buildMapSection(PurchaseModel order) {
     return Container(
-      height: 220.h,
+      height: 240.h,
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(32.r),
         image: const DecorationImage(
           image: NetworkImage("https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=2066&auto=format&fit=crop"),
           fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black45, BlendMode.darken),
+          colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
         ),
       ),
       child: Stack(
@@ -106,23 +108,25 @@ class TrackOrderScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10.r),
+                    color: Colors.black.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.white10),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.circle, color: const Color(0xFF8B9BFF), size: 6.sp),
-                      SizedBox(width: 6.w),
-                      Text("LIVE VIEW", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                      Icon(Icons.circle, color: Colors.white, size: 6.sp),
+                      SizedBox(width: 8.w),
+                      Text("LIVE VIEW", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w800)),
                     ],
                   ),
                 ),
-                SizedBox(height: 8.h),
+                SizedBox(height: 12.h),
                 Text(
-                  order.location ?? "Unknown Location",
-                  style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900),
+                  order.location ?? "Jersey City Distribution\nCenter",
+                  style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900, height: 1.2),
                 ),
               ],
             ),
@@ -131,8 +135,14 @@ class TrackOrderScreen extends StatelessWidget {
             right: 24.w,
             bottom: 24.h,
             child: Container(
-              padding: EdgeInsets.all(12.r),
-              decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
+              padding: EdgeInsets.all(16.r),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B9BFF),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.3), blurRadius: 15.r, spreadRadius: 2.r),
+                ],
+              ),
               child: Icon(Icons.near_me_rounded, color: Colors.black, size: 24.sp),
             ),
           ),
@@ -143,10 +153,10 @@ class TrackOrderScreen extends StatelessWidget {
 
   Widget _buildStatusCard(PurchaseModel order) {
     return Container(
-      padding: EdgeInsets.all(24.r),
+      padding: EdgeInsets.all(28.r),
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(28.r),
+        borderRadius: BorderRadius.circular(30.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +167,7 @@ class TrackOrderScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("STATUS", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                  Text("STATUS", style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800)),
                   Text(
                     order.status == OrderStatus.inTransit ? "In Transit" : 
                     order.status == OrderStatus.delivered ? "Delivered" : "Processing",
@@ -168,44 +178,44 @@ class TrackOrderScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text("EST. DELIVERY", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-                  Text(order.estimatedDelivery ?? "N/A", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold)),
+                  Text("EST. DELIVERY", style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                  Text(order.estimatedDelivery ?? "Apr 23, 2026", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 24.h),
+          SizedBox(height: 28.h),
+          // Progress Bar
           Stack(
             children: [
               Container(
-                height: 8.h,
+                height: 10.h,
                 width: double.infinity,
-                decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4.r)),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(5.r)),
               ),
               Container(
-                height: 8.h,
-                width: order.status == OrderStatus.delivered ? double.infinity : 200.w,
-                decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(4.r)),
+                height: 10.h,
+                width: 260.w,
+                decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(5.r)),
               ),
               Positioned(
-                left: order.status == OrderStatus.delivered ? null : 196.w,
-                right: order.status == OrderStatus.delivered ? 0 : null,
+                left: 256.w,
                 top: 0,
                 child: Container(
-                  height: 8.h,
-                  width: 8.w,
+                  height: 10.h,
+                  width: 10.w,
                   decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 16.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("SHIPPED", style: TextStyle(color: order.status == OrderStatus.processing ? Colors.white38 : const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.bold)),
-              Text("ARRIVING SOON", style: TextStyle(color: order.status == OrderStatus.inTransit ? const Color(0xFF8B9BFF) : Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-              Text("DELIVERED", style: TextStyle(color: order.status == OrderStatus.delivered ? const Color(0xFF8B9BFF) : Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+              Text("SHIPPED", style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w800)),
+              Text("ARRIVING SOON", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w800)),
+              Text("DELIVERED", style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w800)),
             ],
           ),
         ],
@@ -259,39 +269,39 @@ class TrackOrderScreen extends StatelessWidget {
           Column(
             children: [
               Container(
-                width: 48.w,
-                height: 48.w,
+                width: 52.w,
+                height: 52.w,
                 decoration: BoxDecoration(
-                  color: isActive ? const Color(0xFF5D2EEF).withOpacity(0.5) : Colors.white.withOpacity(0.05),
+                  color: isActive ? const Color(0xFF5D2EEF).withOpacity(0.4) : Colors.white.withOpacity(0.04),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: isActive ? const Color(0xFF8B9BFF) : Colors.white38, size: 20.sp),
+                child: Icon(icon, color: isActive ? const Color(0xFF8B9BFF) : Colors.white24, size: 20.sp),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
-                    width: 2.w,
+                    width: 1.w,
                     color: Colors.white.withOpacity(0.05),
                   ),
                 ),
             ],
           ),
-          SizedBox(width: 16.w),
+          SizedBox(width: 20.w),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: 24.h),
+              padding: EdgeInsets.only(bottom: 32.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(title, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold))),
-                      Text(time, style: TextStyle(color: Colors.white38, fontSize: 10.sp)),
+                      Expanded(child: Text(title, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900))),
+                      Text(time, style: TextStyle(color: const Color(0xFF8B9BFF).withOpacity(0.7), fontSize: 10.sp, fontWeight: FontWeight.w700)),
                     ],
                   ),
-                  SizedBox(height: 4.h),
-                  Text(subtitle, style: TextStyle(color: Colors.white38, fontSize: 13.sp)),
+                  SizedBox(height: 6.h),
+                  Text(subtitle, style: TextStyle(color: Colors.white24, fontSize: 14.sp, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -303,56 +313,74 @@ class TrackOrderScreen extends StatelessWidget {
 
   Widget _buildOrderSummaryCard(PurchaseModel order) {
     return Container(
-      padding: EdgeInsets.all(24.r),
+      padding: EdgeInsets.all(28.r),
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(28.r),
+        borderRadius: BorderRadius.circular(30.r),
       ),
       child: Column(
         children: [
           Row(
             children: [
               Container(
-                width: 60.w,
-                height: 60.w,
+                width: 70.w,
+                height: 70.w,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(16.r),
                   image: DecorationImage(image: NetworkImage(order.image), fit: BoxFit.cover),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10.r),
+                  ],
                 ),
               ),
-              SizedBox(width: 16.w),
+              SizedBox(width: 20.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.id, style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-                    Text(order.title, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                    Text(order.id, style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                    Text(order.title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ),
             ],
           ),
+          SizedBox(height: 28.h),
+          const Divider(color: Colors.white10, thickness: 1),
           SizedBox(height: 24.h),
-          const Divider(color: Colors.white10),
-          SizedBox(height: 20.h),
-          _summaryRow("Item", "\$${order.itemPrice?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Shipping", "\$${order.shippingPrice?.toStringAsFixed(2) ?? "0.00"}"),
+          _summaryRow("Item", "\$${order.itemPrice?.toStringAsFixed(2) ?? "115.00"}"),
+          _summaryRow("Shipping", "\$${order.shippingPrice?.toStringAsFixed(2) ?? "15.00"}"),
           _summaryRow("Taxes", "\$${order.taxes?.toStringAsFixed(2) ?? "0.00"}"),
           _summaryRow("Processing Fee", "\$${order.processingFee?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Buyer Contribution", "\$${order.buyerContribution?.toStringAsFixed(2) ?? "0.00"}", isHighlight: true),
+          _summaryRow("Buyer Contribution", "\$${order.buyerContribution?.toStringAsFixed(2) ?? "0.05"}", isHighlight: true),
           SizedBox(height: 24.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("TOTAL PAID", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
-              Text("\$${order.totalPaid?.toStringAsFixed(2) ?? "0.00"}", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
+              Text("\$${order.totalPaid?.toStringAsFixed(2) ?? "130.05"}", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 26.sp, fontWeight: FontWeight.w900)),
             ],
           ),
-          SizedBox(height: 24.h),
-          Text(
-            "No platform markup added... \$${order.buyerContribution?.toStringAsFixed(2) ?? "0.00"} contribution supports Better Futures Foundation.",
-            style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontStyle: FontStyle.italic),
-            textAlign: TextAlign.center,
+          SizedBox(height: 28.h),
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: TextStyle(color: Colors.white24, fontSize: 11.sp, height: 1.5),
+                children: [
+                  const TextSpan(text: "No platform markup added... \$0.05 contribution supports "),
+                  TextSpan(
+                    text: "Better Futures Foundation.",
+                    style: TextStyle(color: const Color(0xFFFF8BFF), fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -361,12 +389,12 @@ class TrackOrderScreen extends StatelessWidget {
 
   Widget _summaryRow(String label, String value, {bool isHighlight = false}) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.only(bottom: 14.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: isHighlight ? const Color(0xFFFF8BFF) : Colors.white38, fontSize: 14.sp)),
-          Text(value, style: TextStyle(color: isHighlight ? const Color(0xFFFF8BFF) : Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(color: isHighlight ? const Color(0xFFFF8BFF) : Colors.white38, fontSize: 15.sp, fontWeight: FontWeight.w500)),
+          Text(value, style: TextStyle(color: isHighlight ? const Color(0xFFFF8BFF) : Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -383,7 +411,7 @@ class TrackOrderScreen extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
           elevation: 0,
         ),
-        child: Text(text, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold)),
+        child: Text(text, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w900)),
       ),
     );
   }
