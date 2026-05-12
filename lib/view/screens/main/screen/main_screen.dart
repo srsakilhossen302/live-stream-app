@@ -33,7 +33,7 @@ class MainScreen extends GetView<MainController> {
       children: [
         // Navbar Background
         Container(
-          height: 100.h,
+          height: 90.h,
           width: double.infinity,
           decoration: BoxDecoration(
             color: const Color(0xFF161622),
@@ -49,13 +49,12 @@ class MainScreen extends GetView<MainController> {
               ),
             ],
           ),
-          padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _navItem(0, "assets/icons/Home-navBar.svg", "Home"),
               _navItem(1, "assets/icons/Purchases-navBar.svg", "Shop"),
-              SizedBox(width: 60.w), // Larger gap for center FAB
+              SizedBox(width: 50.w), // Gap for FAB
               _navItem(2, "assets/icons/Discover-navBar.svg", "Find"),
               _navItem(3, "assets/icons/Bidswap-navBar.svg", "Swap"),
               _navItem(4, "assets/icons/Profile-navBar.svg", "User"),
@@ -68,21 +67,21 @@ class MainScreen extends GetView<MainController> {
           child: GestureDetector(
             onTap: () => Get.log("Add Clicked"),
             child: Container(
-              width: 68.w,
-              height: 68.w,
+              width: 64.w,
+              height: 64.w,
               decoration: BoxDecoration(
                 color: const Color(0xFF8B9BFF),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF8B9BFF).withOpacity(0.5),
+                    color: const Color(0xFF8B9BFF).withOpacity(0.4),
                     blurRadius: 20.r,
                     offset: const Offset(0, 8),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFF0F0B1E), width: 5.w),
+                border: Border.all(color: const Color(0xFF0F0B1E), width: 4.w),
               ),
-              child: Icon(Icons.add, color: const Color(0xFF0F0B1E), size: 36.sp),
+              child: Icon(Icons.add, color: Colors.black, size: 32.sp),
             ),
           ),
         ),
@@ -97,23 +96,23 @@ class MainScreen extends GetView<MainController> {
         onTap: () => controller.changeIndex(index),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          padding: EdgeInsets.symmetric(horizontal: isSelected ? 12.w : 6.w, vertical: 10.h),
+          padding: EdgeInsets.symmetric(horizontal: isSelected ? 14.w : 10.w, vertical: 8.h),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFF8B9BFF) : Colors.transparent,
-            borderRadius: BorderRadius.circular(24.r),
+            borderRadius: BorderRadius.circular(20.r),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SvgPicture.asset(
-                iconPath,
-                width: 22.w,
-                height: 22.h,
-                fit: BoxFit.contain,
-                colorFilter: ColorFilter.mode(
-                  isSelected ? const Color(0xFF0F0B1E) : Colors.white70,
-                  BlendMode.srcIn,
+              SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: SvgPicture.asset(
+                  iconPath,
+                  colorFilter: ColorFilter.mode(
+                    isSelected ? Colors.black : Colors.white60,
+                    BlendMode.srcIn,
+                  ),
                 ),
               ),
               if (isSelected) ...[
@@ -121,7 +120,7 @@ class MainScreen extends GetView<MainController> {
                 Text(
                   label,
                   style: TextStyle(
-                    color: const Color(0xFF0F0B1E),
+                    color: Colors.black,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w900,
                   ),
