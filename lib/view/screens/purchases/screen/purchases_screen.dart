@@ -15,32 +15,40 @@ class PurchasesScreen extends GetView<PurchasesController> {
       child: SafeArea(
         child: Column(
           children: [
-            // Header
+            // Custom Header
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              child: Row(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: Icon(Icons.arrow_back, color: Colors.white, size: 24.sp),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Container(
+                        padding: EdgeInsets.all(8.r),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18.sp),
+                      ),
+                    ),
                   ),
-                  const Spacer(),
                   Text(
                     "My Purchases",
-                    style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5),
                   ),
-                  const Spacer(),
-                  SizedBox(width: 40.w), // Balance
                 ],
               ),
             ),
             
-            // Tabs
+            // Tab Bar
             SizedBox(
-              height: 50.h,
+              height: 54.h,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
                 itemCount: controller.tabs.length,
                 itemBuilder: (context, index) {
                   return Obx(() {
@@ -48,18 +56,18 @@ class PurchasesScreen extends GetView<PurchasesController> {
                     return GestureDetector(
                       onTap: () => controller.changeTab(index),
                       child: Container(
-                        margin: EdgeInsets.only(right: 12.w),
-                        padding: EdgeInsets.symmetric(horizontal: 24.w),
+                        margin: EdgeInsets.only(right: 14.w),
+                        padding: EdgeInsets.symmetric(horizontal: 28.w),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF8B9BFF) : const Color(0xFF1E1E2C).withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(20.r),
+                          color: isSelected ? const Color(0xFF8B9BFF) : const Color(0xFF1E1E2C).withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(30.r),
                         ),
                         child: Text(
                           controller.tabs[index],
                           style: TextStyle(
-                            color: isSelected ? Colors.black : Colors.white54,
-                            fontSize: 14.sp,
+                            color: isSelected ? const Color(0xFF0F0B1E) : Colors.white54,
+                            fontSize: 15.sp,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -70,15 +78,16 @@ class PurchasesScreen extends GetView<PurchasesController> {
               ),
             ),
             
-            SizedBox(height: 24.h),
+            SizedBox(height: 32.h),
             
-            // List
+            // List of Orders
             Expanded(
               child: Obx(() => ListView.builder(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
+                physics: const BouncingScrollPhysics(),
                 itemCount: controller.purchases.length,
                 itemBuilder: (context, index) {
-                  return _buildOrderCard(controller.purchases[index]);
+                  return _buildPurchaseCard(controller.purchases[index]);
                 },
               )),
             ),
@@ -88,55 +97,70 @@ class PurchasesScreen extends GetView<PurchasesController> {
     );
   }
 
-  Widget _buildOrderCard(PurchaseModel order) {
-    Color statusColor = const Color(0xFF8B9BFF);
+  Widget _buildPurchaseCard(PurchaseModel order) {
+    Color statusBgColor = const Color(0xFF1E1E2C).withOpacity(0.8);
+    Color statusTextColor = Colors.white60;
     String statusText = "PROCESSING";
     
     if (order.status == OrderStatus.inTransit) {
-      statusColor = const Color(0xFF5D2EEF);
+      statusBgColor = const Color(0xFF5D2EEF);
+      statusTextColor = Colors.white;
       statusText = "IN TRANSIT";
     } else if (order.status == OrderStatus.delivered) {
-      statusColor = Colors.white.withOpacity(0.1);
+      statusBgColor = Colors.white.withOpacity(0.08);
+      statusTextColor = Colors.white54;
       statusText = "DELIVERED";
+    } else if (order.status == OrderStatus.processing) {
+      statusBgColor = Colors.white.withOpacity(0.08);
+      statusTextColor = Colors.white54;
+      statusText = "PROCESSING";
     }
 
     return Container(
       margin: EdgeInsets.only(bottom: 24.h),
-      padding: EdgeInsets.all(24.r),
+      padding: EdgeInsets.all(28.r),
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(28.r),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(32.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15.r,
+            offset: Offset(0, 10.h),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Order Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("ORDER ID", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                  Text("ORDER ID", style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                   Text(order.id, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
                 ],
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: BorderRadius.circular(12.r),
+                  color: statusBgColor,
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     if (order.status == OrderStatus.inTransit)
-                      const Padding(
-                        padding: EdgeInsets.only(right: 6.0),
-                        child: Icon(Icons.circle, color: Colors.white, size: 8),
+                      Padding(
+                        padding: EdgeInsets.only(right: 8.w),
+                        child: Icon(Icons.circle, color: Colors.white, size: 8.sp),
                       ),
                     Text(
                       statusText,
-                      style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900),
+                      style: TextStyle(color: statusTextColor, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5),
                     ),
                   ],
                 ),
@@ -144,139 +168,137 @@ class PurchasesScreen extends GetView<PurchasesController> {
             ],
           ),
           
-          SizedBox(height: 24.h),
+          SizedBox(height: 28.h),
           
+          // Product Info
           Row(
             children: [
               Container(
-                width: 80.w,
-                height: 80.w,
+                width: 90.w,
+                height: 90.w,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16.r),
+                  borderRadius: BorderRadius.circular(20.r),
                   image: DecorationImage(image: NetworkImage(order.image), fit: BoxFit.cover),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10.r, offset: Offset(0, 5.h)),
+                  ],
                 ),
               ),
-              SizedBox(width: 16.w),
+              SizedBox(width: 20.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold)),
-                    Text(order.curator, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                    Text(order.title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w800, height: 1.2)),
                     SizedBox(height: 4.h),
-                    Text(order.date, style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
+                    Text(order.curator, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 14.sp, fontWeight: FontWeight.w700)),
+                    SizedBox(height: 6.h),
+                    Text(order.date, style: TextStyle(color: Colors.white24, fontSize: 13.sp, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
             ],
           ),
           
+          SizedBox(height: 28.h),
+          const Divider(color: Colors.white10, thickness: 1),
           SizedBox(height: 24.h),
-          const Divider(color: Colors.white10),
-          SizedBox(height: 16.h),
           
+          // Payment Info
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("TOTAL PAID", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-                  Text(order.price, style: TextStyle(color: const Color(0xFFCC8BFF), fontSize: 20.sp, fontWeight: FontWeight.w900)),
+                  Text("TOTAL PAID", style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  Text(order.price, style: TextStyle(color: const Color(0xFFFF8BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text("CARRIER", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-                  Text(order.carrier, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                  Text("CARRIER", style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  Text(order.carrier, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w800)),
                 ],
               ),
             ],
           ),
           
+          // Contextual Actions
           if (order.status == OrderStatus.inTransit) ...[
-            SizedBox(height: 24.h),
+            SizedBox(height: 28.h),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withOpacity(0.04),
                 borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: Colors.white.withOpacity(0.05)),
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
                       "Tracking ID: ${order.trackingId}",
-                      style: TextStyle(color: Colors.white60, fontSize: 12.sp, fontFamily: 'Monospace'),
+                      style: TextStyle(color: Colors.white54, fontSize: 13.sp, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  Icon(Icons.copy_rounded, color: const Color(0xFF8B9BFF), size: 16.sp),
+                  Icon(Icons.copy_all_rounded, color: const Color(0xFF8B9BFF), size: 18.sp),
                 ],
               ),
             ),
-            SizedBox(height: 16.h),
-            SizedBox(
-              width: double.infinity,
-              height: 54.h,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B9BFF),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-                ),
-                child: Text("Track Order", style: TextStyle(color: Colors.black, fontSize: 16.sp, fontWeight: FontWeight.w900)),
-              ),
-            ),
-          ],
-          
-          if (order.status == OrderStatus.delivered) ...[
-            SizedBox(height: 24.h),
+            SizedBox(height: 20.h),
+            _buildActionButton("Track Order", const Color(0xFF8B9BFF), Colors.black),
+          ] else if (order.status == OrderStatus.delivered) ...[
+            SizedBox(height: 28.h),
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white10),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-                    ),
-                    child: Text("View Details", style: TextStyle(color: Colors.white, fontSize: 14.sp)),
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white10),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-                    ),
-                    child: Text("Support", style: TextStyle(color: Colors.white, fontSize: 14.sp)),
-                  ),
-                ),
+                Expanded(child: _buildOutlineButton("View Details")),
+                SizedBox(width: 14.w),
+                Expanded(child: _buildOutlineButton("Support")),
               ],
             ),
-          ],
-          
-          if (order.status == OrderStatus.processing) ...[
-            SizedBox(height: 24.h),
-            SizedBox(
-              width: double.infinity,
-              height: 54.h,
-              child: OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-                ),
-                child: Text("Order Details", style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
-              ),
-            ),
+          ] else if (order.status == OrderStatus.processing) ...[
+            SizedBox(height: 32.h),
+            _buildOutlineButton("Order Details", isFullWidth: true),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(String text, Color bgColor, Color textColor) {
+    return SizedBox(
+      width: double.infinity,
+      height: 60.h,
+      child: ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: bgColor,
+          foregroundColor: textColor,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
+        ),
+        child: Text(text, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w900)),
+      ),
+    );
+  }
+
+  Widget _buildOutlineButton(String text, {bool isFullWidth = false}) {
+    return SizedBox(
+      width: isFullWidth ? double.infinity : null,
+      height: 60.h,
+      child: OutlinedButton(
+        onPressed: () {},
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Colors.white.withOpacity(0.08)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
+          backgroundColor: Colors.white.withOpacity(0.03),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w800),
+        ),
       ),
     );
   }
