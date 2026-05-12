@@ -18,28 +18,11 @@ class PurchasesScreen extends GetView<PurchasesController> {
             // Header
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Container(
-                        padding: EdgeInsets.all(8.r),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18.sp),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    "My Purchases",
-                    style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
-                  ),
-                ],
+              child: Center(
+                child: Text(
+                  "My Purchases",
+                  style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+                ),
               ),
             ),
             
