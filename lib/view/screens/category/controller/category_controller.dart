@@ -26,7 +26,7 @@ class CategoryController extends GetxController {
   }
 
   void onContinue() {
-    Get.offAllNamed(AppRoute.home);
+    Get.offAllNamed(AppRoute.main);
   }
 
   void onSkip() {
