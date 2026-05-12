@@ -17,12 +17,20 @@ class PurchasesScreen extends GetView<PurchasesController> {
           children: [
             // Header
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              child: Center(
-                child: Text(
-                  "My Purchases",
-                  style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
-                ),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 15.h),
+              child: Column(
+                children: [
+                  Text(
+                    "My Purchases",
+                    style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+                  ),
+                  SizedBox(height: 12.h),
+                  Container(
+                    height: 1.h,
+                    width: double.infinity,
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ],
               ),
             ),
             
