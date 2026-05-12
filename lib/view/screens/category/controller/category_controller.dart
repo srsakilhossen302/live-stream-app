@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/app_route.dart';
+
 class CategoryController extends GetxController {
   var selectedCategories = <int>{}.obs;
 
@@ -24,7 +26,7 @@ class CategoryController extends GetxController {
   }
 
   void onContinue() {
-    Get.log("Selected Categories: $selectedCategories");
+    Get.offAllNamed(AppRoute.home);
   }
 
   void onSkip() {
