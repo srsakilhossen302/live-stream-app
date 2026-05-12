@@ -180,10 +180,10 @@ class BidShwapScreen extends GetView<BidShwapController> {
   Widget _buildTradeCard(TradeModel trade) {
     return Container(
       margin: EdgeInsets.only(bottom: 24.h),
-      padding: EdgeInsets.all(24.r),
+      padding: EdgeInsets.all(28.r),
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(32.r),
+        borderRadius: BorderRadius.circular(36.r),
       ),
       child: Column(
         children: [
@@ -191,7 +191,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
           Row(
             children: [
               CircleAvatar(
-                radius: 22.r,
+                radius: 18.r,
                 backgroundImage: NetworkImage(trade.userAvatar),
               ),
               SizedBox(width: 12.w),
@@ -199,77 +199,82 @@ class BidShwapScreen extends GetView<BidShwapController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(trade.userName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                    Text(trade.userName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
                     Row(
                       children: [
-                        Icon(Icons.star, color: Colors.pink, size: 14.sp),
+                        Icon(Icons.star, color: const Color(0xFFFF8BFF), size: 12.sp),
                         SizedBox(width: 4.w),
-                        Text("${trade.userRating} (${trade.tradesCount})", style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
+                        Text("${trade.userRating} (${trade.tradesCount})", style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w800)),
                       ],
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E2C),
-                  borderRadius: BorderRadius.circular(8.r),
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(10.r),
                 ),
                 child: Text("VERIFIED AVAILABLE", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 9.sp, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
           
-          SizedBox(height: 24.h),
+          SizedBox(height: 28.h),
           
           // Offered Item
           Stack(
             alignment: Alignment.center,
+            clipBehavior: Clip.none,
             children: [
               Column(
                 children: [
                   Container(
-                    height: 240.h,
+                    height: 260.h,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24.r),
+                      borderRadius: BorderRadius.circular(28.r),
                       image: DecorationImage(
                         image: NetworkImage(trade.offeredItemImage),
                         fit: BoxFit.cover,
                       ),
                     ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24.r),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: 16.w,
+                          bottom: 16.h,
+                          child: Container(
+                            padding: EdgeInsets.all(16.r),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(18.r),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text("OFFERED ITEM", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                                SizedBox(height: 4.h),
+                                Text(trade.offeredItemName, style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                                Text(trade.offeredItemValue, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700)),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      padding: EdgeInsets.all(20.r),
-                      alignment: Alignment.bottomLeft,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("OFFERED ITEM", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                          SizedBox(height: 4.h),
-                          Text(trade.offeredItemName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
-                          Text(trade.offeredItemValue, style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 14.h),
                   // Looking For
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(20.r),
+                    padding: EdgeInsets.all(24.r),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F0B1E),
-                      borderRadius: BorderRadius.circular(24.r),
+                      borderRadius: BorderRadius.circular(28.r),
                     ),
                     child: Row(
                       children: [
@@ -277,14 +282,15 @@ class BidShwapScreen extends GetView<BidShwapController> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("LOOKING FOR", style: TextStyle(color: Colors.pink, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                              SizedBox(height: 8.h),
-                              Text(trade.lookingForItemName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
-                              Text(trade.lookingForItemValue, style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
+                              Text("LOOKING FOR", style: TextStyle(color: const Color(0xFFFF8BFF), fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                              SizedBox(height: 12.h),
+                              Text(trade.lookingForItemName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
+                              SizedBox(height: 4.h),
+                              Text(trade.lookingForItemValue, style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ),
-                        Icon(Icons.watch_outlined, color: Colors.white24, size: 24.sp),
+                        Icon(Icons.watch_outlined, color: Colors.white10, size: 28.sp),
                       ],
                     ),
                   ),
@@ -292,30 +298,34 @@ class BidShwapScreen extends GetView<BidShwapController> {
               ),
               // Swap Button
               Positioned(
-                top: 215.h,
+                top: 235.h, // Adjusted to sit between containers
                 child: Container(
-                  width: 50.w,
-                  height: 50.w,
+                  width: 54.w,
+                  height: 54.w,
                   decoration: BoxDecoration(
                     color: const Color(0xFF8B9BFF),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF161622), width: 4.w),
+                    border: Border.all(color: const Color(0xFF161622), width: 6.w),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10.r),
+                      BoxShadow(
+                        color: const Color(0xFF8B9BFF).withOpacity(0.3),
+                        blurRadius: 20.r,
+                        spreadRadius: 2.r,
+                      ),
                     ],
                   ),
-                  child: Icon(Icons.sync_alt_rounded, color: Colors.black, size: 24.sp),
+                  child: Icon(Icons.sync_alt_rounded, color: Colors.black, size: 26.sp),
                 ),
               ),
             ],
           ),
           
-          SizedBox(height: 24.h),
+          SizedBox(height: 32.h),
           
           // Action Buttons
           Row(
             children: [
-              Expanded(child: _buildActionButton("View Details", const Color(0xFF1E1E2C), Colors.white)),
+              Expanded(child: _buildActionButton("View Details", Colors.white.withOpacity(0.06), Colors.white)),
               SizedBox(width: 16.w),
               Expanded(child: _buildActionButton("Make Offer", const Color(0xFF8B9BFF), Colors.black)),
             ],
