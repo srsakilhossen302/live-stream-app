@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/app_route.dart';
+
 class LoginController extends GetxController {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   void onLogin() {
-    Get.log("Login Clicked: ${emailController.text}");
+    Get.offNamed(AppRoute.category);
   }
 
   void onSignUp() {
