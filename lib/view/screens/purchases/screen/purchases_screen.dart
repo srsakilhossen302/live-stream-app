@@ -83,7 +83,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
             // Orders List
             Expanded(
               child: Obx(() => ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
                 physics: const BouncingScrollPhysics(),
                 itemCount: controller.purchases.length,
                 itemBuilder: (context, index) {
@@ -295,7 +295,12 @@ class PurchasesScreen extends GetView<PurchasesController> {
           elevation: 0,
           side: BorderSide(color: Colors.white.withOpacity(0.05)),
         ),
-        child: Text(text, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w800)),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w800),
+        ),
       ),
     );
   }
