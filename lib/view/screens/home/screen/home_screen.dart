@@ -321,13 +321,10 @@ class HomeScreen extends GetView<HomeController> {
               padding: EdgeInsets.only(right: 4.w),
               child: Icon(icon, color: Colors.white, size: 12.sp),
             ),
-          Flexible(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
-            ),
+          Text(
+            text,
+            maxLines: 1,
+            style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
           ),
         ],
       ),
@@ -371,7 +368,7 @@ class HomeScreen extends GetView<HomeController> {
                     children: [
                       _buildSmallBadge("LIVE", const Color(0xFFFF4B67)),
                       const Spacer(),
-                      Flexible(child: _buildSmallBadge(item.viewers, Colors.black.withOpacity(0.4), icon: Icons.visibility_outlined)),
+                      _buildSmallBadge(item.viewers, Colors.black.withOpacity(0.4), icon: Icons.visibility_outlined),
                     ],
                   ),
                   const Spacer(),
