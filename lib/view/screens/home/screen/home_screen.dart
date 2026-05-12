@@ -277,12 +277,16 @@ class HomeScreen extends GetView<HomeController> {
             ),
           if (icon != null)
             Padding(
-              padding: const EdgeInsets.only(right: 6.0),
-              child: Icon(icon, color: Colors.white, size: 14),
+              padding: const EdgeInsets.only(right: 4.0),
+              child: Icon(icon, color: Colors.white, size: 12),
             ),
-          Text(
-            text,
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900),
+            ),
           ),
         ],
       ),
