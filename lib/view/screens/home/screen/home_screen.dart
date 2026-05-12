@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../main/controller/main_controller.dart';
 import '../controller/home_controller.dart';
 
 class HomeScreen extends GetView<HomeController> {
@@ -44,32 +45,28 @@ class HomeScreen extends GetView<HomeController> {
               SizedBox(height: 28.h),
 
               // Search Bar
-              Container(
-                height: 58.h,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF161622),
-                  borderRadius: BorderRadius.circular(18.r),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Row(
-                  children: [
-                    Icon(Icons.search, color: Colors.white38, size: 24.sp),
-                    SizedBox(width: 14.w),
-                    Expanded(
-                      child: TextField(
-                        style: TextStyle(color: Colors.white, fontSize: 16.sp),
-                        decoration: InputDecoration(
-                          hintText: "Search auctions, items...",
-                          hintStyle: TextStyle(
-                            color: Colors.white24,
-                            fontSize: 16.sp,
-                          ),
-                          border: InputBorder.none,
+              GestureDetector(
+                onTap: () => Get.find<MainController>().changeIndex(2),
+                child: Container(
+                  height: 58.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161622),
+                    borderRadius: BorderRadius.circular(18.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.white38, size: 24.sp),
+                      SizedBox(width: 14.w),
+                      Expanded(
+                        child: Text(
+                          "Search auctions, items...",
+                          style: TextStyle(color: Colors.white24, fontSize: 16.sp),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
