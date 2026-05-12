@@ -65,7 +65,7 @@ class LoginScreen extends GetView<LoginController> {
                     children: [
                       _buildLabel("PASSWORD"),
                       GestureDetector(
-                        onPressed: () => controller.onForgotPassword(),
+                        onTap: () => controller.onForgotPassword(),
                         child: const Text(
                           "FORGOT PASSWORD?",
                           style: TextStyle(
@@ -124,7 +124,7 @@ class LoginScreen extends GetView<LoginController> {
                         style: TextStyle(color: Colors.white38, fontSize: 14),
                       ),
                       GestureDetector(
-                        onPressed: () => controller.onSignUp(),
+                        onTap: () => controller.onSignUp(),
                         child: const Text(
                           "Sign Up",
                           style: TextStyle(
