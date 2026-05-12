@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../../../core/app_route.dart';
 import '../controller/purchases_controller.dart';
 import '../model/purchase_model.dart';
 
@@ -203,7 +204,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
               ),
             ),
             SizedBox(height: 20.h),
-            _buildPrimaryButton("Track Order"),
+            _buildPrimaryButton("Track Order", order: order),
           ] else if (isDelivered) ...[
             SizedBox(height: 28.h),
             Row(
@@ -257,12 +258,12 @@ class PurchasesScreen extends GetView<PurchasesController> {
     );
   }
 
-  Widget _buildPrimaryButton(String text) {
+  Widget _buildPrimaryButton(String text, {required PurchaseModel order}) {
     return SizedBox(
       width: double.infinity,
       height: 60.h,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () => Get.toNamed(AppRoute.trackOrder, arguments: order),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF8B9BFF),
           foregroundColor: Colors.black,
