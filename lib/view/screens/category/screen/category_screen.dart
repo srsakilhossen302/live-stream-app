@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/category_controller.dart';
@@ -15,23 +16,23 @@ class CategoryScreen extends GetView<CategoryController> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
                     onPressed: () => controller.onClose(),
-                    icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                    icon: Icon(Icons.close, color: Colors.white, size: 28.sp),
                   ),
-                  const Text(
+                  Text(
                     "Auction Live",
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () => controller.onSkip(),
-                    child: const Text(
+                    child: Text(
                       "Skip",
-                      style: TextStyle(color: Color(0xFF8B9BFF), fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 16.sp, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -40,39 +41,39 @@ class CategoryScreen extends GetView<CategoryController> {
             
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+                padding: EdgeInsets.all(24.r),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       "Choose What\nYou’re Into",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 42,
+                        fontSize: 42.sp,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    SizedBox(height: 16.h),
+                    Text(
                       "Tell us what ignites your passion. We’ll curate an exclusive gallery experience tailored to your unique aesthetic and investment goals.",
                       style: TextStyle(
                         color: Colors.white38,
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32.h),
                     
                     // Grid
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 0.85,
+                        crossAxisSpacing: 16.w,
+                        mainAxisSpacing: 16.h,
+                        childAspectRatio: 0.82,
                       ),
                       itemCount: controller.categories.length,
                       itemBuilder: (context, index) {
@@ -90,23 +91,23 @@ class CategoryScreen extends GetView<CategoryController> {
             
             // Footer
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.r),
               child: SizedBox(
                 width: double.infinity,
-                height: 60,
+                height: 60.h,
                 child: ElevatedButton(
                   onPressed: () => controller.onContinue(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B9BFF),
                     foregroundColor: const Color(0xFF0F0B1E),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(30.r),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
+                  child: Text(
                     "Continue",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
                   ),
                 ),
               ),
@@ -121,13 +122,13 @@ class CategoryScreen extends GetView<CategoryController> {
     return GestureDetector(
       onTap: () => controller.toggleCategory(category.id),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16.r),
         decoration: BoxDecoration(
           color: const Color(0xFF1E1E2C).withOpacity(0.5),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24.r),
           border: Border.all(
             color: isSelected ? const Color(0xFF8B9BFF) : Colors.white.withOpacity(0.05),
-            width: isSelected ? 2 : 1,
+            width: isSelected ? 2.w : 1.w,
           ),
         ),
         child: Stack(
@@ -136,32 +137,32 @@ class CategoryScreen extends GetView<CategoryController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12.r),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16.r),
                   ),
-                  child: Icon(category.icon, color: Colors.white, size: 24),
+                  child: Icon(category.icon, color: Colors.white, size: 24.sp),
                 ),
                 const Spacer(),
                 Text(
                   category.title,
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   category.subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  style: TextStyle(color: Colors.white38, fontSize: 12.sp),
                 ),
               ],
             ),
             if (isSelected)
-              const Positioned(
+              Positioned(
                 top: 0,
                 right: 0,
-                child: Icon(Icons.check_circle, color: Color(0xFF8B9BFF), size: 24),
+                child: Icon(Icons.check_circle, color: const Color(0xFF8B9BFF), size: 24.sp),
               ),
           ],
         ),
