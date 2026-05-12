@@ -17,6 +17,14 @@ class PurchasesController extends GetxController {
       image: "https://i.ebayimg.com/images/g/V~AAAOSw~oFk~S~U/s-l1600.jpg",
       trackingId: "9400 1234 5678 90",
       status: OrderStatus.inTransit,
+      estimatedDelivery: "Apr 23, 2026",
+      location: "Jersey City Distribution Center",
+      itemPrice: 1150.00,
+      shippingPrice: 90.00,
+      taxes: 0.00,
+      processingFee: 0.00,
+      buyerContribution: 0.05,
+      totalPaid: 1240.05,
     ),
     PurchaseModel(
       id: "#ORD-24885",
@@ -28,6 +36,14 @@ class PurchasesController extends GetxController {
       image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
       trackingId: "FEDEX-8829-1120",
       status: OrderStatus.delivered,
+      estimatedDelivery: "Delivered Oct 10, 2023",
+      location: "New York Hub",
+      itemPrice: 850.00,
+      shippingPrice: 40.00,
+      taxes: 0.00,
+      processingFee: 0.00,
+      buyerContribution: 0.00,
+      totalPaid: 890.00,
     ),
     PurchaseModel(
       id: "#ORD-24902",
@@ -39,6 +55,14 @@ class PurchasesController extends GetxController {
       image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314",
       trackingId: "DHL-9901-2234",
       status: OrderStatus.processing,
+      estimatedDelivery: "Pending",
+      location: "Origin Facility",
+      itemPrice: 2400.00,
+      shippingPrice: 50.00,
+      taxes: 0.00,
+      processingFee: 0.00,
+      buyerContribution: 0.00,
+      totalPaid: 2450.00,
     ),
   ].obs;
 
@@ -47,7 +71,7 @@ class PurchasesController extends GetxController {
   }
 
   List<PurchaseModel> get filteredPurchases {
-    if (selectedTab.value == 0) return purchases; // All
+    if (selectedTab.value == 0) return purchases;
     
     OrderStatus targetStatus;
     switch (selectedTab.value) {

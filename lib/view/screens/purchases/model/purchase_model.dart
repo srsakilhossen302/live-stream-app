@@ -12,6 +12,16 @@ class PurchaseModel {
   final String image;
   final String trackingId;
   final OrderStatus status;
+  
+  // Track Order specific data
+  final String? estimatedDelivery;
+  final String? location;
+  final double? itemPrice;
+  final double? shippingPrice;
+  final double? taxes;
+  final double? processingFee;
+  final double? buyerContribution;
+  final double? totalPaid;
 
   PurchaseModel({
     required this.id,
@@ -23,5 +33,13 @@ class PurchaseModel {
     required this.image,
     required this.trackingId,
     required this.status,
+    this.estimatedDelivery,
+    this.location,
+    this.itemPrice,
+    this.shippingPrice,
+    this.taxes,
+    this.processingFee,
+    this.buyerContribution,
+    this.totalPaid,
   });
 }

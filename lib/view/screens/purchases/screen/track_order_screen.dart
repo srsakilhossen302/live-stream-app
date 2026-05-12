@@ -23,15 +23,15 @@ class TrackOrderScreen extends StatelessWidget {
                     onTap: () => Get.back(),
                     child: Icon(Icons.close, color: Colors.white, size: 24.sp),
                   ),
-                  Expanded(
+                  const Expanded(
                     child: Center(
                       child: Text(
-                        "Order ${order.id}",
-                        style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                        "Order #ORD-24891",
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
-                  SizedBox(width: 24.w),
+                  SizedBox(width: 24.w), // Balance
                 ],
               ),
             ),
@@ -44,12 +44,12 @@ class TrackOrderScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Map Section
-                    _buildMapSection(order),
+                    _buildMapSection(),
                     
                     SizedBox(height: 32.h),
                     
                     // Status Card
-                    _buildStatusCard(order),
+                    _buildStatusCard(),
                     
                     SizedBox(height: 32.h),
                     
@@ -61,7 +61,7 @@ class TrackOrderScreen extends StatelessWidget {
                     SizedBox(height: 32.h),
                     
                     // Order Summary Card
-                    _buildOrderSummaryCard(order),
+                    _buildOrderSummaryCard(),
                     
                     SizedBox(height: 32.h),
                     
@@ -85,7 +85,7 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMapSection(PurchaseModel order) {
+  Widget _buildMapSection() {
     return Container(
       height: 220.h,
       width: double.infinity,
@@ -121,7 +121,7 @@ class TrackOrderScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  order.location ?? "Unknown Location",
+                  "Jersey City Distribution\nCenter",
                   style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900),
                 ),
               ],
@@ -141,7 +141,7 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusCard(PurchaseModel order) {
+  Widget _buildStatusCard() {
     return Container(
       padding: EdgeInsets.all(24.r),
       decoration: BoxDecoration(
@@ -158,23 +158,20 @@ class TrackOrderScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("STATUS", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-                  Text(
-                    order.status == OrderStatus.inTransit ? "In Transit" : 
-                    order.status == OrderStatus.delivered ? "Delivered" : "Processing",
-                    style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 24.sp, fontWeight: FontWeight.w900),
-                  ),
+                  Text("In Transit", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text("EST. DELIVERY", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-                  Text(order.estimatedDelivery ?? "N/A", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold)),
+                  Text("Apr 23, 2026", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold)),
                 ],
               ),
             ],
           ),
           SizedBox(height: 24.h),
+          // Progress Bar
           Stack(
             children: [
               Container(
@@ -184,12 +181,11 @@ class TrackOrderScreen extends StatelessWidget {
               ),
               Container(
                 height: 8.h,
-                width: order.status == OrderStatus.delivered ? double.infinity : 200.w,
+                width: 200.w,
                 decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(4.r)),
               ),
               Positioned(
-                left: order.status == OrderStatus.delivered ? null : 196.w,
-                right: order.status == OrderStatus.delivered ? 0 : null,
+                left: 196.w,
                 top: 0,
                 child: Container(
                   height: 8.h,
@@ -203,9 +199,9 @@ class TrackOrderScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("SHIPPED", style: TextStyle(color: order.status == OrderStatus.processing ? Colors.white38 : const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.bold)),
-              Text("ARRIVING SOON", style: TextStyle(color: order.status == OrderStatus.inTransit ? const Color(0xFF8B9BFF) : Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-              Text("DELIVERED", style: TextStyle(color: order.status == OrderStatus.delivered ? const Color(0xFF8B9BFF) : Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+              Text("SHIPPED", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+              Text("ARRIVING SOON", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.bold)),
+              Text("DELIVERED", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -301,7 +297,7 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderSummaryCard(PurchaseModel order) {
+  Widget _buildOrderSummaryCard(dynamic order) {
     return Container(
       padding: EdgeInsets.all(24.r),
       decoration: BoxDecoration(
@@ -335,22 +331,22 @@ class TrackOrderScreen extends StatelessWidget {
           SizedBox(height: 24.h),
           const Divider(color: Colors.white10),
           SizedBox(height: 20.h),
-          _summaryRow("Item", "\$${order.itemPrice?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Shipping", "\$${order.shippingPrice?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Taxes", "\$${order.taxes?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Processing Fee", "\$${order.processingFee?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Buyer Contribution", "\$${order.buyerContribution?.toStringAsFixed(2) ?? "0.00"}", isHighlight: true),
+          _summaryRow("Item", "\$115.00"),
+          _summaryRow("Shipping", "\$15.00"),
+          _summaryRow("Taxes", "\$0.00"),
+          _summaryRow("Processing Fee", "\$0.00"),
+          _summaryRow("Buyer Contribution", "\$0.05", isHighlight: true),
           SizedBox(height: 24.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("TOTAL PAID", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
-              Text("\$${order.totalPaid?.toStringAsFixed(2) ?? "0.00"}", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
+              Text("\$130.05", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
             ],
           ),
           SizedBox(height: 24.h),
           Text(
-            "No platform markup added... \$${order.buyerContribution?.toStringAsFixed(2) ?? "0.00"} contribution supports Better Futures Foundation.",
+            "No platform markup added... \$0.05 contribution supports Better Futures Foundation.",
             style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontStyle: FontStyle.italic),
             textAlign: TextAlign.center,
           ),
