@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/bidshwap_controller.dart';
@@ -223,7 +224,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
           
           SizedBox(height: 28.h),
           
-          // Offered Item
+          // Offered Item & Looking For Section
           Stack(
             alignment: Alignment.center,
             clipBehavior: Clip.none,
@@ -267,7 +268,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 14.h),
+                  SizedBox(height: 20.h), // Spacing for the swap icon
                   // Looking For
                   Container(
                     width: double.infinity,
@@ -296,16 +297,14 @@ class BidShwapScreen extends GetView<BidShwapController> {
                   ),
                 ],
               ),
-              // Swap Button
-              Positioned(
-                top: 235.h, // Adjusted to sit between containers
+              // Swap Icon (Using Svg)
+              Transform.translate(
+                offset: Offset(0, -25.h), // Adjust vertical position to sit perfectly in the middle
                 child: Container(
                   width: 54.w,
                   height: 54.w,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B9BFF),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF161622), width: 6.w),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF8B9BFF).withOpacity(0.3),
@@ -314,7 +313,10 @@ class BidShwapScreen extends GetView<BidShwapController> {
                       ),
                     ],
                   ),
-                  child: Icon(Icons.sync_alt_rounded, color: Colors.black, size: 26.sp),
+                  child: SvgPicture.asset(
+                    "assets/icons/Container.svg",
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ],
