@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../../../../../global/widgets/custom_background.dart';
+import '../../../../../global/widgets/custom_background.dart';
+import '../../../../../global/widgets/custom_bottom_navbar.dart';
 import '../../../model/purchase_model.dart';
 
 class TrackOrderScreen extends StatelessWidget {
@@ -12,36 +13,38 @@ class TrackOrderScreen extends StatelessWidget {
     final PurchaseModel order = Get.arguments;
     return CustomBackground(
       child: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Header
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                    ),
+            Column(
+              children: [
+                // Header
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          onTap: () => Get.back(),
+                          child: Icon(Icons.close, color: Colors.white, size: 24.sp),
+                        ),
+                      ),
+                      Text(
+                        "Order ${order.id}",
+                        style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
-                  Text(
-                    "Order ${order.id}",
-                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            
-            const Divider(color: Colors.white10, thickness: 1),
-            
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                physics: const BouncingScrollPhysics(),
-                child: Column(
+                ),
+                
+                const Divider(color: Colors.white10, thickness: 1),
+                
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(height: 24.h),
@@ -416,6 +419,16 @@ class TrackOrderScreen extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+        ),
+      ),
+            ),
+            const Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: CustomBottomNavbar(),
+            ),
+          ],
         ),
       ),
     );
