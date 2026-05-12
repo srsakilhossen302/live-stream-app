@@ -318,7 +318,7 @@ class HomeScreen extends GetView<HomeController> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(14.0),
+              padding: const EdgeInsets.all(10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -326,7 +326,7 @@ class HomeScreen extends GetView<HomeController> {
                     children: [
                       _buildSmallBadge("LIVE", const Color(0xFFFF4B67)),
                       const Spacer(),
-                      _buildSmallBadge(item.viewers, Colors.black.withOpacity(0.3), icon: Icons.visibility_outlined),
+                      Flexible(child: _buildSmallBadge(item.viewers, Colors.black.withOpacity(0.3), icon: Icons.visibility_outlined)),
                     ],
                   ),
                   const Spacer(),
