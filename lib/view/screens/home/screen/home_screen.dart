@@ -27,9 +27,9 @@ class HomeScreen extends GetView<HomeController> {
                 ),
               ),
               const SizedBox(height: 6),
-              Row(
+              const Row(
                 children: [
-                  const Text(
+                  Text(
                     "Hello, Alex 👋",
                     style: TextStyle(
                       color: Colors.white,
@@ -112,7 +112,7 @@ class HomeScreen extends GetView<HomeController> {
               
               // Featured Card
               Container(
-                height: 420,
+                height: 440,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(32),
@@ -143,35 +143,46 @@ class HomeScreen extends GetView<HomeController> {
                     children: [
                       Row(
                         children: [
-                          _buildSmallBadge("LIVE", Colors.red),
+                          _buildSmallBadge("LIVE", const Color(0xFFFF5252)),
                           const SizedBox(width: 10),
-                          _buildSmallBadge("4.2K", Colors.white.withOpacity(0.1), icon: Icons.visibility_outlined),
+                          _buildSmallBadge("4.2K", Colors.black.withOpacity(0.4), icon: Icons.visibility_outlined),
                         ],
                       ),
                       const Spacer(),
                       Row(
                         children: [
-                          const CircleAvatar(radius: 16, backgroundImage: NetworkImage("https://i.pravatar.cc/150?u=9")),
-                          const SizedBox(width: 10),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white24, width: 1.5),
+                              image: const DecorationImage(
+                                image: NetworkImage("https://i.pravatar.cc/150?u=9"),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("CURATED BY", style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                              Text("VintageVault_Pro", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+                              Text("CURATED BY", style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                              Text("VintageVault_Pro", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       const Text(
                         "Rare 1980s Tech Drop: Unopened Grail Consoles & Limited Prototypes",
-                        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, height: 1.1),
+                        style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, height: 1.1),
                       ),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
-                        height: 58,
-                        child: ElevatedButton.icon(
+                        height: 60,
+                        child: ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8B9BFF),
@@ -179,8 +190,14 @@ class HomeScreen extends GetView<HomeController> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                             elevation: 0,
                           ),
-                          icon: const Icon(Icons.play_circle_fill_rounded, size: 26),
-                          label: const Text("Join Stream", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.play_circle_fill_rounded, size: 28, color: Color(0xFF0F0B1E)),
+                              SizedBox(width: 10),
+                              Text("Join Stream", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF0F0B1E))),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -245,15 +262,15 @@ class HomeScreen extends GetView<HomeController> {
 
   Widget _buildSmallBadge(String text, Color bgColor, {IconData? icon}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: bgColor == Colors.red ? const Color(0xFFFF4B67) : bgColor,
-        borderRadius: BorderRadius.circular(10),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (bgColor == Colors.red)
+          if (text == "LIVE")
             const Padding(
               padding: EdgeInsets.only(right: 6.0),
               child: Icon(Icons.circle, color: Colors.white, size: 8),
@@ -261,11 +278,11 @@ class HomeScreen extends GetView<HomeController> {
           if (icon != null)
             Padding(
               padding: const EdgeInsets.only(right: 6.0),
-              child: Icon(icon, color: Colors.white, size: 12),
+              child: Icon(icon, color: Colors.white, size: 14),
             ),
           Text(
             text,
-            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900),
+            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
           ),
         ],
       ),
@@ -307,9 +324,9 @@ class HomeScreen extends GetView<HomeController> {
                 children: [
                   Row(
                     children: [
-                      _buildSmallBadge("LIVE", Colors.red),
+                      _buildSmallBadge("LIVE", const Color(0xFFFF4B67)),
                       const Spacer(),
-                      _buildSmallBadge(item.viewers, Colors.white.withOpacity(0.2), icon: Icons.visibility_outlined),
+                      _buildSmallBadge(item.viewers, Colors.black.withOpacity(0.3), icon: Icons.visibility_outlined),
                     ],
                   ),
                   const Spacer(),
