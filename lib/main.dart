@@ -1,7 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'view/screens/onboarding/screen/onboarding_screen.dart';
+import 'core/app_route.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +19,8 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Inter',
       ),
-      home: const OnboardingScreen(),
+      initialRoute: AppRoute.onboarding,
+      getPages: AppRoute.routes,
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../../../../core/utils/app_images.dart';
 
 class OnboardingController extends GetxController {
@@ -38,12 +39,12 @@ class OnboardingController extends GetxController {
         curve: Curves.easeIn,
       );
     } else {
-      Get.log("Navigate to Auth");
+      Get.offNamed(AppRoute.login);
     }
   }
 
   void onSkip() {
-    Get.log("Skip Clicked");
+    Get.offNamed(AppRoute.login);
   }
 
   @override
