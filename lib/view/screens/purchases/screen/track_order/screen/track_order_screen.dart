@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../../../../global/widgets/custom_background.dart';
-import '../../../../../global/widgets/custom_bottom_navbar.dart';
+import '../../../../../../global/widgets/custom_background.dart';
+import '../../../../../../global/widgets/custom_bottom_navbar.dart';
 import '../../../model/purchase_model.dart';
 
 class TrackOrderScreen extends StatelessWidget {
@@ -45,44 +45,52 @@ class TrackOrderScreen extends StatelessWidget {
                     padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
                     physics: const BouncingScrollPhysics(),
                     child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 24.h),
-                    // Map Section
-                    _buildMapSection(order),
-                    
-                    SizedBox(height: 32.h),
-                    
-                    // Status Card
-                    _buildStatusCard(order),
-                    
-                    SizedBox(height: 32.h),
-                    
-                    // Journey Updates
-                    Text("JOURNEY UPDATES", style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-                    SizedBox(height: 24.h),
-                    _buildJourneyTimeline(),
-                    
-                    SizedBox(height: 32.h),
-                    
-                    // Order Summary Card
-                    _buildOrderSummaryCard(order),
-                    
-                    SizedBox(height: 32.h),
-                    
-                    // Action Buttons
-                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(child: _buildButton("View Receipt", const Color(0xFF8B9BFF), Colors.black)),
-                        SizedBox(width: 16.w),
-                        Expanded(child: _buildButton("Contact Seller", const Color(0xFF1E1E2C).withOpacity(0.9), Colors.white)),
+                        SizedBox(height: 24.h),
+                        // Map Section
+                        _buildMapSection(order),
+                        
+                        SizedBox(height: 32.h),
+                        
+                        // Status Card
+                        _buildStatusCard(order),
+                        
+                        SizedBox(height: 32.h),
+                        
+                        // Journey Updates
+                        Text("JOURNEY UPDATES", style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                        SizedBox(height: 24.h),
+                        _buildJourneyTimeline(),
+                        
+                        SizedBox(height: 32.h),
+                        
+                        // Order Summary Card
+                        _buildOrderSummaryCard(order),
+                        
+                        SizedBox(height: 32.h),
+                        
+                        // Action Buttons
+                        Row(
+                          children: [
+                            Expanded(child: _buildButton("View Receipt", const Color(0xFF8B9BFF), Colors.black)),
+                            SizedBox(width: 16.w),
+                            Expanded(child: _buildButton("Contact Seller", const Color(0xFF1E1E2C).withOpacity(0.9), Colors.white)),
+                          ],
+                        ),
+                        
+                        SizedBox(height: 40.h),
                       ],
                     ),
-                    
-                    SizedBox(height: 40.h),
-                  ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+            const Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: CustomBottomNavbar(),
             ),
           ],
         ),
@@ -120,9 +128,9 @@ class TrackOrderScreen extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.circle, color: Color(0xff97A9FF), size: 6.sp),
+                      Icon(Icons.circle, color: const Color(0xFF97A9FF), size: 6.sp),
                       SizedBox(width: 8.w),
-                      Text("LIVE VIEW", style: TextStyle(color: Color(0xff97A9FF), fontSize: 10.sp, fontWeight: FontWeight.w800)),
+                      Text("LIVE VIEW", style: TextStyle(color: const Color(0xFF97A9FF), fontSize: 10.sp, fontWeight: FontWeight.w800)),
                     ],
                   ),
                 ),
@@ -174,7 +182,7 @@ class TrackOrderScreen extends StatelessWidget {
                   Text(
                     order.status == OrderStatus.inTransit ? "In Transit" : 
                     order.status == OrderStatus.delivered ? "Delivered" : "Processing",
-                    style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 24.sp, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: const Color(0xFFAC8AFF), fontSize: 24.sp, fontWeight: FontWeight.w900),
                   ),
                 ],
               ),
@@ -188,7 +196,6 @@ class TrackOrderScreen extends StatelessWidget {
             ],
           ),
           SizedBox(height: 28.h),
-          // Progress Bar
           Stack(
             children: [
               Container(
@@ -341,7 +348,7 @@ class TrackOrderScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.id, style: TextStyle(color: Color(0xffAC8AFF), fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                    Text(order.id, style: TextStyle(color: const Color(0xFFAC8AFF), fontSize: 11.sp, fontWeight: FontWeight.w800)),
                     Text(order.title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
                   ],
                 ),
@@ -419,16 +426,6 @@ class TrackOrderScreen extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
-        ),
-      ),
-            ),
-            const Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: CustomBottomNavbar(),
-            ),
-          ],
         ),
       ),
     );
