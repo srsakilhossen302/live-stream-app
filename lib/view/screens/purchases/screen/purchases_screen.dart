@@ -15,7 +15,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
       child: SafeArea(
         child: Column(
           children: [
-            // Custom Header
+            // Header
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
               child: Stack(
@@ -80,7 +80,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
             
             SizedBox(height: 32.h),
             
-            // List of Orders
+            // List
             Expanded(
               child: Obx(() => ListView.builder(
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -98,22 +98,29 @@ class PurchasesScreen extends GetView<PurchasesController> {
   }
 
   Widget _buildPurchaseCard(PurchaseModel order) {
-    Color statusBgColor = const Color(0xFF1E1E2C).withOpacity(0.8);
-    Color statusTextColor = Colors.white60;
+    bool isDelivered = order.status == OrderStatus.delivered;
+    bool isInTransit = order.status == OrderStatus.inTransit;
+    bool isProcessing = order.status == OrderStatus.processing;
+
+    Color statusBgColor = Colors.white.withOpacity(0.08);
+    Color statusTextColor = Colors.white54;
     String statusText = "PROCESSING";
-    
-    if (order.status == OrderStatus.inTransit) {
+    Color priceColor = const Color(0xFFFF8BFF); // Default pink for In Transit/other
+
+    if (isInTransit) {
       statusBgColor = const Color(0xFF5D2EEF);
       statusTextColor = Colors.white;
       statusText = "IN TRANSIT";
-    } else if (order.status == OrderStatus.delivered) {
-      statusBgColor = Colors.white.withOpacity(0.08);
-      statusTextColor = Colors.white54;
+    } else if (isDelivered) {
+      statusBgColor = Colors.white.withOpacity(0.1);
+      statusTextColor = Colors.white70;
       statusText = "DELIVERED";
-    } else if (order.status == OrderStatus.processing) {
-      statusBgColor = Colors.white.withOpacity(0.08);
+      priceColor = Colors.white; // White price for Delivered as per mockup
+    } else if (isProcessing) {
+      statusBgColor = Colors.white.withOpacity(0.1);
       statusTextColor = Colors.white54;
       statusText = "PROCESSING";
+      priceColor = Colors.white;
     }
 
     return Container(
@@ -133,7 +140,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Order Header
+          // Header Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -151,9 +158,8 @@ class PurchasesScreen extends GetView<PurchasesController> {
                   borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (order.status == OrderStatus.inTransit)
+                    if (isInTransit)
                       Padding(
                         padding: EdgeInsets.only(right: 8.w),
                         child: Icon(Icons.circle, color: Colors.white, size: 8.sp),
@@ -177,11 +183,9 @@ class PurchasesScreen extends GetView<PurchasesController> {
                 width: 90.w,
                 height: 90.w,
                 decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20.r),
                   image: DecorationImage(image: NetworkImage(order.image), fit: BoxFit.cover),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10.r, offset: Offset(0, 5.h)),
-                  ],
                 ),
               ),
               SizedBox(width: 20.w),
@@ -204,7 +208,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
           const Divider(color: Colors.white10, thickness: 1),
           SizedBox(height: 24.h),
           
-          // Payment Info
+          // Payment/Carrier Info
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -212,7 +216,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("TOTAL PAID", style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                  Text(order.price, style: TextStyle(color: const Color(0xFFFF8BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
+                  Text(order.price, style: TextStyle(color: priceColor, fontSize: 24.sp, fontWeight: FontWeight.w900)),
                 ],
               ),
               Column(
@@ -225,43 +229,47 @@ class PurchasesScreen extends GetView<PurchasesController> {
             ],
           ),
           
-          // Contextual Actions
-          if (order.status == OrderStatus.inTransit) ...[
+          // Action Buttons based on status
+          if (isInTransit) ...[
             SizedBox(height: 28.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.04),
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Tracking ID: ${order.trackingId}",
-                      style: TextStyle(color: Colors.white54, fontSize: 13.sp, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  Icon(Icons.copy_all_rounded, color: const Color(0xFF8B9BFF), size: 18.sp),
-                ],
-              ),
-            ),
+            _buildTrackingInfo(order.trackingId),
             SizedBox(height: 20.h),
             _buildActionButton("Track Order", const Color(0xFF8B9BFF), Colors.black),
-          ] else if (order.status == OrderStatus.delivered) ...[
+          ] else if (isDelivered) ...[
             SizedBox(height: 28.h),
             Row(
               children: [
-                Expanded(child: _buildOutlineButton("View Details")),
+                Expanded(child: _buildGreyButton("View Details")),
                 SizedBox(width: 14.w),
-                Expanded(child: _buildOutlineButton("Support")),
+                Expanded(child: _buildGreyButton("Support")),
               ],
             ),
-          ] else if (order.status == OrderStatus.processing) ...[
+          ] else if (isProcessing) ...[
             SizedBox(height: 32.h),
-            _buildOutlineButton("Order Details", isFullWidth: true),
+            _buildOutlineButton("Order Details"),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackingInfo(String id) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              "Tracking ID: $id",
+              style: TextStyle(color: Colors.white54, fontSize: 13.sp, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Icon(Icons.copy_all_rounded, color: const Color(0xFF8B9BFF), size: 18.sp),
         ],
       ),
     );
@@ -284,14 +292,31 @@ class PurchasesScreen extends GetView<PurchasesController> {
     );
   }
 
-  Widget _buildOutlineButton(String text, {bool isFullWidth = false}) {
+  Widget _buildGreyButton(String text) {
     return SizedBox(
-      width: isFullWidth ? double.infinity : null,
+      height: 60.h,
+      child: ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1E1E2C).withOpacity(0.9),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Text(text, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w800)),
+      ),
+    );
+  }
+
+  Widget _buildOutlineButton(String text) {
+    return SizedBox(
+      width: double.infinity,
       height: 60.h,
       child: OutlinedButton(
         onPressed: () {},
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.white.withOpacity(0.08)),
+          side: BorderSide(color: Colors.white.withOpacity(0.1)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
           backgroundColor: Colors.white.withOpacity(0.03),
         ),
