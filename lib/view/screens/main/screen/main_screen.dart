@@ -33,55 +33,55 @@ class MainScreen extends GetView<MainController> {
       children: [
         // Navbar Background
         Container(
-          height: 90.h,
+          height: 95.h,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: const Color(0xFF161622),
+            color: const Color(0xFF0F0B1E), // Matching exact dark purple from mockup
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(40.r),
               topRight: Radius.circular(40.r),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
-                blurRadius: 20.r,
-                offset: const Offset(0, -5),
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 30.r,
+                offset: const Offset(0, -10),
               ),
             ],
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _navItem(0, "assets/icons/Home-navBar.svg", "Home"),
-              _navItem(1, "assets/icons/Purchases-navBar.svg", "Shop"),
+              _navItem(1, "assets/icons/Purchases-navBar.svg", "Purchases"),
               SizedBox(width: 50.w), // Gap for FAB
-              _navItem(2, "assets/icons/Discover-navBar.svg", "Find"),
-              _navItem(3, "assets/icons/Bidswap-navBar.svg", "Swap"),
-              _navItem(4, "assets/icons/Profile-navBar.svg", "User"),
+              _navItem(2, "assets/icons/Discover-navBar.svg", "Discover"),
+              _navItem(3, "assets/icons/Bidswap-navBar.svg", "Bidswap"),
+              _navItem(4, "assets/icons/Profile-navBar.svg", "Profile"),
             ],
           ),
         ),
         // Floating Action Button
         Positioned(
-          top: -30.h,
+          top: -32.h,
           child: GestureDetector(
             onTap: () => Get.log("Add Clicked"),
             child: Container(
-              width: 64.w,
-              height: 64.w,
+              width: 66.w,
+              height: 66.w,
               decoration: BoxDecoration(
                 color: const Color(0xFF8B9BFF),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF8B9BFF).withOpacity(0.4),
-                    blurRadius: 20.r,
-                    offset: const Offset(0, 8),
+                    blurRadius: 25.r,
+                    offset: const Offset(0, 10),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFF0F0B1E), width: 4.w),
+                border: Border.all(color: const Color(0xFF0F0B1E), width: 5.w),
               ),
-              child: Icon(Icons.add, color: Colors.black, size: 32.sp),
+              child: Icon(Icons.add, color: Colors.black, size: 34.sp),
             ),
           ),
         ),
@@ -95,33 +95,34 @@ class MainScreen extends GetView<MainController> {
       return GestureDetector(
         onTap: () => controller.changeIndex(index),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: EdgeInsets.symmetric(horizontal: isSelected ? 14.w : 10.w, vertical: 8.h),
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.fastOutSlowIn,
+          padding: EdgeInsets.symmetric(horizontal: isSelected ? 20.w : 12.w, vertical: 12.h),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFF8B9BFF) : Colors.transparent,
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(28.r),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 20.w,
-                height: 20.w,
+                width: 22.w,
+                height: 22.w,
                 child: SvgPicture.asset(
                   iconPath,
                   colorFilter: ColorFilter.mode(
-                    isSelected ? Colors.black : Colors.white60,
+                    isSelected ? Colors.black : Colors.white70,
                     BlendMode.srcIn,
                   ),
                 ),
               ),
               if (isSelected) ...[
-                SizedBox(width: 6.w),
+                SizedBox(width: 8.w),
                 Text(
                   label,
                   style: TextStyle(
                     color: Colors.black,
-                    fontSize: 12.sp,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
