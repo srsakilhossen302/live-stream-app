@@ -88,28 +88,28 @@ class BrowseScreen extends GetView<BrowseController> {
 
   Widget _buildSearchBar() {
     return Container(
-      height: 64.h,
+      height: 60.h,
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(32.r),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(30.r),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Row(
         children: [
-          Icon(Icons.search, color: Colors.white38, size: 24.sp),
+          Icon(Icons.search, color: Colors.white, size: 24.sp),
           SizedBox(width: 14.w),
           Expanded(
             child: TextField(
               style: TextStyle(color: Colors.white, fontSize: 16.sp),
               decoration: InputDecoration(
                 hintText: "Search deals & more",
-                hintStyle: TextStyle(color: Colors.white24, fontSize: 16.sp),
+                hintStyle: TextStyle(color: Colors.white38, fontSize: 16.sp),
                 border: InputBorder.none,
               ),
             ),
           ),
-          Icon(Icons.tune_rounded, color: Colors.white70, size: 22.sp),
+          Icon(Icons.tune_rounded, color: Colors.white, size: 22.sp),
         ],
       ),
     );
@@ -117,7 +117,7 @@ class BrowseScreen extends GetView<BrowseController> {
 
   Widget _buildFilters() {
     return SizedBox(
-      height: 48.h,
+      height: 44.h,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: controller.filters.length,
@@ -132,14 +132,14 @@ class BrowseScreen extends GetView<BrowseController> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isSelected ? const Color(0xFF8B9BFF) : const Color(0xFF1E1E2C),
-                  borderRadius: BorderRadius.circular(24.r),
+                  borderRadius: BorderRadius.circular(22.r),
                 ),
                 child: Text(
                   controller.filters[index],
                   style: TextStyle(
                     color: isSelected ? Colors.black : Colors.white38,
                     fontSize: 14.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
@@ -153,50 +153,78 @@ class BrowseScreen extends GetView<BrowseController> {
   Widget _buildCategoryCard(CategoryModel category) {
     return Container(
       margin: EdgeInsets.only(bottom: 24.h),
-      height: 200.h,
+      height: 220.h,
       width: double.infinity,
       decoration: BoxDecoration(
+        color: const Color(0xFF161622),
         borderRadius: BorderRadius.circular(32.r),
-        image: DecorationImage(
-          image: NetworkImage(category.image),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken),
-        ),
       ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(24.r),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(category.title, style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900)),
-                SizedBox(height: 6.h),
-                Text(category.subtitle, style: TextStyle(color: Colors.white60, fontSize: 14.sp, fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-          Positioned(
-            right: 20.w,
-            bottom: 20.h,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFF5D2EEF).withOpacity(0.8),
-                borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: Colors.white10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32.r),
+        child: Stack(
+          children: [
+            // Background Image
+            Positioned.fill(
+              child: Image.network(
+                category.image,
+                fit: BoxFit.cover,
+                color: Colors.black.withOpacity(0.4),
+                colorBlendMode: BlendMode.darken,
               ),
-              child: Row(
+            ),
+            // Content
+            Padding(
+              padding: EdgeInsets.all(28.r),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.circle, color: const Color(0xFF8B9BFF), size: 6.sp),
-                  SizedBox(width: 8.w),
-                  Text(category.liveCount, style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900)),
+                  Text(
+                    category.title.replaceAll(" & ", " &\n"),
+                    style: TextStyle(color: Colors.white, fontSize: 26.sp, fontWeight: FontWeight.w900, height: 1.1),
+                  ),
+                  SizedBox(height: 12.h),
+                  Text(
+                    category.subtitle,
+                    style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w800),
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
+            // Live Badge
+            Positioned(
+              right: 24.w,
+              bottom: 24.h,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E1E5D),
+                  borderRadius: BorderRadius.circular(25.r),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.circle, color: const Color(0xFFAC8AFF), size: 6.sp),
+                    SizedBox(width: 10.w),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.liveCount.split(" ")[0],
+                          style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900, height: 1),
+                        ),
+                        Text(
+                          "Live",
+                          style: TextStyle(color: Colors.white70, fontSize: 10.sp, fontWeight: FontWeight.w800, height: 1),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
