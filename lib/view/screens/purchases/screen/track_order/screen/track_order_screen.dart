@@ -117,9 +117,9 @@ class TrackOrderScreen extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.circle, color: Colors.white, size: 6.sp),
+                      Icon(Icons.circle, color: Color(0xff97A9FF), size: 6.sp),
                       SizedBox(width: 8.w),
-                      Text("LIVE VIEW", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w800)),
+                      Text("LIVE VIEW", style: TextStyle(color: Color(0xff97A9FF), fontSize: 10.sp, fontWeight: FontWeight.w800)),
                     ],
                   ),
                 ),
@@ -338,7 +338,7 @@ class TrackOrderScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.id, style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                    Text(order.id, style: TextStyle(color: Color(0xffAC8AFF), fontSize: 11.sp, fontWeight: FontWeight.w800)),
                     Text(order.title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
                   ],
                 ),
@@ -411,7 +411,12 @@ class TrackOrderScreen extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
           elevation: 0,
         ),
-        child: Text(text, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w900)),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }
