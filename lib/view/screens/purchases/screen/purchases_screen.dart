@@ -293,7 +293,7 @@ class PurchasesScreen extends GetView<PurchasesController> {
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.r)),
           elevation: 0,
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+          side: BorderSide(color: Colors.white.withOpacity(0.05)),
         ),
         child: Text(text, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w800)),
       ),
