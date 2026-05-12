@@ -43,22 +43,22 @@ class MainScreen extends GetView<MainController> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withOpacity(0.4),
                 blurRadius: 20.r,
                 offset: const Offset(0, -5),
               ),
             ],
           ),
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _navItem(0, "assets/icons/Home-navBar.svg", "Home"),
-              _navItem(1, "assets/icons/Purchases-navBar.svg", "Purchases"),
-              SizedBox(width: 50.w), // Space for the center FAB
-              _navItem(2, "assets/icons/Discover-navBar.svg", "Discover"),
-              _navItem(3, "assets/icons/Bidswap-navBar.svg", "Bidswap"),
-              _navItem(4, "assets/icons/Profile-navBar.svg", "Profile"),
+              _navItem(1, "assets/icons/Purchases-navBar.svg", "Shop"),
+              SizedBox(width: 60.w), // Larger gap for center FAB
+              _navItem(2, "assets/icons/Discover-navBar.svg", "Find"),
+              _navItem(3, "assets/icons/Bidswap-navBar.svg", "Swap"),
+              _navItem(4, "assets/icons/Profile-navBar.svg", "User"),
             ],
           ),
         ),
@@ -68,21 +68,21 @@ class MainScreen extends GetView<MainController> {
           child: GestureDetector(
             onTap: () => Get.log("Add Clicked"),
             child: Container(
-              width: 64.w,
-              height: 64.w,
+              width: 68.w,
+              height: 68.w,
               decoration: BoxDecoration(
                 color: const Color(0xFF8B9BFF),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF8B9BFF).withOpacity(0.4),
-                    blurRadius: 15.r,
-                    offset: const Offset(0, 5),
+                    color: const Color(0xFF8B9BFF).withOpacity(0.5),
+                    blurRadius: 20.r,
+                    offset: const Offset(0, 8),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFF0F0B1E), width: 4.w),
+                border: Border.all(color: const Color(0xFF0F0B1E), width: 5.w),
               ),
-              child: Icon(Icons.add, color: const Color(0xFF0F0B1E), size: 32.sp),
+              child: Icon(Icons.add, color: const Color(0xFF0F0B1E), size: 36.sp),
             ),
           ),
         ),
@@ -98,20 +98,21 @@ class MainScreen extends GetView<MainController> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
-          padding: EdgeInsets.symmetric(horizontal: isSelected ? 16.w : 8.w, vertical: 10.h),
+          padding: EdgeInsets.symmetric(horizontal: isSelected ? 12.w : 6.w, vertical: 10.h),
           decoration: BoxDecoration(
             color: isSelected ? const Color(0xFF8B9BFF) : Colors.transparent,
-            borderRadius: BorderRadius.circular(30.r),
+            borderRadius: BorderRadius.circular(24.r),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               SvgPicture.asset(
                 iconPath,
-                width: 20.w,
-                height: 20.h,
+                width: 22.w,
+                height: 22.h,
+                fit: BoxFit.contain,
                 colorFilter: ColorFilter.mode(
-                  isSelected ? const Color(0xFF0F0B1E) : Colors.white,
+                  isSelected ? const Color(0xFF0F0B1E) : Colors.white70,
                   BlendMode.srcIn,
                 ),
               ),
@@ -121,8 +122,8 @@ class MainScreen extends GetView<MainController> {
                   label,
                   style: TextStyle(
                     color: const Color(0xFF0F0B1E),
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ],
