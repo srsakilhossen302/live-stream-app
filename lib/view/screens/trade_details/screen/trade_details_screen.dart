@@ -112,7 +112,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                         SizedBox(height: 16.h),
                         Row(
                           children: [
-                            Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Platform Verified", "100% Secure Auth")),
+                            Expanded(child: _buildVerificationCard(null, "Platform Verified", "100% Secure Auth", iconData: Icons.shield_outlined)),
                             SizedBox(width: 16.w),
                             Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Direct Trade", "Peer-to-peer risk")),
                           ],
@@ -321,19 +321,26 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     );
   }
 
-  Widget _buildVerificationCard(String svgPath, String title, String subtitle) {
+  Widget _buildVerificationCard(String? svgPath, String title, String subtitle, {IconData? iconData}) {
     return Container(
       padding: EdgeInsets.all(20.r),
-      decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161622),
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: Colors.white.withOpacity(0.04)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SvgPicture.asset(
-            svgPath,
-            width: 28.sp,
-            height: 28.sp,
-            colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
-          ),
+          if (svgPath != null)
+            SvgPicture.asset(
+              svgPath,
+              width: 32.sp,
+              height: 32.sp,
+              colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+            )
+          else if (iconData != null)
+            Icon(iconData, color: const Color(0xFF8B9BFF), size: 32.sp),
           SizedBox(height: 16.h),
           Text(title, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w900)),
           SizedBox(height: 4.h),
