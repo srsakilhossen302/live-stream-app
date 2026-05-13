@@ -252,7 +252,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   }
 
   Widget _buildTradeBox({required String title, required String name, required String subName, required bool isOffering, String? badge}) {
-    final primaryColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFC08BFF);
+    final primaryColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF);
     final labelColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF);
 
     return Container(
@@ -263,21 +263,21 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
       ),
       child: Stack(
         children: [
-          // Vertical indicator bar - Thicker and rounded
+          // Vertical indicator bar - Perfect Pill shape
           Positioned(
             left: 0,
-            top: 2.h,
-            bottom: 2.h,
+            top: 6.h,
+            bottom: 6.h,
             child: Container(
-              width: 5.w,
+              width: 6.w,
               decoration: BoxDecoration(
                 color: primaryColor,
-                borderRadius: BorderRadius.circular(4.r),
+                borderRadius: BorderRadius.circular(20.r),
               ),
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(left: 20.w),
+            padding: EdgeInsets.only(left: 24.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -287,7 +287,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                     Text(title, style: TextStyle(color: labelColor, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                     Icon(
                       isOffering ? Icons.north_rounded : Icons.south_rounded,
-                      color: isOffering ? Colors.white38 : primaryColor.withOpacity(0.8),
+                      color: isOffering ? Colors.white38 : labelColor.withOpacity(0.8),
                       size: 24.sp,
                     ),
                   ],
