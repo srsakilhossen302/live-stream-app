@@ -21,71 +21,88 @@ class LiveStreamScreen extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Background Video
-              GetBuilder<LiveStreamController>(
-                builder: (ctrl) {
-                  if (ctrl.videoControllers.length > index) {
-                    final vc = ctrl.videoControllers[index];
-                    final isReady = ctrl.videoReady[index];
+              // Background Video Player with Gestures
+              Obx(() {
+                final vc = controller.videoControllers[index];
+                final isReady = controller.videoReady[index];
+                final isPaused = controller.isPaused[index];
 
-                    if (isReady && vc != null) {
-                      return SizedBox.expand(
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: vc.value.size.width,
-                            height: vc.value.size.height,
-                            child: VideoPlayer(vc),
+                if (isReady && vc != null) {
+                  return GestureDetector(
+                    onTap: () => controller.togglePlay(index),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox.expand(
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: vc.value.size.width,
+                              height: vc.value.size.height,
+                              child: VideoPlayer(vc),
+                            ),
                           ),
                         ),
-                      );
-                    } else if (vc != null && vc.value.hasError) {
-                      return Container(
-                        color: Colors.black,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error_outline,
-                                color: Colors.redAccent, size: 48),
-                            SizedBox(height: 16.h),
-                            Text(
-                              "Failed to load stream",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.bold,
+                        // Play Icon Overlay
+                        if (isPaused)
+                          Container(
+                            padding: EdgeInsets.all(15.r),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.play_arrow_rounded,
+                                color: Colors.white, size: 50.sp),
+                          ),
+                        // Red Progress Bar at the very bottom
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: SizedBox(
+                            height: 3.h,
+                            child: VideoProgressIndicator(
+                              vc,
+                              allowScrubbing: true,
+                              padding: EdgeInsets.zero,
+                              colors: VideoProgressColors(
+                                playedColor: Colors.red,
+                                bufferedColor: Colors.white24,
+                                backgroundColor: Colors.white10,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      );
-                    }
-                  }
-                  return Container(
-                    color: Colors.black,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF8B9BFF),
-                        strokeWidth: 2,
-                      ),
+                      ],
                     ),
                   );
-                },
-              ),
+                }
+                return Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF8B9BFF),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                );
+              }),
 
               // Dark gradient overlay
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.4),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.7),
-                    ],
-                    stops: const [0, 0.2, 0.6, 1],
+              IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.4),
+                        Colors.transparent,
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.7),
+                      ],
+                      stops: const [0, 0.2, 0.6, 1],
+                    ),
                   ),
                 ),
               ),
@@ -101,12 +118,12 @@ class LiveStreamScreen extends StatelessWidget {
 
   Widget _buildOverlayUI(LiveStreamModel stream) {
     return SafeArea(
-      child: Column(
-        children: [
-          // Top Bar
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            child: Row(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Column(
+          children: [
+            // Top Bar
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
@@ -114,109 +131,170 @@ class LiveStreamScreen extends StatelessWidget {
                   child: Container(
                     padding: EdgeInsets.all(8.r),
                     decoration: const BoxDecoration(
-                        color: Colors.black26, shape: BoxShape.circle),
-                    child: Icon(Icons.close, color: Colors.white, size: 24.sp),
+                        color: Colors.black38, shape: BoxShape.circle),
+                    child: Icon(Icons.close, color: Colors.white, size: 22.sp),
                   ),
                 ),
                 Container(
                   padding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                   decoration: BoxDecoration(
-                      color: Colors.black38,
-                      borderRadius: BorderRadius.circular(20.r)),
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(25.r)),
                   child: Row(
                     children: [
-                      Icon(Icons.sensors, color: Colors.red, size: 16.sp),
-                      SizedBox(width: 8.w),
+                      Icon(Icons.sensors, color: const Color(0xFFFF5252), size: 14.sp),
+                      SizedBox(width: 6.w),
                       Text("LIVE",
                           style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w900)),
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5)),
                       SizedBox(width: 8.w),
                       Container(
-                          width: 1, height: 12.h, color: Colors.white24),
+                          width: 1, height: 10.h, color: Colors.white24),
                       SizedBox(width: 8.w),
                       Text(stream.viewers,
                           style: TextStyle(
                               color: Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w900)),
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
               ],
             ),
-          ),
+            
+            SizedBox(height: 12.h),
 
-          // Creator Info
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: Row(
+            // Creator Info
+            Row(
               children: [
-                CircleAvatar(
-                  radius: 22.r,
-                  backgroundImage: NetworkImage(stream.productImage),
+                Container(
+                  padding: EdgeInsets.all(2.r),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white24, width: 1),
+                  ),
+                  child: CircleAvatar(
+                    radius: 20.r,
+                    backgroundImage: NetworkImage(stream.productImage),
+                  ),
                 ),
-                SizedBox(width: 12.w),
+                SizedBox(width: 10.w),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(stream.curator,
                         style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w900)),
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.bold)),
                     Row(
                       children: [
                         Icon(Icons.star,
-                            color: const Color(0xFFFF8BFF), size: 12.sp),
-                        SizedBox(width: 4.w),
+                            color: const Color(0xFFFF8BFF), size: 10.sp),
+                        SizedBox(width: 2.w),
                         Text("4.9",
                             style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w900)),
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ],
                 ),
                 const Spacer(),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 20.w, vertical: 10.h),
-                  decoration: BoxDecoration(
-                      color: const Color(0xFF8B9BFF),
-                      borderRadius: BorderRadius.circular(20.r)),
-                  child: Text("FOLLOW",
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w900)),
-                ),
+                Obx(() => GestureDetector(
+                      onTap: () => stream.isFollowing.toggle(),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 18.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                            color: stream.isFollowing.value
+                                ? Colors.white.withOpacity(0.1)
+                                : const Color(0xFF9EACFF),
+                            borderRadius: BorderRadius.circular(10.r),
+                            border: stream.isFollowing.value
+                                ? Border.all(color: Colors.white24)
+                                : null),
+                        child: Text(
+                            stream.isFollowing.value ? "FOLLOWING" : "FOLLOW",
+                            style: TextStyle(
+                                color: stream.isFollowing.value
+                                    ? Colors.white
+                                    : const Color(0xFF0D0D1A),
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w900)),
+                      ),
+                    )),
               ],
             ),
-          ),
 
-          const Spacer(),
+            const Spacer(),
 
-          // Bottom Section
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 20.h),
-            child: Row(
+            // Bottom Section
+            Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildChatBubble("@user123", "Is there a warranty?"),
+                      _buildChatBubble("@user123", "Is there a warranty on this?"),
                       _buildChatBubble("@short023", "The zoom is incredible!"),
                       _buildChatBubble("@short028", "Just placed my bid 🚀"),
                       SizedBox(height: 12.h),
                       _buildProductCard(stream),
-                      SizedBox(height: 12.h),
-                      _buildInputBar(stream),
+                      SizedBox(height: 16.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 52.h,
+                              padding: EdgeInsets.symmetric(horizontal: 18.w),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFF1A1A1A),
+                                  borderRadius: BorderRadius.circular(26.r)),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      style: TextStyle(color: Colors.white, fontSize: 13.sp),
+                                      decoration: InputDecoration(
+                                        hintText: "Say something...",
+                                        hintStyle:
+                                            TextStyle(color: Colors.white30, fontSize: 13.sp),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(Icons.send_rounded,
+                                      color: Colors.white, size: 20.sp),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          Container(
+                            height: 52.h,
+                            width: 52.h,
+                            decoration: const BoxDecoration(
+                                color: Color(0xFF1A1A1A),
+                                shape: BoxShape.circle),
+                            child: Center(
+                                child: Text("Custom",
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10.sp,
+                                        fontWeight: FontWeight.bold))),
+                          ),
+                          SizedBox(width: 8.w),
+                          _buildBidButton(stream),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -224,39 +302,50 @@ class LiveStreamScreen extends StatelessWidget {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    _buildActionButton(Icons.favorite, "1.2K",
-                        color: const Color(0xFFFF8BFF)),
+                    Obx(() => _buildActionButton(
+                          stream.isLiked.value
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          "1.2K",
+                          color: stream.isLiked.value
+                              ? const Color(0xFFFF41FF)
+                              : Colors.white,
+                          onTap: () => stream.isLiked.toggle(),
+                        )),
                     _buildActionButton(Icons.notifications_none, ""),
                     _buildActionButton(Icons.share_outlined, ""),
+                    SizedBox(height: 60.h), 
                   ],
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildChatBubble(String user, String message) {
     return Container(
-      margin: EdgeInsets.only(bottom: 6.h),
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 7.h),
+      margin: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-          color: Colors.black45, borderRadius: BorderRadius.circular(14.r)),
+          color: Colors.black.withOpacity(0.35), 
+          borderRadius: BorderRadius.circular(15.r)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(user,
               style: TextStyle(
-                  color: Colors.white38,
+                  color: Colors.white60,
                   fontSize: 10.sp,
-                  fontWeight: FontWeight.w900)),
+                  fontWeight: FontWeight.bold)),
+          SizedBox(height: 1.h),
           Text(message,
               style: TextStyle(
                   color: Colors.white,
                   fontSize: 12.sp,
-                  fontWeight: FontWeight.w600)),
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -264,41 +353,42 @@ class LiveStreamScreen extends StatelessWidget {
 
   Widget _buildProductCard(LiveStreamModel stream) {
     return Container(
-      padding: EdgeInsets.all(12.r),
+      padding: EdgeInsets.all(10.r),
       decoration: BoxDecoration(
-        color: const Color(0xFF161622).withOpacity(0.85),
+        color: const Color(0xFF0D0D0D).withOpacity(0.6),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Stack(
+            clipBehavior: Clip.none,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12.r),
+                borderRadius: BorderRadius.circular(15.r),
                 child: Image.network(
                   stream.productImage,
-                  width: 60.r,
-                  height: 60.r,
+                  width: 65.r,
+                  height: 65.r,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                      width: 60.r, height: 60.r, color: Colors.white10),
+                      width: 65.r, height: 65.r, color: Colors.white10),
                 ),
               ),
               Positioned(
-                top: 3,
-                right: 3,
+                top: -4,
+                left: -4,
                 child: Container(
                   padding:
-                      EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                      EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                   decoration: BoxDecoration(
-                      color: const Color(0xFFFF8BFF),
-                      borderRadius: BorderRadius.circular(4.r)),
+                      color: const Color(0xFFFF41FF),
+                      borderRadius: BorderRadius.circular(6.r)),
                   child: Text("HOT",
                       style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 7.sp,
-                          fontWeight: FontWeight.w900)),
+                          color: Colors.white,
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -311,20 +401,37 @@ class LiveStreamScreen extends StatelessWidget {
                 Text(stream.productTitle,
                     style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w900)),
-                SizedBox(height: 4.h),
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 6.h),
                 Row(children: [
                   _buildBadge("FREE SHIPPING"),
                   SizedBox(width: 4.w),
                   _buildBadge("TAXES"),
                 ]),
-                SizedBox(height: 4.h),
-                Text(stream.productPrice,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17.sp,
-                        fontWeight: FontWeight.w900)),
+                SizedBox(height: 8.h),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "\$ ",
+                        style: TextStyle(
+                          color: const Color(0xFF9EACFF),
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: stream.productPrice.replaceAll('\$', '').split('.')[0],
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -334,117 +441,84 @@ class LiveStreamScreen extends StatelessWidget {
   }
 
   Widget _buildBadge(String label) => Container(
-        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
         decoration: BoxDecoration(
-            color: Colors.white10, borderRadius: BorderRadius.circular(4.r)),
+            color: Colors.white.withOpacity(0.1), 
+            borderRadius: BorderRadius.circular(4.r)),
         child: Text(label,
             style: TextStyle(
-                color: Colors.white38,
+                color: Colors.white70,
                 fontSize: 8.sp,
-                fontWeight: FontWeight.w900)),
+                fontWeight: FontWeight.bold)),
       );
 
-  Widget _buildInputBar(LiveStreamModel stream) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 44.h,
-            padding: EdgeInsets.symmetric(horizontal: 14.w),
-            decoration: BoxDecoration(
-                color: Colors.black45,
-                borderRadius: BorderRadius.circular(22.r)),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    style: TextStyle(color: Colors.white, fontSize: 12.sp),
-                    decoration: InputDecoration(
-                      hintText: "Say something...",
-                      hintStyle:
-                          TextStyle(color: Colors.white38, fontSize: 12.sp),
-                      border: InputBorder.none,
-                      isDense: true,
-                    ),
-                  ),
-                ),
-                Icon(Icons.send_rounded,
-                    color: Colors.white38, size: 18.sp),
-              ],
-            ),
-          ),
-        ),
-        SizedBox(width: 8.w),
-        Container(
-          height: 44.h,
-          padding: EdgeInsets.symmetric(horizontal: 14.w),
-          decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(22.r),
-              border: Border.all(color: Colors.white12)),
-          child: Center(
-              child: Text("Custom",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w900))),
-        ),
-        SizedBox(width: 8.w),
-        Container(
-          height: 44.h,
-          padding: EdgeInsets.symmetric(horizontal: 14.w),
-          decoration: BoxDecoration(
-              color: const Color(0xFF8B9BFF),
-              borderRadius: BorderRadius.circular(22.r)),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+  Widget _buildBidButton(LiveStreamModel stream) {
+    return Container(
+      height: 52.h,
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      decoration: BoxDecoration(
+          color: const Color(0xFFA6B4FF),
+          borderRadius: BorderRadius.circular(26.r)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(width: 14.w),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("BID",
-                      style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 8.sp,
-                          fontWeight: FontWeight.w900)),
-                  Text(stream.productPrice,
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w900)),
-                ],
-              ),
-              SizedBox(width: 6.w),
-              Icon(Icons.arrow_forward_rounded,
-                  color: Colors.black, size: 18.sp),
+              Text("BID",
+                  style: TextStyle(
+                      color: Colors.black45,
+                      fontSize: 8.sp,
+                      fontWeight: FontWeight.w900)),
+              Text(stream.productPrice.split('.')[0],
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w900)),
             ],
           ),
-        ),
-      ],
+          SizedBox(width: 12.w),
+          Container(
+            padding: EdgeInsets.all(8.r),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.arrow_forward_rounded,
+                color: Colors.black, size: 18.sp),
+          ),
+          SizedBox(width: 2.w),
+        ],
+      ),
     );
   }
 
   Widget _buildActionButton(IconData icon, String label,
-      {Color color = Colors.white}) {
-    return Column(
-      children: [
-        Container(
-          margin: EdgeInsets.only(bottom: label.isEmpty ? 16.h : 4.h),
-          padding: EdgeInsets.all(11.r),
-          decoration: const BoxDecoration(
-              color: Colors.black26, shape: BoxShape.circle),
-          child: Icon(icon, color: color, size: 24.sp),
-        ),
-        if (label.isNotEmpty)
-          Padding(
-            padding: EdgeInsets.only(bottom: 16.h),
-            child: Text(label,
-                style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w900)),
+      {Color color = Colors.white, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            margin: EdgeInsets.only(bottom: label.isEmpty ? 16.h : 4.h),
+            padding: EdgeInsets.all(12.r),
+            decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 24.sp),
           ),
-      ],
+          if (label.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(bottom: 16.h),
+              child: Text(label,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.bold)),
+            ),
+        ],
+      ),
     );
   }
 }
