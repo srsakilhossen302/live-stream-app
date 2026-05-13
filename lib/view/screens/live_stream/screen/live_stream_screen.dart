@@ -25,8 +25,8 @@ class LiveStreamScreen extends StatelessWidget {
               GetBuilder<LiveStreamController>(
                 builder: (ctrl) {
                   if (ctrl.videoControllers.length > index &&
-                      ctrl.initialized.length > index &&
-                      ctrl.initialized[index]) {
+                      ctrl.videoReady.length > index &&
+                      ctrl.videoReady[index]) {
                     final vc = ctrl.videoControllers[index];
                     return SizedBox.expand(
                       child: FittedBox(

@@ -53,7 +53,7 @@ class LiveStreamController extends GetxController {
   ];
 
   // Simple list to track init status
-  final List<bool> initialized = <bool>[];
+  final List<bool> videoReady = <bool>[];
   int currentIdx = 0;
   final List<VideoPlayerController> videoControllers = <VideoPlayerController>[];
 
@@ -61,7 +61,7 @@ class LiveStreamController extends GetxController {
   void onInit() {
     super.onInit();
     for (int i = 0; i < streams.length; i++) {
-      initialized.add(false);
+      videoReady.add(false);
     }
     _initializeAll();
   }
@@ -73,7 +73,7 @@ class LiveStreamController extends GetxController {
       vc.initialize().then((_) {
         vc.setLooping(true);
         vc.setVolume(0);
-        initialized[i] = true;
+        videoReady[i] = true;
         if (i == currentIdx) {
           vc.play();
         }
@@ -87,7 +87,7 @@ class LiveStreamController extends GetxController {
       videoControllers[currentIdx].pause();
     }
     currentIdx = index;
-    if (index < videoControllers.length && initialized[index]) {
+    if (index < videoControllers.length && videoReady[index]) {
       videoControllers[index].play();
     }
     update();
