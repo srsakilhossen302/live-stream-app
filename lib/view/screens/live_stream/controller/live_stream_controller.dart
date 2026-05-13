@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
@@ -8,7 +9,7 @@ class LiveStreamModel {
   final String viewers;
   final String title;
   final String productTitle;
-  final String productPrice;
+  final RxString productPrice;
   final String productImage;
   final RxBool isFollowing = false.obs;
   final RxBool isLiked = false.obs;
@@ -19,9 +20,9 @@ class LiveStreamModel {
     required this.viewers,
     required this.title,
     required this.productTitle,
-    required this.productPrice,
+    required String productPrice,
     required this.productImage,
-  });
+  }) : productPrice = productPrice.obs;
 }
 
 class LiveStreamController extends GetxController {
@@ -123,6 +124,58 @@ class LiveStreamController extends GetxController {
   final RxList<bool> isPaused = <bool>[].obs;
   int currentIdx = 0;
   final RxList<VideoPlayerController?> videoControllers = <VideoPlayerController?>[].obs;
+
+  // Custom Bid state
+  final RxString currentCustomBid = "".obs;
+
+  void addDigit(String digit) {
+    if (currentCustomBid.value == "0") {
+      currentCustomBid.value = digit;
+    } else {
+      currentCustomBid.value += digit;
+    }
+  }
+
+  void removeDigit() {
+    if (currentCustomBid.value.isNotEmpty) {
+      currentCustomBid.value = currentCustomBid.value.substring(0, currentCustomBid.value.length - 1);
+      if (currentCustomBid.value.isEmpty) {
+        currentCustomBid.value = "0";
+      }
+    }
+  }
+
+  void addAmount(int amount) {
+    int current = int.tryParse(currentCustomBid.value) ?? 0;
+    currentCustomBid.value = (current + amount).toString();
+  }
+
+  void placeBid() {
+    if (currentIdx < streams.length) {
+      // Parse current price (remove $ and commas)
+      double currentPrice = double.tryParse(streams[currentIdx].productPrice.value.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+      double newBid = double.tryParse(currentCustomBid.value) ?? 0;
+
+      if (newBid <= currentPrice) {
+        Get.snackbar(
+          "Invalid Bid", 
+          "Your bid must be higher than the current highest price (\$${currentPrice.toStringAsFixed(0)})", 
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 2),
+        );
+        return;
+      }
+
+      streams[currentIdx].productPrice.value = "\$${currentCustomBid.value}";
+      Get.back();
+      Get.snackbar("Success", "Bid placed successfully!", 
+        backgroundColor: Colors.green.withOpacity(0.7),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP);
+    }
+  }
 
   @override
   void onInit() {

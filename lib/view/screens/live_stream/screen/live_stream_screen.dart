@@ -108,7 +108,7 @@ class LiveStreamScreen extends StatelessWidget {
               ),
 
               // Overlay UI
-              _buildOverlayUI(stream),
+              _buildOverlayUI(stream, index, context, controller),
             ],
           );
         },
@@ -116,10 +116,10 @@ class LiveStreamScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOverlayUI(LiveStreamModel stream) {
+  Widget _buildOverlayUI(LiveStreamModel stream, int index, BuildContext context, LiveStreamController controller) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
         child: Column(
           children: [
             // Top Bar
@@ -278,21 +278,24 @@ class LiveStreamScreen extends StatelessWidget {
                             ),
                           ),
                           SizedBox(width: 8.w),
-                          Container(
-                            height: 52.h,
-                            width: 52.h,
-                            decoration: const BoxDecoration(
-                                color: Color(0xFF1A1A1A),
-                                shape: BoxShape.circle),
-                            child: Center(
-                                child: Text("Custom",
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.bold))),
+                          GestureDetector(
+                            onTap: () => _showCustomBidSheet(context, controller, stream),
+                            child: Container(
+                              height: 52.h,
+                              width: 52.h,
+                              decoration: const BoxDecoration(
+                                  color: Color(0xFF1A1A1A),
+                                  shape: BoxShape.circle),
+                              child: Center(
+                                  child: Text("Custom",
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.bold))),
+                            ),
                           ),
                           SizedBox(width: 8.w),
-                          _buildBidButton(stream),
+                          Obx(() => _buildBidButton(controller.streams[index])),
                         ],
                       ),
                     ],
@@ -472,7 +475,7 @@ class LiveStreamScreen extends StatelessWidget {
                       color: Colors.black45,
                       fontSize: 8.sp,
                       fontWeight: FontWeight.w900)),
-              Text(stream.productPrice.split('.')[0],
+              Text(stream.productPrice.value.split('.')[0],
                   style: TextStyle(
                       color: Colors.black,
                       fontSize: 16.sp,
@@ -518,6 +521,157 @@ class LiveStreamScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold)),
             ),
         ],
+      ),
+    );
+  }
+
+  void _showCustomBidSheet(BuildContext context, LiveStreamController controller, LiveStreamModel stream) {
+    Get.bottomSheet(
+      Container(
+        height: 800.h,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30.r)),
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: Column(
+          children: [
+            SizedBox(height: 12.h),
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(height: 30.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("CURRENT HIGHEST", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                    Obx(() => Text(stream.productPrice.value, style: TextStyle(color: Colors.white, fontSize: 28.sp, fontWeight: FontWeight.bold))),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text("NEXT MINIMUM", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                    Obx(() {
+                      double current = double.tryParse(stream.productPrice.value.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+                      return Text("\$${(current + 500).toStringAsFixed(0)}", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 20.sp, fontWeight: FontWeight.bold));
+                    }),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 40.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text("\$", style: TextStyle(color: Colors.white38, fontSize: 24.sp, fontWeight: FontWeight.bold)),
+                SizedBox(width: 12.w),
+                Obx(() => Text(
+                  controller.currentCustomBid.value,
+                  style: TextStyle(color: Colors.white, fontSize: 48.sp, fontWeight: FontWeight.bold),
+                )),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            const Divider(color: Colors.white10),
+            SizedBox(height: 12.h),
+            Text("SET YOUR CUSTOM LIMIT", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+            SizedBox(height: 24.h),
+            
+            // Quick Amounts
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildQuickAmountButton("+\$50", () => controller.addAmount(50)),
+                _buildQuickAmountButton("+\$100", () => controller.addAmount(100)),
+                _buildQuickAmountButton("+\$500", () => controller.addAmount(500)),
+                _buildQuickAmountButton("+\$1K", () => controller.addAmount(1000)),
+              ],
+            ),
+            SizedBox(height: 30.h),
+            
+            // Keypad
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 3,
+                childAspectRatio: 2.2,
+                mainAxisSpacing: 10.h,
+                crossAxisSpacing: 10.w,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  ...["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((digit) => _buildKeypadButton(digit, () => controller.addDigit(digit))),
+                  _buildKeypadButton(null, () => controller.removeDigit(), icon: Icons.backspace_outlined),
+                ],
+              ),
+            ),
+            SizedBox(height: 40.h),
+            
+            // Place Bid Button
+            SizedBox(
+              width: double.infinity,
+              height: 56.h,
+              child: ElevatedButton(
+                onPressed: () => controller.placeBid(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B9BFF),
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.r)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.gavel_rounded, size: 20.sp),
+                    SizedBox(width: 12.w),
+                    Text("PLACE CUSTOM BID", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 30.h),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildQuickAmountButton(String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D2D2D),
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Text(label, style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildKeypadButton(String? digit, VoidCallback onTap, {IconData? icon}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF262626),
+          borderRadius: BorderRadius.circular(30.r),
+        ),
+        child: Center(
+          child: digit != null 
+            ? Text(digit, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold))
+            : Icon(icon, color: Colors.white, size: 20.sp),
+        ),
       ),
     );
   }
