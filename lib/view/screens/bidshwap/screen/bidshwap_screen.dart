@@ -270,32 +270,35 @@ class BidShwapScreen extends GetView<BidShwapController> {
                   ),
                   
                   // Swap Icon sitting in the middle
-                  Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      SizedBox(height: 20.h),
-                      Positioned(
-                        child: Container(
-                          width: 54.w,
-                          height: 54.w,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF8B9BFF).withOpacity(0.3),
-                                blurRadius: 20.r,
-                                spreadRadius: 2.r,
-                              ),
-                            ],
-                          ),
-                          child: SvgPicture.asset(
-                            "assets/icons/Container.svg",
-                            fit: BoxFit.contain,
+                  Transform.translate(
+                    offset: Offset(0, 0),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        SizedBox(height: 10.h), // Tighten the gap
+                        Positioned(
+                          child: Container(
+                            width: 60.w,
+                            height: 60.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8B9BFF).withOpacity(0.4),
+                                  blurRadius: 30.r,
+                                  spreadRadius: 4.r,
+                                ),
+                              ],
+                            ),
+                            child: SvgPicture.asset(
+                              "assets/icons/Container.svg",
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
                   // Looking For
