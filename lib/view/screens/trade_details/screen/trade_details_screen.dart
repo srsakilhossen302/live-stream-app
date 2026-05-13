@@ -252,22 +252,27 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   }
 
   Widget _buildTradeBox({required String title, required String name, required String subName, required bool isOffering, String? badge}) {
-    final primaryColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF);
-    final labelColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF);
+    // Exact colors from mockup
+    final offeringColor = const Color(0xFF8B9BFF);
+    final lookingForLabelColor = const Color(0xFFFF8BFF);
+    final lookingForBarColor = const Color(0xFF9155FF); // Exact purple from mockup
+
+    final primaryColor = isOffering ? offeringColor : lookingForBarColor;
+    final labelColor = isOffering ? offeringColor : lookingForLabelColor;
 
     return Container(
       padding: EdgeInsets.all(24.r),
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(28.r),
+        borderRadius: BorderRadius.circular(32.r),
       ),
       child: Stack(
         children: [
           // Vertical indicator bar - Perfect Pill shape
           Positioned(
             left: 0,
-            top: 6.h,
-            bottom: 6.h,
+            top: 2.h,
+            bottom: 2.h,
             child: Container(
               width: 6.w,
               decoration: BoxDecoration(
@@ -277,31 +282,31 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(left: 24.w),
+            padding: EdgeInsets.only(left: 28.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: TextStyle(color: labelColor, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                    Text(title, style: TextStyle(color: labelColor, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 2)),
                     Icon(
-                      isOffering ? Icons.north_rounded : Icons.south_rounded,
-                      color: isOffering ? Colors.white38 : labelColor.withOpacity(0.8),
-                      size: 24.sp,
+                      isOffering ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                      color: isOffering ? Colors.white70 : labelColor,
+                      size: 26.sp,
                     ),
                   ],
                 ),
-                SizedBox(height: 16.h),
-                Text(name, style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900)),
+                SizedBox(height: 18.h),
+                Text(name, style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                 SizedBox(height: 8.h),
                 Row(
                   children: [
-                    Text(subName, style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700)),
+                    Text(subName, style: TextStyle(color: Colors.white38, fontSize: 15.sp, fontWeight: FontWeight.w700)),
                     if (badge != null) ...[
                       SizedBox(width: 14.w),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                         decoration: BoxDecoration(color: const Color(0xFF2E1E5D), borderRadius: BorderRadius.circular(10.r)),
                         child: Text(badge, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900)),
                       ),
