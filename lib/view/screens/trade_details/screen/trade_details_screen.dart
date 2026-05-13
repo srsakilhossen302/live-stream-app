@@ -67,11 +67,24 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                         // Swap Icon
                         Center(
                           child: Container(
-                            height: 40.h,
-                            width: 40.h,
-                            margin: EdgeInsets.symmetric(vertical: 8.h),
-                            decoration: const BoxDecoration(color: Color(0xFF1E1E2C), shape: BoxShape.circle),
-                            child: Icon(Icons.sync_alt_rounded, color: Colors.white38, size: 20.sp),
+                            height: 48.h,
+                            width: 48.h,
+                            margin: EdgeInsets.symmetric(vertical: 12.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF282C36),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10.r, offset: const Offset(0, 4)),
+                              ],
+                            ),
+                            child: Center(
+                              child: SvgPicture.asset(
+                                "assets/icons/updaont.svg",
+                                width: 22.sp,
+                                height: 22.sp,
+                                colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+                              ),
+                            ),
                           ),
                         ),
                         
@@ -244,25 +257,49 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
         borderRadius: BorderRadius.circular(24.r),
-        border: Border(left: BorderSide(color: isOffering ? Colors.white10 : const Color(0xFF8B9BFF).withOpacity(0.5), width: 3)),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Expanded(
+          // Vertical indicator bar
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 4.w,
+              decoration: BoxDecoration(
+                color: isOffering ? const Color(0xFF8B9BFF) : const Color(0xFF8B9BFF).withOpacity(0.5),
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(color: isOffering ? Colors.white38 : const Color(0xFFFF8BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                SizedBox(height: 12.h),
-                Text(name, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
-                SizedBox(height: 4.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(title, style: TextStyle(color: isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    SvgPicture.asset(
+                      "assets/icons/updaont.svg",
+                      width: 20.sp,
+                      height: 20.sp,
+                      colorFilter: ColorFilter.mode(isOffering ? Colors.white38 : const Color(0xFF8B9BFF).withOpacity(0.5), BlendMode.srcIn),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16.h),
+                Text(name, style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
+                SizedBox(height: 6.h),
                 Row(
                   children: [
-                    Text(subName, style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700)),
+                    Text(subName, style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700)),
                     if (badge != null) ...[
                       SizedBox(width: 12.w),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                         decoration: BoxDecoration(color: const Color(0xFF2E1E5D), borderRadius: BorderRadius.circular(8.r)),
                         child: Text(badge, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 9.sp, fontWeight: FontWeight.w900)),
                       ),
@@ -271,12 +308,6 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                 ),
               ],
             ),
-          ),
-          SvgPicture.asset(
-            "assets/icons/updaont.svg",
-            width: 24.sp,
-            height: 24.sp,
-            colorFilter: ColorFilter.mode(isOffering ? Colors.white24 : const Color(0xFF8B9BFF).withOpacity(0.5), BlendMode.srcIn),
           ),
         ],
       ),
