@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/messages_controller.dart';
 
@@ -207,97 +208,105 @@ class MessagesScreen extends GetView<MessagesController> {
   }
 
   Widget _buildUpdateCard({required String name, required String message, required String time, required String avatar, List<String> tags = const [], bool hasNew = false}) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
-      padding: EdgeInsets.all(20.r),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(24.r),
-      ),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(radius: 24.r, backgroundImage: NetworkImage(avatar)),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(name, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
-                        Row(
-                          children: [
-                            Text(time, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700)),
-                            if (hasNew) ...[
-                              SizedBox(width: 8.w),
-                              Container(width: 8.h, height: 8.h, decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle)),
+    return InkWell(
+      onTap: () => Get.toNamed(AppRoute.messageDetails),
+      borderRadius: BorderRadius.circular(24.r),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16.h),
+        padding: EdgeInsets.all(20.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161622),
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(radius: 24.r, backgroundImage: NetworkImage(avatar)),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(name, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
+                          Row(
+                            children: [
+                              Text(time, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700)),
+                              if (hasNew) ...[
+                                SizedBox(width: 8.w),
+                                Container(width: 8.h, height: 8.h, decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle)),
+                              ],
                             ],
-                          ],
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(message, style: TextStyle(color: Colors.white70, fontSize: 14.sp, fontWeight: FontWeight.w500)),
-                  ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(message, style: TextStyle(color: Colors.white70, fontSize: 14.sp, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          Row(
-            children: [
-              SizedBox(width: 64.w),
-              ...tags.map((tag) => Container(
-                margin: EdgeInsets.only(right: 8.w),
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(10.r)),
-                child: Text(tag, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w800)),
-              )),
-            ],
-          ),
-        ],
+              ],
+            ),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                SizedBox(width: 64.w),
+                ...tags.map((tag) => Container(
+                  margin: EdgeInsets.only(right: 8.w),
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                  decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(10.r)),
+                  child: Text(tag, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                )),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMessageRow({required String name, required String message, required String time, required String avatar, bool isSpecial = false}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 24.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(radius: 28.r, backgroundImage: NetworkImage(avatar)),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(name, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
-                    Text(time, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700)),
-                  ],
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  message,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isSpecial ? const Color(0xFF8B9BFF) : Colors.white70,
-                    fontSize: 14.sp,
-                    fontWeight: isSpecial ? FontWeight.w900 : FontWeight.w500,
+    return InkWell(
+      onTap: () => Get.toNamed(AppRoute.messageDetails),
+      borderRadius: BorderRadius.circular(16.r),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: 24.h),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(radius: 28.r, backgroundImage: NetworkImage(avatar)),
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(name, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
+                      Text(time, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700)),
+                    ],
                   ),
-                ),
-              ],
+                  SizedBox(height: 4.h),
+                  Text(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSpecial ? const Color(0xFF8B9BFF) : Colors.white70,
+                      fontSize: 14.sp,
+                      fontWeight: isSpecial ? FontWeight.w900 : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
