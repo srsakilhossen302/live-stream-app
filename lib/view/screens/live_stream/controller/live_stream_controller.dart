@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
-import '../../home/controller/home_controller.dart';
 
 class LiveStreamModel {
   final String videoUrl;
@@ -31,7 +30,7 @@ class LiveStreamController extends GetxController {
       title: 'Luxury Watch Auction',
       productTitle: 'Rolex Submariner',
       productPrice: '\$15,000',
-      productImage: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1000&auto=format&fit=crop',
+      productImage: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=400&auto=format&fit=crop',
     ),
     LiveStreamModel(
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-person-opening-a-shoe-box-48197-large.mp4',
@@ -40,7 +39,7 @@ class LiveStreamController extends GetxController {
       title: 'Rare Sneaker Unboxing',
       productTitle: 'Nike Dunk Low',
       productPrice: '\$180',
-      productImage: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1000&auto=format&fit=crop',
+      productImage: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=400&auto=format&fit=crop',
     ),
     LiveStreamModel(
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-holding-a-pair-of-sneakers-in-his-hands-48202-large.mp4',
@@ -49,53 +48,62 @@ class LiveStreamController extends GetxController {
       title: 'Streetwear Steals',
       productTitle: 'Supreme Box Logo',
       productPrice: '\$450',
-      productImage: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop',
+      productImage: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=400&auto=format&fit=crop',
     ),
   ];
 
-  var controllers = <VideoPlayerController>[].obs;
-  var currentIndex = 0.obs;
+  // Reactive list to track which videos are initialized
+  final RxList<bool> initialized = <bool>[].obs;
+  final RxInt currentIndex = 0.obs;
+
+  final List<VideoPlayerController> _videoControllers = [];
 
   @override
   void onInit() {
     super.onInit();
-    _initializeControllers();
+    // Pre-fill initialized list
+    for (int i = 0; i < streams.length; i++) {
+      initialized.add(false);
+    }
+    _initializeAll();
   }
 
-  Future<void> _initializeControllers() async {
-    // If we came from Home with arguments, we can prepend it or replace the first one
-    if (Get.arguments != null && Get.arguments is LiveItemModel) {
-      final LiveItemModel item = Get.arguments;
-      // You might want to match a video to the item, for now just use the first video slot
-    }
-
-    for (var stream in streams) {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(stream.videoUrl));
-      controllers.add(controller);
-      controller.initialize().then((_) {
-        controller.setLooping(true);
-        if (controllers.indexOf(controller) == currentIndex.value) {
-          controller.play();
+  Future<void> _initializeAll() async {
+    for (int i = 0; i < streams.length; i++) {
+      final vc = VideoPlayerController.networkUrl(Uri.parse(streams[i].videoUrl));
+      _videoControllers.add(vc);
+      vc.initialize().then((_) {
+        vc.setLooping(true);
+        vc.setVolume(0); // mute by default like TikTok
+        initialized[i] = true; // triggers Obx rebuild
+        if (i == currentIndex.value) {
+          vc.play();
         }
-        update(); // Refresh UI when initialized
       });
     }
   }
 
+  VideoPlayerController? getController(int index) {
+    if (index < _videoControllers.length) return _videoControllers[index];
+    return null;
+  }
+
   void onPageChanged(int index) {
-    if (currentIndex.value < controllers.length) {
-      controllers[currentIndex.value].pause();
+    // Pause previous
+    if (currentIndex.value < _videoControllers.length) {
+      _videoControllers[currentIndex.value].pause();
     }
     currentIndex.value = index;
-    if (index < controllers.length) {
-      controllers[index].play();
+    // Play current if initialized
+    if (index < _videoControllers.length && initialized[index]) {
+      _videoControllers[index].play();
     }
   }
 
   @override
   void onClose() {
-    for (var controller in controllers) {
-      controller.dispose();
+    for (var vc in _videoControllers) {
+      vc.dispose();
     }
     super.onClose();
   }
