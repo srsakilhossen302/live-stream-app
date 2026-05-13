@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../home/controller/home_controller.dart';
 import '../controller/browse_controller.dart';
 import '../model/category_model.dart';
 
@@ -151,79 +153,92 @@ class BrowseScreen extends GetView<BrowseController> {
   }
 
   Widget _buildCategoryCard(CategoryModel category) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 24.h),
-      height: 220.h,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(32.r),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32.r),
-        child: Stack(
-          children: [
-            // Background Image
-            Positioned.fill(
-              child: Image.network(
-                category.image,
-                fit: BoxFit.cover,
-                color: Colors.black.withOpacity(0.4),
-                colorBlendMode: BlendMode.darken,
-              ),
-            ),
-            // Content
-            Padding(
-              padding: EdgeInsets.all(28.r),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    category.title.replaceAll(" & ", " &\n"),
-                    style: TextStyle(color: Colors.white, fontSize: 26.sp, fontWeight: FontWeight.w900, height: 1.1),
-                  ),
-                  SizedBox(height: 12.h),
-                  Text(
-                    category.subtitle,
-                    style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-            ),
-            // Live Badge
-            Positioned(
-              right: 24.w,
-              bottom: 24.h,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2E1E5D),
-                  borderRadius: BorderRadius.circular(25.r),
+    return GestureDetector(
+      onTap: () {
+        Get.toNamed(
+          AppRoute.liveStream,
+          arguments: LiveItemModel(
+            title: category.title,
+            curator: category.subtitle.split(",")[0], // Use first subtitle item as curator placeholder
+            viewers: category.liveCount.split(" ")[0],
+            image: category.image,
+          ),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 24.h),
+        height: 220.h,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFF161622),
+          borderRadius: BorderRadius.circular(32.r),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32.r),
+          child: Stack(
+            children: [
+              // Background Image
+              Positioned.fill(
+                child: Image.network(
+                  category.image,
+                  fit: BoxFit.cover,
+                  color: Colors.black.withOpacity(0.4),
+                  colorBlendMode: BlendMode.darken,
                 ),
-                child: Row(
+              ),
+              // Content
+              Padding(
+                padding: EdgeInsets.all(28.r),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.circle, color: const Color(0xFFAC8AFF), size: 6.sp),
-                    SizedBox(width: 10.w),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          category.liveCount.split(" ")[0],
-                          style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900, height: 1),
-                        ),
-                        Text(
-                          "Live",
-                          style: TextStyle(color: Colors.white70, fontSize: 10.sp, fontWeight: FontWeight.w800, height: 1),
-                        ),
-                      ],
+                    Text(
+                      category.title.replaceAll(" & ", " &\n"),
+                      style: TextStyle(color: Colors.white, fontSize: 26.sp, fontWeight: FontWeight.w900, height: 1.1),
+                    ),
+                    SizedBox(height: 12.h),
+                    Text(
+                      category.subtitle,
+                      style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+              // Live Badge
+              Positioned(
+                right: 24.w,
+                bottom: 24.h,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2E1E5D),
+                    borderRadius: BorderRadius.circular(25.r),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, color: const Color(0xFFAC8AFF), size: 6.sp),
+                      SizedBox(width: 10.w),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            category.liveCount.split(" ")[0],
+                            style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900, height: 1),
+                          ),
+                          Text(
+                            "Live",
+                            style: TextStyle(color: Colors.white70, fontSize: 10.sp, fontWeight: FontWeight.w800, height: 1),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

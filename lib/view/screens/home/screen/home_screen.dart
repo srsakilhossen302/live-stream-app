@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../../main/controller/main_controller.dart';
 import '../controller/home_controller.dart';
