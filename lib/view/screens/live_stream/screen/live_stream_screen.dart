@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+import '../../home/controller/home_controller.dart';
 import '../controller/live_stream_controller.dart';
 
 class LiveStreamScreen extends GetView<LiveStreamController> {
@@ -49,6 +50,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
   }
 
   Widget _buildOverlayUI() {
+    final LiveItemModel? item = Get.arguments;
     return SafeArea(
       child: Column(
         children: [
@@ -77,7 +79,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                       SizedBox(width: 8.w),
                       Container(width: 1, height: 12.h, color: Colors.white24),
                       SizedBox(width: 8.w),
-                      Text("64", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                      Text(item?.viewers ?? "64", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
                     ],
                   ),
                 ),
@@ -92,13 +94,13 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
               children: [
                 CircleAvatar(
                   radius: 24.r,
-                  backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
+                  backgroundImage: NetworkImage(item?.image ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
                 ),
                 SizedBox(width: 12.w),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("@jrehsales", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                    Text(item?.curator ?? "@jrehsales", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
                     Row(
                       children: [
                         Icon(Icons.star, color: const Color(0xFFFF8BFF), size: 12.sp),

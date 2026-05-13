@@ -360,7 +360,9 @@ class HomeScreen extends GetView<HomeController> {
   }
 
   Widget _buildLiveCard(LiveItemModel item, int index) {
-    return Container(
+    return GestureDetector(
+      onTap: () => Get.toNamed(AppRoute.liveStream, arguments: item),
+      child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28.r),
         boxShadow: [
@@ -468,6 +470,7 @@ class HomeScreen extends GetView<HomeController> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
