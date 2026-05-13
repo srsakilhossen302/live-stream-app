@@ -53,9 +53,9 @@ class LiveStreamController extends GetxController {
   ];
 
   // Simple list to track init status
-  List<bool> initialized = [];
+  final List<bool> initialized = <bool>[];
   int currentIdx = 0;
-  List<VideoPlayerController> videoControllers = [];
+  final List<VideoPlayerController> videoControllers = <VideoPlayerController>[];
 
   @override
   void onInit() {
