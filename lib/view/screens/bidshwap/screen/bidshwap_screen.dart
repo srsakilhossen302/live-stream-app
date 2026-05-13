@@ -268,6 +268,8 @@ class BidShwapScreen extends GetView<BidShwapController> {
                       ],
                     ),
                   ),
+
+                   SizedBox(height: 10.h),
                   
                   // Swap Icon sitting in the middle
                   Transform.translate(
@@ -282,6 +284,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
                             width: 60.w,
                             height: 60.w,
                             decoration: BoxDecoration(
+                              color: const Color(0xFF8B9BFF), // Added the missing background color
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
@@ -291,15 +294,23 @@ class BidShwapScreen extends GetView<BidShwapController> {
                                 ),
                               ],
                             ),
-                            child: SvgPicture.asset(
-                              "assets/icons/Container.svg",
-                              fit: BoxFit.contain,
+                            child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(12.r), // Adjust padding to scale SVG
+                                child: SvgPicture.asset(
+                                  "assets/icons/Container.svg",
+                                  fit: BoxFit.contain,
+                                  colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn), // Ensure arrows are black
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  SizedBox(height: 10.h),
+
 
                   // Looking For
                   Container(
