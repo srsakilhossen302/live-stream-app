@@ -38,7 +38,7 @@ class CustomBottomNavbar extends StatelessWidget {
             children: [
               _navItem(controller, 0, "assets/icons/Home-navBar.svg", "Home"),
               _navItem(controller, 1, "assets/icons/Messg-navbar.svg", "Message"),
-              _navItem(controller, 2, "assets/icons/Discover-navBar.svg", "Browse"),
+              _navItem(controller, 2, "assets/icons/Discover-navBar.svg", "Discover"),
               _navItem(controller, 3, "assets/icons/Bidswap-navBar.svg", "BidShwap"),
               _navItem(controller, 4, "assets/icons/Profile-navBar.svg", "Profile"),
             ],

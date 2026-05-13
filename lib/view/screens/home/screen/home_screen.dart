@@ -3,7 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../browse/screen/browse_screen.dart';
 import '../../main/controller/main_controller.dart';
+import '../../purchases/screen/purchases_screen.dart';
 import '../controller/home_controller.dart';
 
 class HomeScreen extends GetView<HomeController> {
@@ -46,6 +48,7 @@ class HomeScreen extends GetView<HomeController> {
               SizedBox(height: 28.h),
 
               // Search Bar
+              /*
               GestureDetector(
                 onTap: () => Get.find<MainController>().changeIndex(2),
                 child: Container(
@@ -70,6 +73,7 @@ class HomeScreen extends GetView<HomeController> {
                   ),
                 ),
               ),
+              */
 
               SizedBox(height: 28.h),
 
@@ -286,7 +290,7 @@ class HomeScreen extends GetView<HomeController> {
                     ],
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () => Get.to(()=>PurchasesScreen()),
                     child: Text(
                       "SEE ALL",
                       style: TextStyle(

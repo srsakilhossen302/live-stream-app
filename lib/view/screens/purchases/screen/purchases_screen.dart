@@ -5,6 +5,8 @@ import '../../../../global/widgets/custom_background.dart';
 import '../../../../core/app_route.dart';
 import '../controller/purchases_controller.dart';
 import '../model/purchase_model.dart';
+import '../../main/controller/main_controller.dart';
+import '../../../../global/widgets/custom_bottom_navbar.dart';
 
 class PurchasesScreen extends GetView<PurchasesController> {
   const PurchasesScreen({super.key});
@@ -12,7 +14,9 @@ class PurchasesScreen extends GetView<PurchasesController> {
   @override
   Widget build(BuildContext context) {
     Get.put(PurchasesController());
+    final mainController = Get.find<MainController>();
     return CustomBackground(
+      bottomNavigationBar: const CustomBottomNavbar(),
       child: SafeArea(
         child: Column(
           children: [
@@ -21,9 +25,28 @@ class PurchasesScreen extends GetView<PurchasesController> {
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 15.h),
               child: Column(
                 children: [
-                  Text(
-                    "My Purchases",
-                    style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          onTap: () => Get.back(),
+                          child: Container(
+                            padding: EdgeInsets.all(8.r),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18.sp),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        "My Purchases",
+                        style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 12.h),
                   Container(

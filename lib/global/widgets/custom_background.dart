@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 
 class CustomBackground extends StatelessWidget {
   final Widget? child;
+  final Widget? bottomNavigationBar;
 
-  const CustomBackground({super.key, this.child});
+  const CustomBackground({super.key, this.child, this.bottomNavigationBar});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF02010A),
+      bottomNavigationBar: bottomNavigationBar,
       body: Stack(
         children: [
           // Base Dark Background
