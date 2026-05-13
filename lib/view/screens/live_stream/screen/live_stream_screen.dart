@@ -13,44 +13,44 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
     Get.put(LiveStreamController());
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Vertical Video Feed (TikTok style)
-          PageView.builder(
-            scrollDirection: Axis.vertical,
-            itemCount: controller.videoUrls.length,
-            onPageChanged: controller.onPageChanged,
-            itemBuilder: (context, index) {
-              return Obx(() {
-                if (controller.controllers.length > index) {
-                  final vController = controller.controllers[index];
-                  return vController.value.isInitialized
-                      ? SizedBox.expand(
-                          child: FittedBox(
-                            fit: BoxFit.cover,
-                            child: SizedBox(
-                              width: vController.value.size.width,
-                              height: vController.value.size.height,
-                              child: VideoPlayer(vController),
-                            ),
-                          ),
-                        )
-                      : const Center(child: CircularProgressIndicator(color: Color(0xFF8B9BFF)));
-                }
-                return const Center(child: CircularProgressIndicator(color: Color(0xFF8B9BFF)));
-              });
-            },
-          ),
+      body: PageView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: controller.streams.length,
+        onPageChanged: controller.onPageChanged,
+        itemBuilder: (context, index) {
+          final stream = controller.streams[index];
+          return Stack(
+            children: [
+              // Background Video
+              GetBuilder<LiveStreamController>(
+                builder: (logic) {
+                  if (logic.controllers.length > index && logic.controllers[index].value.isInitialized) {
+                    final vController = logic.controllers[index];
+                    return SizedBox.expand(
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: vController.value.size.width,
+                          height: vController.value.size.height,
+                          child: VideoPlayer(vController),
+                        ),
+                      ),
+                    );
+                  }
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFF8B9BFF)));
+                },
+              ),
 
-          // Overlay UI
-          _buildOverlayUI(),
-        ],
+              // Overlay UI (Now inside PageView so it scrolls with the video)
+              _buildOverlayUI(stream),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildOverlayUI() {
-    final LiveItemModel? item = Get.arguments;
+  Widget _buildOverlayUI(LiveStreamModel stream) {
     return SafeArea(
       child: Column(
         children: [
@@ -79,7 +79,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                       SizedBox(width: 8.w),
                       Container(width: 1, height: 12.h, color: Colors.white24),
                       SizedBox(width: 8.w),
-                      Text(item?.viewers ?? "64", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                      Text(stream.viewers, style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
                     ],
                   ),
                 ),
@@ -94,13 +94,13 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
               children: [
                 CircleAvatar(
                   radius: 24.r,
-                  backgroundImage: NetworkImage(item?.image ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
+                  backgroundImage: NetworkImage(stream.productImage),
                 ),
                 SizedBox(width: 12.w),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item?.curator ?? "@jrehsales", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                    Text(stream.curator, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
                     Row(
                       children: [
                         Icon(Icons.star, color: const Color(0xFFFF8BFF), size: 12.sp),
@@ -141,12 +141,12 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                       SizedBox(height: 16.h),
 
                       // Product Card
-                      _buildProductCard(),
+                      _buildProductCard(stream),
                       
                       SizedBox(height: 16.h),
 
                       // Input bar
-                      _buildInputBar(),
+                      _buildInputBar(stream),
                     ],
                   ),
                 ),
@@ -185,7 +185,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
     );
   }
 
-  Widget _buildProductCard() {
+  Widget _buildProductCard(LiveStreamModel stream) {
     return Container(
       padding: EdgeInsets.all(12.r),
       decoration: BoxDecoration(
@@ -202,8 +202,8 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                 height: 64.r,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12.r),
-                  image: const DecorationImage(
-                    image: NetworkImage("https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop"),
+                  image: DecorationImage(
+                    image: NetworkImage(stream.productImage),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -224,7 +224,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Ear Wax OtoScope", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                Text(stream.productTitle, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
                 SizedBox(height: 4.h),
                 Row(
                   children: [
@@ -234,7 +234,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                   ],
                 ),
                 SizedBox(height: 4.h),
-                Text("\$1", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
+                Text(stream.productPrice, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
               ],
             ),
           ),
@@ -251,7 +251,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(LiveStreamModel stream) {
     return Row(
       children: [
         Expanded(
@@ -294,7 +294,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text("BID", style: TextStyle(color: Colors.black54, fontSize: 8.sp, fontWeight: FontWeight.w900)),
-                  Text("\$1", style: TextStyle(color: Colors.black, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                  Text(stream.productPrice.contains("\$") ? stream.productPrice : "\$${stream.productPrice}", style: TextStyle(color: Colors.black, fontSize: 14.sp, fontWeight: FontWeight.w900)),
                 ],
               ),
               SizedBox(width: 8.w),
