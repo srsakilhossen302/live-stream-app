@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/trade_details_controller.dart';
@@ -60,7 +61,6 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                           title: "OFFERING",
                           name: "Off-White Tee",
                           subName: "Chicago Edition Capsule",
-                          icon: Icons.north_rounded,
                           isOffering: true,
                         ),
                         
@@ -80,7 +80,6 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                           title: "LOOKING FOR",
                           name: "Rolex Submariner Date",
                           subName: "\$5k-\$6k Range",
-                          icon: Icons.south_rounded,
                           isOffering: false,
                           badge: "TOP PRIORITY",
                         ),
@@ -100,9 +99,9 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                         SizedBox(height: 16.h),
                         Row(
                           children: [
-                            Expanded(child: _buildVerificationCard(Icons.shield_outlined, "Platform Verified", "100% Secure Auth")),
+                            Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Platform Verified", "100% Secure Auth")),
                             SizedBox(width: 16.w),
-                            Expanded(child: _buildVerificationCard(Icons.diamond_outlined, "Direct Trade", "Peer-to-peer risk")),
+                            Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Direct Trade", "Peer-to-peer risk")),
                           ],
                         ),
                         
@@ -239,7 +238,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     );
   }
 
-  Widget _buildTradeBox({required String title, required String name, required String subName, required IconData icon, required bool isOffering, String? badge}) {
+  Widget _buildTradeBox({required String title, required String name, required String subName, required bool isOffering, String? badge}) {
     return Container(
       padding: EdgeInsets.all(24.r),
       decoration: BoxDecoration(
@@ -273,20 +272,30 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
               ],
             ),
           ),
-          Icon(icon, color: isOffering ? Colors.white24 : const Color(0xFF8B9BFF).withOpacity(0.5), size: 24.sp),
+          SvgPicture.asset(
+            "assets/icons/updaont.svg",
+            width: 24.sp,
+            height: 24.sp,
+            colorFilter: ColorFilter.mode(isOffering ? Colors.white24 : const Color(0xFF8B9BFF).withOpacity(0.5), BlendMode.srcIn),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildVerificationCard(IconData icon, String title, String subtitle) {
+  Widget _buildVerificationCard(String svgPath, String title, String subtitle) {
     return Container(
       padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFF8B9BFF), size: 28.sp),
+          SvgPicture.asset(
+            svgPath,
+            width: 28.sp,
+            height: 28.sp,
+            colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+          ),
           SizedBox(height: 16.h),
           Text(title, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w900)),
           SizedBox(height: 4.h),
