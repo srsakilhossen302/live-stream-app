@@ -4,6 +4,7 @@ import '../view/screens/auth/screen/login_screen.dart';
 import '../view/screens/category/screen/category_screen.dart';
 import '../view/screens/main/screen/main_screen.dart';
 import '../view/screens/purchases/screen/track_order/screen/track_order_screen.dart';
+import '../view/screens/trade_details/screen/trade_details_screen.dart';
 
 class AppRoute {
   static const String onboarding = "/onboarding";
@@ -11,6 +12,7 @@ class AppRoute {
   static const String category = "/category";
   static const String main = "/main";
   static const String trackOrder = "/trackOrder";
+  static const String tradeDetails = "/trade_details";
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -18,5 +20,6 @@ class AppRoute {
     GetPage(name: category, page: () => const CategoryScreen()),
     GetPage(name: main, page: () => const MainScreen()),
     GetPage(name: trackOrder, page: () => const TrackOrderScreen()),
+    GetPage(name: tradeDetails, page: () => const TradeDetailsScreen()),
   ];
 }

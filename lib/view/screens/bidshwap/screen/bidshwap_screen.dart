@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
-import '../../my_trades/model/my_trade_model.dart';
 import '../controller/bidshwap_controller.dart';
 import '../model/trade_model.dart';
 
@@ -306,7 +306,14 @@ class BidShwapScreen extends GetView<BidShwapController> {
           // Action Buttons
           Row(
             children: [
-              Expanded(child: _buildActionButton("View Details", Colors.white.withOpacity(0.06), Colors.white)),
+              Expanded(
+                child: _buildActionButton(
+                  "View Details",
+                  Colors.white.withOpacity(0.06),
+                  Colors.white,
+                  onTap: () => Get.toNamed(AppRoute.tradeDetails),
+                ),
+              ),
               SizedBox(width: 16.w),
               Expanded(child: _buildActionButton("Make Offer", const Color(0xFF8B9BFF), Colors.black)),
             ],
@@ -508,11 +515,11 @@ class BidShwapScreen extends GetView<BidShwapController> {
     );
   }
 
-  Widget _buildActionButton(String text, Color bg, Color textCol) {
+  Widget _buildActionButton(String text, Color bg, Color textCol, {VoidCallback? onTap}) {
     return SizedBox(
       height: 56.h,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: onTap ?? () {},
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: textCol,
