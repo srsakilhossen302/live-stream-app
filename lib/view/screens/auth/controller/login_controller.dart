@@ -12,7 +12,7 @@ class LoginController extends GetxController {
   }
 
   void onSignUp() {
-    Get.log("Sign Up Clicked");
+    Get.toNamed(AppRoute.signUp);
   }
 
   void onForgotPassword() {
