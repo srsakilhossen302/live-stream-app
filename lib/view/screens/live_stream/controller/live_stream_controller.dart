@@ -43,7 +43,7 @@ class LiveStreamController extends GetxController {
       productImage: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=400&auto=format&fit=crop',
     ),
     LiveStreamModel(
-      videoUrl: 'http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8',
+      videoUrl: 'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
       curator: '@hype_trader',
       viewers: '2.1K',
       title: 'Streetwear Steals',
