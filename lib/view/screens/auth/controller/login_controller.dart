@@ -8,7 +8,7 @@ class LoginController extends GetxController {
   final passwordController = TextEditingController();
 
   void onLogin() {
-    Get.offNamed(AppRoute.category);
+    Get.offAllNamed(AppRoute.main);
   }
 
   void onSignUp() {
