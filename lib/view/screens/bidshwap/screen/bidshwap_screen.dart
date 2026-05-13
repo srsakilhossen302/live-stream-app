@@ -268,7 +268,36 @@ class BidShwapScreen extends GetView<BidShwapController> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 20.h), // Spacing for the swap icon
+                  
+                  // Swap Icon sitting in the middle
+                  Stack(
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(height: 20.h),
+                      Positioned(
+                        child: Container(
+                          width: 54.w,
+                          height: 54.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8B9BFF).withOpacity(0.3),
+                                blurRadius: 20.r,
+                                spreadRadius: 2.r,
+                              ),
+                            ],
+                          ),
+                          child: SvgPicture.asset(
+                            "assets/icons/Container.svg",
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
                   // Looking For
                   Container(
                     width: double.infinity,
@@ -296,28 +325,6 @@ class BidShwapScreen extends GetView<BidShwapController> {
                     ),
                   ),
                 ],
-              ),
-              // Swap Icon (Using Svg)
-              Transform.translate(
-                offset: Offset(0, -25.h), // Adjust vertical position to sit perfectly in the middle
-                child: Container(
-                  width: 54.w,
-                  height: 54.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF8B9BFF).withOpacity(0.3),
-                        blurRadius: 20.r,
-                        spreadRadius: 2.r,
-                      ),
-                    ],
-                  ),
-                  child: SvgPicture.asset(
-                    "assets/icons/Container.svg",
-                    fit: BoxFit.contain,
-                  ),
-                ),
               ),
             ],
           ),
