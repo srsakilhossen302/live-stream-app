@@ -408,6 +408,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
 
   Widget _buildMyTradeCard(MyTradeModel trade) {
     Color statusColor;
+    Color statusTextColor = Colors.white;
     String statusText;
     switch (trade.status) {
       case MyTradeStatus.shipped:
@@ -442,14 +443,14 @@ class BidShwapScreen extends GetView<BidShwapController> {
                 padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: statusColor,
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
-                child: Text(statusText, style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900)),
+                child: Text(statusText, style: TextStyle(color: statusTextColor, fontSize: 10.sp, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
           SizedBox(height: 12.h),
-          Text(trade.title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
+          Text(trade.title, style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900, height: 1.2)),
           SizedBox(height: 24.h),
           
           if (trade.status == MyTradeStatus.completed) ...[
@@ -459,13 +460,13 @@ class BidShwapScreen extends GetView<BidShwapController> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("TRADER", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w800)),
-                    SizedBox(height: 8.h),
+                    Text("TRADER", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    SizedBox(height: 10.h),
                     Row(
                       children: [
-                        CircleAvatar(radius: 12.r, backgroundImage: NetworkImage(trade.traderAvatar ?? "")),
-                        SizedBox(width: 8.w),
-                        Text(trade.traderName, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800)),
+                        CircleAvatar(radius: 14.r, backgroundImage: NetworkImage(trade.traderAvatar ?? "")),
+                        SizedBox(width: 10.w),
+                        Text(trade.traderName, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
                       ],
                     ),
                   ],
@@ -473,9 +474,9 @@ class BidShwapScreen extends GetView<BidShwapController> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text("DATE", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w800)),
-                    SizedBox(height: 8.h),
-                    Text(trade.date ?? "", style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800)),
+                    Text("DATE", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                    SizedBox(height: 10.h),
+                    Text(trade.date ?? "", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ],
@@ -485,9 +486,10 @@ class BidShwapScreen extends GetView<BidShwapController> {
             SizedBox(height: 24.h),
             Container(
               height: 180.h,
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(24.r),
+                borderRadius: BorderRadius.circular(28.r),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -509,8 +511,8 @@ class BidShwapScreen extends GetView<BidShwapController> {
                     children: [
                       _buildTradeItemImage(trade.item1Image, small: true),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w),
-                        child: Icon(Icons.sync_alt_rounded, color: Colors.white24, size: 16.sp),
+                        padding: EdgeInsets.symmetric(horizontal: 14.w),
+                        child: Icon(Icons.sync_alt_rounded, color: Colors.white10, size: 20.sp),
                       ),
                       _buildTradeItemImage(trade.item2Image, small: true),
                     ],
@@ -520,12 +522,12 @@ class BidShwapScreen extends GetView<BidShwapController> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text("Trader", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w800)),
-                    Text(trade.traderName, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                    Text(trade.traderName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ],
             ),
-            SizedBox(height: 24.h),
+            SizedBox(height: 28.h),
             Row(
               children: [
                 Expanded(child: _buildActionButton("View Trade", const Color(0xFF1E1E2C), Colors.white)),
@@ -535,9 +537,9 @@ class BidShwapScreen extends GetView<BidShwapController> {
                   width: 56.h,
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E1E2C),
-                    borderRadius: BorderRadius.circular(16.r),
+                    borderRadius: BorderRadius.circular(20.r),
                   ),
-                  child: Icon(Icons.chat_bubble_outline_rounded, color: const Color(0xFF8B9BFF), size: 24.sp),
+                  child: Icon(Icons.chat_bubble_outline_rounded, color: const Color(0xFF8B9BFF), size: 22.sp),
                 ),
               ],
             ),
@@ -549,10 +551,10 @@ class BidShwapScreen extends GetView<BidShwapController> {
 
   Widget _buildTradeItemImage(String url, {bool small = false}) {
     return Container(
-      width: small ? 60.w : 120.w,
-      height: small ? 60.w : 120.w,
+      width: small ? 64.w : 120.w,
+      height: small ? 64.w : 120.w,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(small ? 12.r : 20.r),
+        borderRadius: BorderRadius.circular(small ? 14.r : 24.r),
         image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
       ),
     );
