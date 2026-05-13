@@ -223,7 +223,7 @@ class HomeScreen extends GetView<HomeController> {
                         width: double.infinity,
                         height: 60.h,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => Get.toNamed(AppRoute.liveStream),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8B9BFF),
                             foregroundColor: const Color(0xFF0F0B1E),
