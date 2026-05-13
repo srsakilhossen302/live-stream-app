@@ -52,16 +52,14 @@ class LiveStreamController extends GetxController {
     ),
   ];
 
-  // Reactive list to track which videos are initialized
-  final RxList<bool> initialized = <bool>[].obs;
-  final RxInt currentIndex = 0.obs;
-
-  final List<VideoPlayerController> _videoControllers = [];
+  // Simple list to track init status
+  List<bool> initialized = [];
+  int currentIdx = 0;
+  List<VideoPlayerController> videoControllers = [];
 
   @override
   void onInit() {
     super.onInit();
-    // Pre-fill initialized list
     for (int i = 0; i < streams.length; i++) {
       initialized.add(false);
     }
@@ -71,38 +69,33 @@ class LiveStreamController extends GetxController {
   Future<void> _initializeAll() async {
     for (int i = 0; i < streams.length; i++) {
       final vc = VideoPlayerController.networkUrl(Uri.parse(streams[i].videoUrl));
-      _videoControllers.add(vc);
+      videoControllers.add(vc);
       vc.initialize().then((_) {
         vc.setLooping(true);
-        vc.setVolume(0); // mute by default like TikTok
-        initialized[i] = true; // triggers Obx rebuild
-        if (i == currentIndex.value) {
+        vc.setVolume(0);
+        initialized[i] = true;
+        if (i == currentIdx) {
           vc.play();
         }
+        update(); // triggers GetBuilder rebuild
       });
     }
   }
 
-  VideoPlayerController? getController(int index) {
-    if (index < _videoControllers.length) return _videoControllers[index];
-    return null;
-  }
-
   void onPageChanged(int index) {
-    // Pause previous
-    if (currentIndex.value < _videoControllers.length) {
-      _videoControllers[currentIndex.value].pause();
+    if (currentIdx < videoControllers.length) {
+      videoControllers[currentIdx].pause();
     }
-    currentIndex.value = index;
-    // Play current if initialized
-    if (index < _videoControllers.length && initialized[index]) {
-      _videoControllers[index].play();
+    currentIdx = index;
+    if (index < videoControllers.length && initialized[index]) {
+      videoControllers[index].play();
     }
+    update();
   }
 
   @override
   void onClose() {
-    for (var vc in _videoControllers) {
+    for (var vc in videoControllers) {
       vc.dispose();
     }
     super.onClose();

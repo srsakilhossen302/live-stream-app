@@ -4,12 +4,12 @@ import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 import '../controller/live_stream_controller.dart';
 
-class LiveStreamScreen extends GetView<LiveStreamController> {
+class LiveStreamScreen extends StatelessWidget {
   const LiveStreamScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Get.put(LiveStreamController());
+    final controller = Get.put(LiveStreamController());
     return Scaffold(
       backgroundColor: Colors.black,
       body: PageView.builder(
@@ -21,36 +21,37 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // ── Background Video ──────────────────────────────────────
-              Obx(() {
-                final isReady = controller.initialized.length > index &&
-                    controller.initialized[index];
-                if (isReady) {
-                  final vc = controller.getController(index)!;
-                  return SizedBox.expand(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: vc.value.size.width,
-                        height: vc.value.size.height,
-                        child: VideoPlayer(vc),
+              // Background Video
+              GetBuilder<LiveStreamController>(
+                builder: (ctrl) {
+                  if (ctrl.videoControllers.length > index &&
+                      ctrl.initialized.length > index &&
+                      ctrl.initialized[index]) {
+                    final vc = ctrl.videoControllers[index];
+                    return SizedBox.expand(
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: vc.value.size.width,
+                          height: vc.value.size.height,
+                          child: VideoPlayer(vc),
+                        ),
+                      ),
+                    );
+                  }
+                  return Container(
+                    color: Colors.black,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF8B9BFF),
+                        strokeWidth: 2,
                       ),
                     ),
                   );
-                }
-                // Loading state: dark bg + spinner
-                return Container(
-                  color: Colors.black,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF8B9BFF),
-                      strokeWidth: 2,
-                    ),
-                  ),
-                );
-              }),
+                },
+              ),
 
-              // Dark gradient overlay for readability
+              // Dark gradient overlay
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -67,7 +68,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                 ),
               ),
 
-              // ── Overlay UI ────────────────────────────────────────────
+              // Overlay UI
               _buildOverlayUI(stream),
             ],
           );
@@ -80,7 +81,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
     return SafeArea(
       child: Column(
         children: [
-          // ── Top Bar ───────────────────────────────────────────────────
+          // Top Bar
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
             child: Row(
@@ -126,7 +127,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
             ),
           ),
 
-          // ── Creator Info ──────────────────────────────────────────────
+          // Creator Info
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Row(
@@ -159,19 +160,17 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                   ],
                 ),
                 const Spacer(),
-                GestureDetector(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 20.w, vertical: 10.h),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF8B9BFF),
-                        borderRadius: BorderRadius.circular(20.r)),
-                    child: Text("FOLLOW",
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w900)),
-                  ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 20.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF8B9BFF),
+                      borderRadius: BorderRadius.circular(20.r)),
+                  child: Text("FOLLOW",
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w900)),
                 ),
               ],
             ),
@@ -179,7 +178,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
 
           const Spacer(),
 
-          // ── Bottom Section ────────────────────────────────────────────
+          // Bottom Section
           Padding(
             padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 20.h),
             child: Row(
@@ -261,9 +260,7 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
                   height: 60.r,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                      width: 60.r,
-                      height: 60.r,
-                      color: Colors.white10),
+                      width: 60.r, height: 60.r, color: Colors.white10),
                 ),
               ),
               Positioned(
@@ -339,12 +336,11 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
               children: [
                 Expanded(
                   child: TextField(
-                    style:
-                        TextStyle(color: Colors.white, fontSize: 12.sp),
+                    style: TextStyle(color: Colors.white, fontSize: 12.sp),
                     decoration: InputDecoration(
                       hintText: "Say something...",
-                      hintStyle: TextStyle(
-                          color: Colors.white38, fontSize: 12.sp),
+                      hintStyle:
+                          TextStyle(color: Colors.white38, fontSize: 12.sp),
                       border: InputBorder.none,
                       isDense: true,
                     ),
@@ -413,8 +409,8 @@ class LiveStreamScreen extends GetView<LiveStreamController> {
         Container(
           margin: EdgeInsets.only(bottom: label.isEmpty ? 16.h : 4.h),
           padding: EdgeInsets.all(11.r),
-          decoration:
-              const BoxDecoration(color: Colors.black26, shape: BoxShape.circle),
+          decoration: const BoxDecoration(
+              color: Colors.black26, shape: BoxShape.circle),
           child: Icon(icon, color: color, size: 24.sp),
         ),
         if (label.isNotEmpty)
