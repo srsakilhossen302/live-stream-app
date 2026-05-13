@@ -357,8 +357,14 @@ class BidShwapScreen extends GetView<BidShwapController> {
           foregroundColor: textCol,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.r)),
           elevation: 0,
+          padding: EdgeInsets.symmetric(horizontal: 4.w), // Minimal horizontal padding to fit text
         ),
-        child: Text(text, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w900)),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }
