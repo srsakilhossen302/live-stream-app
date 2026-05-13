@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
@@ -24,7 +25,7 @@ class LiveStreamModel {
 class LiveStreamController extends GetxController {
   final List<LiveStreamModel> streams = [
     LiveStreamModel(
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-taking-photos-of-a-luxury-watch-33534-large.mp4',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
       curator: '@jrehsales',
       viewers: '1.2K',
       title: 'Luxury Watch Auction',
@@ -33,7 +34,7 @@ class LiveStreamController extends GetxController {
       productImage: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=400&auto=format&fit=crop',
     ),
     LiveStreamModel(
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-person-opening-a-shoe-box-48197-large.mp4',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
       curator: '@kicks_collector',
       viewers: '850',
       title: 'Rare Sneaker Unboxing',
@@ -42,7 +43,7 @@ class LiveStreamController extends GetxController {
       productImage: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=400&auto=format&fit=crop',
     ),
     LiveStreamModel(
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-holding-a-pair-of-sneakers-in-his-hands-48202-large.mp4',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
       curator: '@hype_trader',
       viewers: '2.1K',
       title: 'Streetwear Steals',
@@ -68,26 +69,34 @@ class LiveStreamController extends GetxController {
 
   Future<void> _initializeAll() async {
     for (int i = 0; i < streams.length; i++) {
-      final vc = VideoPlayerController.networkUrl(Uri.parse(streams[i].videoUrl));
-      videoControllers.add(vc);
-      vc.initialize().then((_) {
+      try {
+        final vc = VideoPlayerController.networkUrl(
+          Uri.parse(streams[i].videoUrl),
+        );
+        videoControllers.add(vc);
+        await vc.initialize();
         vc.setLooping(true);
-        vc.setVolume(0);
+        vc.setVolume(1.0);
         videoReady[i] = true;
         if (i == currentIdx) {
           vc.play();
         }
-        update(); // triggers GetBuilder rebuild
-      });
+        update();
+        debugPrint('✅ Video $i initialized successfully');
+      } catch (e) {
+        debugPrint('❌ Video $i failed: $e');
+        videoControllers.add(VideoPlayerController.networkUrl(Uri.parse('')));
+        update();
+      }
     }
   }
 
   void onPageChanged(int index) {
-    if (currentIdx < videoControllers.length) {
+    if (currentIdx < videoControllers.length && videoReady.length > currentIdx && videoReady[currentIdx]) {
       videoControllers[currentIdx].pause();
     }
     currentIdx = index;
-    if (index < videoControllers.length && videoReady[index]) {
+    if (index < videoControllers.length && videoReady.length > index && videoReady[index]) {
       videoControllers[index].play();
     }
     update();
