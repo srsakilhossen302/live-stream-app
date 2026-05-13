@@ -252,56 +252,58 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   }
 
   Widget _buildTradeBox({required String title, required String name, required String subName, required bool isOffering, String? badge}) {
+    final primaryColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFC08BFF);
+    final labelColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF);
+
     return Container(
       padding: EdgeInsets.all(24.r),
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(24.r),
+        borderRadius: BorderRadius.circular(28.r),
       ),
       child: Stack(
         children: [
-          // Vertical indicator bar
+          // Vertical indicator bar - Thicker and rounded
           Positioned(
             left: 0,
-            top: 0,
-            bottom: 0,
+            top: 2.h,
+            bottom: 2.h,
             child: Container(
-              width: 4.w,
+              width: 5.w,
               decoration: BoxDecoration(
-                color: isOffering ? const Color(0xFF8B9BFF) : const Color(0xFF8B9BFF).withOpacity(0.5),
-                borderRadius: BorderRadius.circular(2.r),
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(4.r),
               ),
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(left: 16.w),
+            padding: EdgeInsets.only(left: 20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: TextStyle(color: isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                    SvgPicture.asset(
-                      "assets/icons/updaont.svg",
-                      width: 20.sp,
-                      height: 20.sp,
-                      colorFilter: ColorFilter.mode(isOffering ? Colors.white38 : const Color(0xFF8B9BFF).withOpacity(0.5), BlendMode.srcIn),
+                    Text(title, style: TextStyle(color: labelColor, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                    Icon(
+                      isOffering ? Icons.north_rounded : Icons.south_rounded,
+                      color: isOffering ? Colors.white38 : primaryColor.withOpacity(0.8),
+                      size: 24.sp,
                     ),
                   ],
                 ),
                 SizedBox(height: 16.h),
-                Text(name, style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
-                SizedBox(height: 6.h),
+                Text(name, style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900)),
+                SizedBox(height: 8.h),
                 Row(
                   children: [
                     Text(subName, style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700)),
                     if (badge != null) ...[
-                      SizedBox(width: 12.w),
+                      SizedBox(width: 14.w),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                        decoration: BoxDecoration(color: const Color(0xFF2E1E5D), borderRadius: BorderRadius.circular(8.r)),
-                        child: Text(badge, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 9.sp, fontWeight: FontWeight.w900)),
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                        decoration: BoxDecoration(color: const Color(0xFF2E1E5D), borderRadius: BorderRadius.circular(10.r)),
+                        child: Text(badge, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900)),
                       ),
                     ],
                   ],
