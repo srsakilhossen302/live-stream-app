@@ -222,8 +222,10 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   }
 
   Widget _buildTraderCard() {
-    return Container(
-      padding: EdgeInsets.all(20.r),
+    return GestureDetector(
+      onTap: () => Get.toNamed('/trader_profile'),
+      child: Container(
+        padding: EdgeInsets.all(20.r),
       decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
       child: Row(
         children: [
@@ -248,6 +250,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
           Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 28.sp),
         ],
       ),
+      )
     );
   }
 
