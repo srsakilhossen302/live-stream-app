@@ -24,20 +24,42 @@ class LiveStreamScreen extends StatelessWidget {
               // Background Video
               GetBuilder<LiveStreamController>(
                 builder: (ctrl) {
-                  if (ctrl.videoControllers.length > index &&
-                      ctrl.videoReady.length > index &&
-                      ctrl.videoReady[index]) {
+                  if (ctrl.videoControllers.length > index) {
                     final vc = ctrl.videoControllers[index];
-                    return SizedBox.expand(
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: vc.value.size.width,
-                          height: vc.value.size.height,
-                          child: VideoPlayer(vc),
+                    final isReady = ctrl.videoReady[index];
+
+                    if (isReady && vc != null) {
+                      return SizedBox.expand(
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: vc.value.size.width,
+                            height: vc.value.size.height,
+                            child: VideoPlayer(vc),
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    } else if (vc != null && vc.value.hasError) {
+                      return Container(
+                        color: Colors.black,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline,
+                                color: Colors.redAccent, size: 48),
+                            SizedBox(height: 16.h),
+                            Text(
+                              "Failed to load stream",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                   }
                   return Container(
                     color: Colors.black,

@@ -25,7 +25,7 @@ class LiveStreamModel {
 class LiveStreamController extends GetxController {
   final List<LiveStreamModel> streams = [
     LiveStreamModel(
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      videoUrl: 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
       curator: '@jrehsales',
       viewers: '1.2K',
       title: 'Luxury Watch Auction',
@@ -34,7 +34,7 @@ class LiveStreamController extends GetxController {
       productImage: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=400&auto=format&fit=crop',
     ),
     LiveStreamModel(
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      videoUrl: 'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
       curator: '@kicks_collector',
       viewers: '850',
       title: 'Rare Sneaker Unboxing',
@@ -43,7 +43,7 @@ class LiveStreamController extends GetxController {
       productImage: 'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=400&auto=format&fit=crop',
     ),
     LiveStreamModel(
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+      videoUrl: 'http://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8',
       curator: '@hype_trader',
       viewers: '2.1K',
       title: 'Streetwear Steals',
@@ -53,16 +53,18 @@ class LiveStreamController extends GetxController {
     ),
   ];
 
-  // Simple list to track init status
-  final List<bool> videoReady = <bool>[];
+  // Track initialization status
+  final RxList<bool> videoReady = <bool>[].obs;
   int currentIdx = 0;
-  final List<VideoPlayerController> videoControllers = <VideoPlayerController>[];
+  final RxList<VideoPlayerController?> videoControllers = <VideoPlayerController?>[].obs;
 
   @override
   void onInit() {
     super.onInit();
+    // Initialize lists with correct length
     for (int i = 0; i < streams.length; i++) {
       videoReady.add(false);
+      videoControllers.add(null);
     }
     _initializeAll();
   }
@@ -70,34 +72,60 @@ class LiveStreamController extends GetxController {
   Future<void> _initializeAll() async {
     for (int i = 0; i < streams.length; i++) {
       try {
+        debugPrint('🎬 Initializing Video $i: ${streams[i].videoUrl}');
+        
         final vc = VideoPlayerController.networkUrl(
           Uri.parse(streams[i].videoUrl),
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
         );
-        videoControllers.add(vc);
-        await vc.initialize();
+        
+        videoControllers[i] = vc;
+        
+        await vc.initialize().timeout(const Duration(seconds: 15), onTimeout: () {
+          throw 'Connection timeout for video $i';
+        });
+
         vc.setLooping(true);
         vc.setVolume(1.0);
         videoReady[i] = true;
+
         if (i == currentIdx) {
-          vc.play();
+          await vc.play();
         }
+        
         update();
         debugPrint('✅ Video $i initialized successfully');
       } catch (e) {
-        debugPrint('❌ Video $i failed: $e');
-        videoControllers.add(VideoPlayerController.networkUrl(Uri.parse('')));
+        debugPrint('❌ Video $i failed to initialize: $e');
+        videoReady[i] = false;
+        // Keep the controller as null or handle error state
         update();
       }
+      // Small delay between initializations to avoid overwhelming the network
+      await Future.delayed(const Duration(milliseconds: 500));
     }
   }
 
   void onPageChanged(int index) {
-    if (currentIdx < videoControllers.length && videoReady.length > currentIdx && videoReady[currentIdx]) {
-      videoControllers[currentIdx].pause();
+    // Pause previous video
+    if (currentIdx < videoControllers.length) {
+      final oldController = videoControllers[currentIdx];
+      if (oldController != null && videoReady[currentIdx]) {
+        oldController.pause();
+      }
     }
+
     currentIdx = index;
-    if (index < videoControllers.length && videoReady.length > index && videoReady[index]) {
-      videoControllers[index].play();
+
+    // Play current video
+    if (index < videoControllers.length) {
+      final newController = videoControllers[index];
+      if (newController != null && videoReady[index]) {
+        newController.play();
+      } else if (newController != null && !videoReady[index]) {
+        // If not ready, try to re-initialize or wait
+        debugPrint('⏳ Video $index is not ready yet');
+      }
     }
     update();
   }
@@ -105,7 +133,7 @@ class LiveStreamController extends GetxController {
   @override
   void onClose() {
     for (var vc in videoControllers) {
-      vc.dispose();
+      vc?.dispose();
     }
     super.onClose();
   }
