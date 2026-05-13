@@ -511,8 +511,8 @@ class BidShwapScreen extends GetView<BidShwapController> {
                     children: [
                       _buildTradeItemImage(trade.item1Image, small: true),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 14.w),
-                        child: Icon(Icons.sync_alt_rounded, color: Colors.white10, size: 20.sp),
+                        padding: EdgeInsets.symmetric(horizontal: 8.w), // Reduced padding to prevent overflow
+                        child: Icon(Icons.sync_alt_rounded, color: Colors.white10, size: 18.sp),
                       ),
                       _buildTradeItemImage(trade.item2Image, small: true),
                     ],
