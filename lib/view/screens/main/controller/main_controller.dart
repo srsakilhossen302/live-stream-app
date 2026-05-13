@@ -5,6 +5,7 @@ import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import '../../browse/screen/browse_screen.dart';
 import '../../bidshwap/screen/bidshwap_screen.dart';
 import '../../home/screen/home_screen.dart';
+import '../../messages/screen/messages_screen.dart';
 import '../../purchases/screen/purchases_screen.dart';
 
 class MainController extends GetxController {
@@ -12,7 +13,8 @@ class MainController extends GetxController {
 
   final List<Widget> screens = [
     const HomeScreen(),
-    const PurchasesScreen(),
+    const MessagesScreen(),
+    // const PurchasesScreen(),
     const BrowseScreen(),
     const BidShwapScreen(),
     const Center(child: Text("Profile", style: TextStyle(color: Colors.white))),
