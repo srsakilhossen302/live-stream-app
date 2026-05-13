@@ -10,6 +10,8 @@ import '../view/screens/messages/screen/message_details_screen.dart';
 import '../view/screens/purchases/screen/track_order/screen/track_order_screen.dart';
 import '../view/screens/trade_details/screen/trade_details_screen.dart';
 
+import '../view/screens/trade_market/screen/create_trade_screen.dart';
+
 class AppRoute {
   static const String onboarding = "/onboarding";
   static const String login = "/login";
@@ -21,6 +23,7 @@ class AppRoute {
   static const String tradeDetails = "/trade_details";
   static const String messageDetails = "/message_details";
   static const String liveStream = "/live_stream";
+  static const String createTrade = "/create_trade";
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -33,5 +36,6 @@ class AppRoute {
     GetPage(name: tradeDetails, page: () => const TradeDetailsScreen()),
     GetPage(name: messageDetails, page: () => const MessageDetailsScreen()),
     GetPage(name: liveStream, page: () => const LiveStreamScreen()),
+    GetPage(name: createTrade, page: () => const CreateTradeScreen()),
   ];
 }

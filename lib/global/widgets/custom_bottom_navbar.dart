@@ -10,13 +10,21 @@ class CustomBottomNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<MainController>();
-    return Stack(
-      alignment: Alignment.topCenter,
-      clipBehavior: Clip.none,
-      children: [
-        // Navbar Background
-        Container(
-          height: 100.h,
+    return SizedBox(
+      height: 145.h,
+      child: Stack(
+        alignment: Alignment.topCenter,
+        clipBehavior: Clip.none,
+        children: [
+          // Invisible spacer to expand hit-test area
+          SizedBox(height: 145.h, width: double.infinity),
+          // Navbar Background (Moved down to accommodate the spacer)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 100.h,
           width: double.infinity,
           decoration: BoxDecoration(
             color: const Color(0xFF0F0B1E),
@@ -42,13 +50,14 @@ class CustomBottomNavbar extends StatelessWidget {
               _navItem(controller, 3, "assets/icons/Bidswap-navBar.svg", "BidShwap"),
               _navItem(controller, 4, "assets/icons/Profile-navBar.svg", "Profile"),
             ],
+            ),
           ),
         ),
         // Floating Action Button
         Positioned(
-          top: -45.h,
+          top: 0,
           child: GestureDetector(
-            onTap: () => Get.log("Add Clicked"),
+            onTap: () => Get.toNamed('/create_trade'),
             child: Container(
               width: 72.w,
               height: 72.w,
@@ -69,7 +78,8 @@ class CustomBottomNavbar extends StatelessWidget {
           ),
         ),
       ],
-    );
+      )
+      );
   }
 
   Widget _navItem(MainController controller, int index, String iconPath, String label) {
