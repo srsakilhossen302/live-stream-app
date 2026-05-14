@@ -1,6 +1,8 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../controller/sign_up_controller.dart';
 
 class SignUpScreen extends StatelessWidget {
@@ -175,18 +177,22 @@ class SignUpScreen extends StatelessWidget {
                       child: RichText(
                         text: TextSpan(
                           style: TextStyle(color: Colors.white38, fontSize: 12.sp),
-                          children: const [
-                            TextSpan(text: "By signing up, I agree to the "),
+                          children: [
+                            const TextSpan(text: "By signing up, I agree to the "),
                             TextSpan(
                               text: "Terms of Service",
-                              style: TextStyle(color: Color(0xFF8B9BFF), fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Color(0xFF8B9BFF), fontWeight: FontWeight.bold),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => Get.toNamed(AppRoute.terms),
                             ),
-                            TextSpan(text: " and "),
+                            const TextSpan(text: " and "),
                             TextSpan(
                               text: "Privacy Policy",
-                              style: TextStyle(color: Color(0xFF8B9BFF), fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: Color(0xFF8B9BFF), fontWeight: FontWeight.bold),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () => Get.toNamed(AppRoute.terms),
                             ),
-                            TextSpan(text: "."),
+                            const TextSpan(text: "."),
                           ],
                         ),
                       ),

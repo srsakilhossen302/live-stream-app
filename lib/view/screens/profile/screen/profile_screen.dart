@@ -393,6 +393,7 @@ class ProfileScreen extends GetView<ProfileController> {
             svgPath: "assets/icons/Terms & Conditions.svg",
             title: "Terms & Conditions",
             showArrow: true,
+            onTap: () => Get.toNamed(AppRoute.terms),
           ),
         ]),
         SizedBox(height: 48.h),
