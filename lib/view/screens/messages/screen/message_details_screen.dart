@@ -1,10 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../purchases/model/purchase_model.dart';
 
 class MessageDetailsScreen extends StatelessWidget {
   const MessageDetailsScreen({super.key});
+
+  PurchaseModel _getMockOrder() {
+    return PurchaseModel(
+      id: "ORD-24891",
+      title: "Vintage Pokémon Card Pack",
+      curator: "CardMaster",
+      date: "Oct 21, 2023",
+      price: "\$1,250",
+      carrier: "USPS",
+      image: "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop",
+      trackingId: "9400 1112 3456 7890 1234 56",
+      status: OrderStatus.inTransit,
+      estimatedDelivery: "October 24",
+      itemPrice: 1250,
+      shippingPrice: 15.50,
+      taxes: 42.00,
+      processingFee: 12.00,
+      buyerContribution: 0,
+      totalPaid: 1319.50,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +91,13 @@ class MessageDetailsScreen extends StatelessWidget {
                   // Action Buttons
                   Row(
                     children: [
-                      Expanded(child: _buildActionChip(Icons.location_on_outlined, "TRACK ORDER")),
+                      Expanded(
+                        child: _buildActionChip(
+                          Icons.location_on_outlined, 
+                          "TRACK ORDER",
+                          onTap: () => Get.toNamed(AppRoute.trackOrder, arguments: _getMockOrder()),
+                        ),
+                      ),
                       SizedBox(width: 16.w),
                       Expanded(child: _buildActionChip(Icons.check_circle_outline, "CONFIRM DELIVERY")),
                     ],
@@ -346,7 +375,7 @@ class MessageDetailsScreen extends StatelessWidget {
             width: double.infinity,
             height: 56.h,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => Get.toNamed(AppRoute.trackOrder, arguments: _getMockOrder()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF8B9BFF),
                 foregroundColor: Colors.black,
@@ -380,21 +409,24 @@ class MessageDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionChip(IconData icon, String label) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 16.h),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(28.r),
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: const Color(0xFF8B9BFF), size: 18.sp),
-          SizedBox(width: 8.w),
-          Text(label, style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-        ],
+  Widget _buildActionChip(IconData icon, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161622),
+          borderRadius: BorderRadius.circular(28.r),
+          border: Border.all(color: Colors.white.withOpacity(0.04)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: const Color(0xFF8B9BFF), size: 18.sp),
+            SizedBox(width: 8.w),
+            Text(label, style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+          ],
+        ),
       ),
     );
   }

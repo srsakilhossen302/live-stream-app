@@ -315,7 +315,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
                 ),
               ),
               SizedBox(width: 16.w),
-              Expanded(child: _buildActionButton("Make Offer", const Color(0xFF8B9BFF), Colors.black)),
+              Expanded(child: _buildActionButton("Make Offer", const Color(0xFF8B9BFF), Colors.black, onTap: () => Get.toNamed('/make_offer'))),
             ],
           ),
         ],
