@@ -202,7 +202,7 @@ class NotificationsScreen extends GetView<NotificationController> {
           SizedBox(height: 20.h),
           Row(
             children: [
-              Expanded(child: _buildButton("View Offer", isPrimary: true, onTap: () => Get.toNamed(AppRoute.tradeDetails))),
+              Expanded(child: _buildButton("View Offer", isPrimary: true, onTap: () => Get.toNamed(AppRoute.newOffer))),
               SizedBox(width: 12.w),
               Expanded(child: _buildButton("Decline", onTap: () => controller.dismissNotification(item.id))),
             ],
