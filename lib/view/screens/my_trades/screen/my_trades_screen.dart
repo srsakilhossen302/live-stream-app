@@ -246,19 +246,22 @@ class MyTradesScreen extends GetView<MyTradesController> {
             SizedBox(height: 28.h),
             Row(
               children: [
-                Expanded(child: _buildActionButton("View Trade", const Color(0xFF1E1E2C), Colors.white)),
+                Expanded(child: _buildActionButton("View Trade", const Color(0xFF1E1E2C), Colors.white, onTap: () => Get.toNamed('/trade_details'))),
                 SizedBox(width: 16.w),
-                Container(
-                  height: 56.h,
-                  width: 64.w,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E2C),
-                    borderRadius: BorderRadius.circular(24.r),
-                  ),
-                  padding: EdgeInsets.all(18.r),
-                  child: SvgPicture.asset(
-                    "assets/icons/Messg-navbar.svg",
-                    colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+                GestureDetector(
+                  onTap: () => Get.toNamed('/message_details'),
+                  child: Container(
+                    height: 56.h,
+                    width: 64.w,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E2C),
+                      borderRadius: BorderRadius.circular(24.r),
+                    ),
+                    padding: EdgeInsets.all(18.r),
+                    child: SvgPicture.asset(
+                      "assets/icons/Messg-navbar.svg",
+                      colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+                    ),
                   ),
                 ),
               ],
@@ -285,18 +288,21 @@ class MyTradesScreen extends GetView<MyTradesController> {
     );
   }
 
-  Widget _buildActionButton(String text, Color bg, Color textCol, {bool fullWidth = false}) {
-    return Container(
-      height: 56.h,
-      width: fullWidth ? double.infinity : null,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(28.r),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(color: textCol, fontSize: 15.sp, fontWeight: FontWeight.w900),
+  Widget _buildActionButton(String text, Color bg, Color textCol, {bool fullWidth = false, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 56.h,
+        width: fullWidth ? double.infinity : null,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(28.r),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          style: TextStyle(color: textCol, fontSize: 15.sp, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }
