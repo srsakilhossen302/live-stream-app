@@ -146,6 +146,7 @@ class AccountSettingsScreen extends StatelessWidget {
                       icon: Icons.tune_rounded,
                       title: "Preferences",
                       showArrow: true,
+                      onTap: () => Get.toNamed(AppRoute.userPreferences),
                     ),
                     Divider(color: Colors.white.withOpacity(0.05), height: 1),
                     _buildSettingsTile(
