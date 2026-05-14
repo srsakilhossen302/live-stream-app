@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/profile_controller.dart';
@@ -54,27 +55,16 @@ class ProfileScreen extends GetView<ProfileController> {
                     
                     SizedBox(height: 24.h),
                     
-                    // Grid Section
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.7,
-                          crossAxisSpacing: 16.w,
-                          mainAxisSpacing: 16.h,
-                        ),
-                        itemCount: 4,
-                        itemBuilder: (context, index) {
-                          if (index == 0) return _buildListingCard("Nike Dunk Low 'Retro'", "\$180", "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1000&auto=format&fit=crop", isLive: true, hasTrade: true);
-                          if (index == 1) return _buildListingCard("Supreme Classic Tee", "\$85", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop", isSold: true);
-                          if (index == 2) return _buildListingCard("Seiko Prospex 'Blue'", "\$420", "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1000&auto=format&fit=crop", isLive: true);
-                          return _buildListingCard("Pokemon Charizard V", "\$1,200", "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop", isLive: true, hasTrade: true);
-                        },
-                      ),
-                    ),
+                    // Content Section
+                    Obx(() {
+                      if (controller.selectedTab.value == 1) {
+                        return _buildActivityTab();
+                      } else if (controller.selectedTab.value == 0) {
+                        return _buildListingsGrid();
+                      } else {
+                        return const SizedBox(); // Settings Placeholder
+                      }
+                    }),
                     
                     SizedBox(height: 120.h),
                   ],
@@ -199,6 +189,167 @@ class ProfileScreen extends GetView<ProfileController> {
             }),
           );
         }),
+      ),
+    );
+  }
+
+  Widget _buildListingsGrid() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 16.w,
+          mainAxisSpacing: 16.h,
+        ),
+        itemCount: 4,
+        itemBuilder: (context, index) {
+          if (index == 0) return _buildListingCard("Nike Dunk Low 'Retro'", "\$180", "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1000&auto=format&fit=crop", isLive: true, hasTrade: true);
+          if (index == 1) return _buildListingCard("Supreme Classic Tee", "\$85", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop", isSold: true);
+          if (index == 2) return _buildListingCard("Seiko Prospex 'Blue'", "\$420", "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1000&auto=format&fit=crop", isLive: true);
+          return _buildListingCard("Pokemon Charizard V", "\$1,200", "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop", isLive: true, hasTrade: true);
+        },
+      ),
+    );
+  }
+
+  Widget _buildActivityTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sub-filters
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Row(
+            children: List.generate(controller.activityFilters.length, (index) {
+              return Padding(
+                padding: EdgeInsets.only(right: 12.w),
+                child: Obx(() {
+                  final isSelected = controller.selectedActivityFilter.value == index;
+                  return GestureDetector(
+                    onTap: () => controller.changeActivityFilter(index),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF8B9BFF) : const Color(0xFF161622),
+                        borderRadius: BorderRadius.circular(24.r),
+                      ),
+                      child: Text(
+                        controller.activityFilters[index],
+                        style: TextStyle(
+                          color: isSelected ? Colors.black : Colors.white38,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              );
+            }),
+          ),
+        ),
+        SizedBox(height: 32.h),
+        
+        // Activity List
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Column(
+            children: [
+              _buildActivityItem(
+                svgPath: "assets/icons/Order Delivered.svg",
+                title: "Order Delivered",
+                subtitle: "Your order #24891 has arrived",
+                time: "2h ago",
+                isFirst: true,
+              ),
+              _buildActivityItem(
+                svgPath: "assets/icons/Trade Completed.svg",
+                title: "Trade Completed",
+                subtitle: "Trade with @user123 completed",
+                time: "5h ago",
+              ),
+              _buildActivityItem(
+                svgPath: "assets/icons/New Message.svg",
+                title: "New Message",
+                subtitle: "New message from @sellerX",
+                time: "Yesterday",
+              ),
+              _buildActivityItem(
+                svgPath: "assets/icons/Purchase Made.svg",
+                title: "Purchase Made",
+                subtitle: "You bought Pokémon Card Pack",
+                time: "2d ago",
+                isLast: true,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityItem({
+    IconData? icon,
+    String? svgPath,
+    required String title,
+    required String subtitle,
+    required String time,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Timeline Line & Icon
+          Column(
+            children: [
+              Container(
+                width: 48.r,
+                height: 48.r,
+                padding: EdgeInsets.all(12.r),
+                decoration: const BoxDecoration(color: Color(0xFF161622), shape: BoxShape.circle),
+                child: svgPath != null
+                    ? SvgPicture.asset(svgPath, colorFilter: const ColorFilter.mode(Color(0xFFFF8BFF), BlendMode.srcIn))
+                    : Icon(icon, color: const Color(0xFFFF8BFF), size: 22.sp),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2.w,
+                    margin: EdgeInsets.symmetric(vertical: 4.h),
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ),
+            ],
+          ),
+          SizedBox(width: 20.w),
+          
+          // Content
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 32.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(title, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
+                      Text(time, style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(subtitle, style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

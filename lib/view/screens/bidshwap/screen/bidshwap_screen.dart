@@ -256,7 +256,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
                               child: Padding(
                                 padding: EdgeInsets.all(12.r), // Adjust padding to scale SVG
                                 child: SvgPicture.asset(
-                                  "assets/icons/Container.svg",
+                                  "assets/icons/Container1.svg",
                                   fit: BoxFit.contain,
                                   colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn), // Ensure arrows are black
                                 ),
