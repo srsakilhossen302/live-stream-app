@@ -14,6 +14,7 @@ import '../view/screens/profile/screen/profile_information_screen.dart';
 import '../view/screens/profile/screen/change_password_screen.dart';
 import '../view/screens/profile/screen/user_preferences_screen.dart';
 import '../view/screens/profile/screen/terms_conditions_screen.dart';
+import '../view/screens/notifications/screen/notifications_screen.dart';
 
 import '../view/screens/trade_market/screen/create_trade_screen.dart';
 import '../view/screens/profile/screen/trader_profile_screen.dart';
@@ -42,6 +43,7 @@ class AppRoute {
   static const String changePassword = "/change_password";
   static const String userPreferences = "/user_preferences";
   static const String terms = "/terms";
+  static const String notifications = "/notifications";
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -64,5 +66,6 @@ class AppRoute {
     GetPage(name: changePassword, page: () => const ChangePasswordScreen()),
     GetPage(name: userPreferences, page: () => const UserPreferencesScreen()),
     GetPage(name: terms, page: () => const TermsConditionsScreen()),
+    GetPage(name: notifications, page: () => const NotificationsScreen()),
   ];
 }

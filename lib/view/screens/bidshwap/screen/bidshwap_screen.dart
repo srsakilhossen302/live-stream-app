@@ -31,7 +31,10 @@ class BidShwapScreen extends GetView<BidShwapController> {
                     "Auction Live",
                     style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
                   ),
-                  Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26.sp),
+                  GestureDetector(
+                    onTap: () => Get.toNamed(AppRoute.notifications),
+                    child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26.sp),
+                  ),
                 ],
               ),
             ),

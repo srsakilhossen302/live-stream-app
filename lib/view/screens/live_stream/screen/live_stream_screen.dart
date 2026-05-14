@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+import '../../../../core/app_route.dart';
 import '../controller/live_stream_controller.dart';
 
 class LiveStreamScreen extends StatelessWidget {
@@ -315,7 +316,7 @@ class LiveStreamScreen extends StatelessWidget {
                               : Colors.white,
                           onTap: () => stream.isLiked.toggle(),
                         )),
-                    _buildActionButton(Icons.notifications_none, ""),
+                    _buildActionButton(Icons.notifications_none, "", onTap: () => Get.toNamed(AppRoute.notifications)),
                     _buildActionButton(Icons.share_outlined, ""),
                     SizedBox(height: 60.h), 
                   ],

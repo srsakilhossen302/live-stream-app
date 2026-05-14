@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../../../core/app_route.dart';
 import '../controller/my_trades_controller.dart';
 import '../model/my_trade_model.dart';
 
@@ -30,7 +31,10 @@ class MyTradesScreen extends GetView<MyTradesController> {
                     "My Trades",
                     style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
                   ),
-                  Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26.sp),
+                  GestureDetector(
+                    onTap: () => Get.toNamed(AppRoute.notifications),
+                    child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26.sp),
+                  ),
                 ],
               ),
             ),

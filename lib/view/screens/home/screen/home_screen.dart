@@ -34,6 +34,7 @@ class HomeScreen extends GetView<HomeController> {
               ),
               SizedBox(height: 6.h),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Hello, Alex 👋",
@@ -41,6 +42,33 @@ class HomeScreen extends GetView<HomeController> {
                       color: Colors.white,
                       fontSize: 32.sp,
                       fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Get.toNamed(AppRoute.notifications),
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(10.r),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.06),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24.sp),
+                        ),
+                        Positioned(
+                          top: 8.r,
+                          right: 8.r,
+                          child: Container(
+                            width: 8.r,
+                            height: 8.r,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF8B9BFF),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
