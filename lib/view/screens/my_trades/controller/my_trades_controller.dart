@@ -37,4 +37,15 @@ class MyTradesController extends GetxController {
   void changeFilter(int index) {
     selectedFilter.value = index;
   }
+
+  List<MyTradeModel> get filteredTrades {
+    if (selectedFilter.value == 0) return myTrades;
+    if (selectedFilter.value == 1) {
+      return myTrades.where((t) => t.status == MyTradeStatus.pending || t.status == MyTradeStatus.shipped).toList();
+    }
+    if (selectedFilter.value == 2) {
+      return myTrades.where((t) => t.status == MyTradeStatus.completed).toList();
+    }
+    return myTrades;
+  }
 }

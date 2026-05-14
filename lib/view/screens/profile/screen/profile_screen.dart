@@ -59,10 +59,10 @@ class ProfileScreen extends GetView<ProfileController> {
                     Obx(() {
                       if (controller.selectedTab.value == 1) {
                         return _buildActivityTab();
-                      } else if (controller.selectedTab.value == 0) {
-                        return _buildListingsGrid();
+                      } else if (controller.selectedTab.value == 2) {
+                        return _buildSettingsTab();
                       } else {
-                        return const SizedBox(); // Settings Placeholder
+                        return _buildListingsGrid();
                       }
                     }),
                     
@@ -350,6 +350,128 @@ class ProfileScreen extends GetView<ProfileController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsTab() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSettingsSection("ACCOUNT", [
+          _buildSettingsTile(
+            svgPath: "assets/icons/Edit Profile.svg",
+            title: "Edit Profile",
+            showArrow: true,
+          ),
+          _buildSettingsTile(
+            svgPath: "assets/icons/Username.svg",
+            title: "Username",
+            trailing: Text("@jdraxler_collector", style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700)),
+          ),
+        ]),
+        SizedBox(height: 32.h),
+        _buildSettingsSection("PAYMENTS", [
+          _buildSettingsTile(
+            svgPath: "assets/icons/My Purchase.svg",
+            title: "My Purchase",
+            showArrow: true,
+            onTap: () => Get.toNamed('/purchases'),
+          ),
+          _buildSettingsTile(
+            svgPath: "assets/icons/My Trades.svg",
+            title: "My Trades",
+            showArrow: true,
+            onTap: () => Get.toNamed('/my_trades'),
+          ),
+        ]),
+        SizedBox(height: 32.h),
+        _buildSettingsSection("SUPPORT", [
+          _buildSettingsTile(
+            svgPath: "assets/icons/Terms & Conditions.svg",
+            title: "Terms & Conditions",
+            showArrow: true,
+          ),
+        ]),
+        SizedBox(height: 48.h),
+        
+        // Logout Button
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Container(
+            width: double.infinity,
+            height: 80.h,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A0A10),
+              borderRadius: BorderRadius.circular(32.r),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.logout_rounded, color: const Color(0xFFFF4B6E), size: 24.sp),
+                SizedBox(width: 12.w),
+                Text(
+                  "Logout",
+                  style: TextStyle(color: const Color(0xFFFF4B6E), fontSize: 16.sp, fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 24.w, bottom: 16.h),
+          child: Text(
+            title,
+            style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFF11111A),
+            borderRadius: BorderRadius.circular(32.r),
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingsTile({required String svgPath, required String title, bool showArrow = false, Widget? trailing, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 22.h),
+        child: Row(
+          children: [
+            SvgPicture.asset(
+              svgPath,
+              width: 24.w,
+              colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+            ),
+            SizedBox(width: 20.w),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w700),
+              ),
+            ),
+            if (trailing != null) trailing!,
+            if (showArrow)
+              Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 20.sp),
+          ],
+        ),
       ),
     );
   }
