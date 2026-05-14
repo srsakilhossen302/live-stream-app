@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/profile_controller.dart';
 
@@ -363,6 +364,7 @@ class ProfileScreen extends GetView<ProfileController> {
             svgPath: "assets/icons/Edit Profile.svg",
             title: "Edit Profile",
             showArrow: true,
+            onTap: () => Get.toNamed(AppRoute.accountSettings),
           ),
           _buildSettingsTile(
             svgPath: "assets/icons/Username.svg",

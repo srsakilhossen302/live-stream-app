@@ -9,6 +9,9 @@ import '../view/screens/live_stream/screen/live_stream_screen.dart';
 import '../view/screens/messages/screen/message_details_screen.dart';
 import '../view/screens/purchases/screen/track_order/screen/track_order_screen.dart';
 import '../view/screens/trade_details/screen/trade_details_screen.dart';
+import '../view/screens/profile/screen/account_settings_screen.dart';
+import '../view/screens/profile/screen/profile_information_screen.dart';
+import '../view/screens/profile/screen/change_password_screen.dart';
 
 import '../view/screens/trade_market/screen/create_trade_screen.dart';
 import '../view/screens/profile/screen/trader_profile_screen.dart';
@@ -32,6 +35,9 @@ class AppRoute {
   static const String purchases = "/purchases";
   static const String myTrades = "/my_trades";
   static const String makeOffer = "/make_offer";
+  static const String accountSettings = "/account_settings";
+  static const String profileInformation = "/profile_information";
+  static const String changePassword = "/change_password";
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -49,5 +55,8 @@ class AppRoute {
     GetPage(name: purchases, page: () => const PurchasesScreen()),
     GetPage(name: myTrades, page: () => const MyTradesScreen()),
     GetPage(name: makeOffer, page: () => const MakeOfferScreen()),
+    GetPage(name: accountSettings, page: () => const AccountSettingsScreen()),
+    GetPage(name: profileInformation, page: () => const ProfileInformationScreen()),
+    GetPage(name: changePassword, page: () => const ChangePasswordScreen()),
   ];
 }

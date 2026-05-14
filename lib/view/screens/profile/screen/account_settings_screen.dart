@@ -1,0 +1,273 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import '../../../../core/app_route.dart';
+import '../../../../global/widgets/custom_background.dart';
+
+class AccountSettingsScreen extends StatelessWidget {
+  const AccountSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Get.back(),
+          ),
+          title: Text(
+            "Account Settings",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          child: Column(
+            children: [
+              SizedBox(height: 32.h),
+              
+              // Profile Header
+              Center(
+                child: Column(
+                  children: [
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 130.r,
+                          height: 130.r,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8B9BFF), Color(0xFFFF8BFF)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8B9BFF).withOpacity(0.3),
+                                blurRadius: 20.r,
+                                spreadRadius: 2.r,
+                              ),
+                            ],
+                          ),
+                        ),
+                        CircleAvatar(
+                          radius: 60.r,
+                          backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 24.h),
+                    Text(
+                      "Julian Sterling",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E2C),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        "CHANGE PICTURE",
+                        style: TextStyle(
+                          color: const Color(0xFF8B9BFF),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              SizedBox(height: 48.h),
+              
+              // Account Details Section
+              _buildSectionTitle("ACCOUNT DETAILS"),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF11111E),
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
+                child: Column(
+                  children: [
+                    _buildSettingsTile(
+                      icon: Icons.person_outline_rounded,
+                      title: "Profile Information",
+                      showArrow: true,
+                      onTap: () => Get.toNamed(AppRoute.profileInformation),
+                    ),
+                    Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                    _buildSettingsTile(
+                      icon: Icons.lock_outline_rounded,
+                      title: "Security & Password",
+                      showArrow: true,
+                      onTap: () => Get.toNamed(AppRoute.changePassword),
+                    ),
+                  ],
+                ),
+              ),
+              
+              SizedBox(height: 32.h),
+              
+              // Preferences Section
+              _buildSectionTitle("PREFERENCES"),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF11111E),
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
+                child: Column(
+                  children: [
+                    _buildSettingsTile(
+                      icon: Icons.account_balance_wallet_outlined,
+                      title: "Payment Methods",
+                      showArrow: true,
+                    ),
+                    Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                    _buildSettingsTile(
+                      icon: Icons.tune_rounded,
+                      title: "Preferences",
+                      showArrow: true,
+                    ),
+                    Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                    _buildSettingsTile(
+                      icon: Icons.visibility_outlined,
+                      title: "Public Profile",
+                      subtitle: "Visible to other bidders",
+                      trailing: Switch(
+                        value: true,
+                        onChanged: (v) {},
+                        activeColor: const Color(0xFF8B9BFF),
+                        activeTrackColor: const Color(0xFF8B9BFF).withOpacity(0.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              SizedBox(height: 48.h),
+              
+              // Sign Out Button
+              Container(
+                width: double.infinity,
+                height: 70.h,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E2C),
+                  borderRadius: BorderRadius.circular(35.r),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.logout_rounded, color: Colors.white38, size: 24.sp),
+                    SizedBox(width: 12.w),
+                    Text(
+                      "Sign Out",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              SizedBox(height: 48.h),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: EdgeInsets.only(left: 4.w, bottom: 16.h),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Colors.white38,
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    bool showArrow = false,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12.r),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E2C),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(icon, color: const Color(0xFF8B9BFF), size: 22.sp),
+            ),
+            SizedBox(width: 20.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    SizedBox(height: 4.h),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (showArrow)
+              Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 24.sp),
+            if (trailing != null) trailing,
+          ],
+        ),
+      ),
+    );
+  }
+}
