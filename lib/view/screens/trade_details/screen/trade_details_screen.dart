@@ -151,7 +151,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => Get.toNamed('/make_offer'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B9BFF),
                     foregroundColor: Colors.black,

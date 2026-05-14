@@ -14,6 +14,7 @@ import '../view/screens/trade_market/screen/create_trade_screen.dart';
 import '../view/screens/profile/screen/trader_profile_screen.dart';
 import '../view/screens/purchases/screen/purchases_screen.dart';
 import '../view/screens/my_trades/screen/my_trades_screen.dart';
+import '../view/screens/trade_details/screen/make_offer_screen.dart';
 
 class AppRoute {
   static const String onboarding = "/onboarding";
@@ -30,6 +31,7 @@ class AppRoute {
   static const String traderProfile = "/trader_profile";
   static const String purchases = "/purchases";
   static const String myTrades = "/my_trades";
+  static const String makeOffer = "/make_offer";
 
   static List<GetPage> routes = [
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
@@ -46,5 +48,6 @@ class AppRoute {
     GetPage(name: traderProfile, page: () => const TraderProfileScreen()),
     GetPage(name: purchases, page: () => const PurchasesScreen()),
     GetPage(name: myTrades, page: () => const MyTradesScreen()),
+    GetPage(name: makeOffer, page: () => const MakeOfferScreen()),
   ];
 }
