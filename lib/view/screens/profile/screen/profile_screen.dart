@@ -39,12 +39,12 @@ class ProfileScreen extends GetView<ProfileController> {
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
-                    SizedBox(height: 24.h),
+                    SizedBox(height: 8.h),
                     
-                    // Profile Info
+                    // Profile Info — Facebook-style cover
                     _buildProfileHeader(),
                     
-                    SizedBox(height: 32.h),
+                    SizedBox(height: 24.h),
                     
                     // Stats Row
                     _buildStatsRow(),
@@ -79,60 +79,276 @@ class ProfileScreen extends GetView<ProfileController> {
   }
 
   Widget _buildProfileHeader() {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            Container(
-              padding: EdgeInsets.all(4.r),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF8B9BFF), width: 2),
-              ),
-              child: CircleAvatar(
-                radius: 50.r,
-                backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.all(4.r),
-              decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
-              child: Icon(Icons.verified, color: Colors.black, size: 16.sp),
-            ),
-          ],
-        ),
-        SizedBox(height: 16.h),
-        Text("Julian Draxler", style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900)),
-        SizedBox(height: 4.h),
-        Text("@jdraxler_collector", style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700)),
-        SizedBox(height: 16.h),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 40.w),
-          child: Text(
-            "Collector & trader of rare sneakers and vintage cards. Trusted deals only.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 14.sp, fontWeight: FontWeight.w500, height: 1.5),
-          ),
-        ),
-        SizedBox(height: 24.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-          decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(20.r)),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+    return Obx(() {
+      final coverUrl = controller.coverPhotoUrl.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cover Photo Banner
+          Stack(
+            clipBehavior: Clip.none,
             children: [
-              Icon(Icons.stars, color: const Color(0xFFFF8BFF), size: 18.sp),
-              SizedBox(width: 8.w),
-              Text("9.0/10", style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w900)),
-              SizedBox(width: 8.w),
-              Text("124 REVIEWS", style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w900)),
+              // Cover image / placeholder
+              GestureDetector(
+                onTap: controller.changeCoverPhoto,
+                onLongPress: () => _showCoverOptions(),
+                child: Container(
+                  width: double.infinity,
+                  height: 180.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF11111E),
+                    image: coverUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(coverUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    gradient: coverUrl == null
+                        ? const LinearGradient(
+                            colors: [Color(0xFF0D0D1A), Color(0xFF1A1040)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                  ),
+                  child: coverUrl == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(14.r),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.add_photo_alternate_outlined, color: Colors.white38, size: 28.sp),
+                            ),
+                            SizedBox(height: 10.h),
+                            Text(
+                              "Add Cover Photo",
+                              style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        )
+                      : null,
+                ),
+              ),
+              // Edit cover button (top-right)
+              if (coverUrl != null)
+                Positioned(
+                  top: 12.h,
+                  right: 12.w,
+                  child: GestureDetector(
+                    onTap: _showCoverOptions,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.55),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.camera_alt_outlined, color: Colors.white, size: 16.sp),
+                          SizedBox(width: 6.w),
+                          Text("Edit Cover", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              // Avatar overlapping the bottom edge of the cover
+              Positioned(
+                bottom: -48.h,
+                left: 20.w,
+                child: Stack(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(3.r),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFF0D0D1A), width: 4),
+                      ),
+                      child: CircleAvatar(
+                        radius: 48.r,
+                        backgroundImage: const NetworkImage(
+                          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 4.h,
+                      right: 4.w,
+                      child: Container(
+                        padding: EdgeInsets.all(6.r),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF8B9BFF),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.camera_alt, color: Colors.black, size: 13.sp),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+
+          // Space so content doesn't collide with the overlapping avatar
+          SizedBox(height: 56.h),
+
+          // Name, handle, bio
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Julian Draxler",
+                          style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+                        ),
+                        SizedBox(height: 3.h),
+                        Text(
+                          "@jdraxler_collector",
+                          style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    // Verified badge
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B9BFF).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.verified, color: const Color(0xFF8B9BFF), size: 14.sp),
+                          SizedBox(width: 5.w),
+                          Text("Verified", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  "Collector & trader of rare sneakers and vintage cards. Trusted deals only.",
+                  style: TextStyle(color: Colors.white70, fontSize: 13.sp, fontWeight: FontWeight.w500, height: 1.5),
+                ),
+                SizedBox(height: 16.h),
+                // Rating pill
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161622),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.stars, color: const Color(0xFFFF8BFF), size: 16.sp),
+                      SizedBox(width: 6.w),
+                      Text("9.0/10", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                      SizedBox(width: 6.w),
+                      Text("124 REVIEWS", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w900)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  void _showCoverOptions() {
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF161622),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
         ),
-      ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.white12,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(height: 24.h),
+            Text("Cover Photo", style: TextStyle(color: Colors.white, fontSize: 17.sp, fontWeight: FontWeight.w900)),
+            SizedBox(height: 24.h),
+            _buildSheetOption(
+              icon: Icons.add_photo_alternate_outlined,
+              label: "Choose from Library",
+              onTap: () {
+                Get.back();
+                controller.changeCoverPhoto();
+              },
+            ),
+            SizedBox(height: 12.h),
+            _buildSheetOption(
+              icon: Icons.camera_alt_outlined,
+              label: "Take a Photo",
+              onTap: () {
+                Get.back();
+                controller.changeCoverPhoto();
+              },
+            ),
+            if (controller.coverPhotoUrl.value != null) ...[
+              SizedBox(height: 12.h),
+              _buildSheetOption(
+                icon: Icons.delete_outline_rounded,
+                label: "Remove Cover Photo",
+                color: const Color(0xFFFF4B6E),
+                onTap: () {
+                  Get.back();
+                  controller.removeCoverPhoto();
+                },
+              ),
+            ],
+            SizedBox(height: 16.h),
+          ],
+        ),
+      ),
     );
   }
+
+  Widget _buildSheetOption({required IconData icon, required String label, Color? color, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color ?? Colors.white70, size: 22.sp),
+            SizedBox(width: 16.w),
+            Text(label, style: TextStyle(color: color ?? Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildStatsRow() {
     return Container(
