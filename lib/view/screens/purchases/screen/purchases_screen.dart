@@ -205,31 +205,37 @@ class PurchasesScreen extends GetView<PurchasesController> {
             ],
           ),
           
+          // Inline tracking tracker (all active orders)
+          if (order.status != OrderStatus.cancelled) ...[
+            SizedBox(height: 24.h),
+            _buildInlineTracker(order),
+          ],
+
           // Bottom Actions
           if (isInTransit) ...[
-            SizedBox(height: 24.h),
+            SizedBox(height: 20.h),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.04),
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(12.r),
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
                       "Tracking ID: ${order.trackingId}",
-                      style: TextStyle(color: Colors.white54, fontSize: 13.sp, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w600),
                     ),
                   ),
                   Icon(Icons.copy_rounded, color: const Color(0xFF8B9BFF), size: 16.sp),
                 ],
               ),
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 16.h),
             _buildPrimaryButton("Track Order", order: order),
           ] else if (isDelivered) ...[
-            SizedBox(height: 28.h),
+            SizedBox(height: 20.h),
             Row(
               children: [
                 Expanded(child: _buildSecondaryButton("View Details")),
@@ -238,11 +244,126 @@ class PurchasesScreen extends GetView<PurchasesController> {
               ],
             ),
           ] else if (isProcessing) ...[
-            SizedBox(height: 28.h),
+            SizedBox(height: 20.h),
             _buildOutlineButton("Order Details"),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildInlineTracker(PurchaseModel order) {
+    const steps = [
+      {"label": "Placed",    "icon": Icons.shopping_bag_outlined},
+      {"label": "Processing","icon": Icons.settings_outlined},
+      {"label": "Shipped",   "icon": Icons.local_shipping_outlined},
+      {"label": "Out",       "icon": Icons.near_me_outlined},
+      {"label": "Delivered", "icon": Icons.check_circle_outline_rounded},
+    ];
+    final current = order.trackingStep.clamp(1, 5);
+    final eta = order.estimatedDelivery ?? '';
+    final loc = order.location ?? '';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ETA + location row
+        Row(
+          children: [
+            Icon(Icons.location_on_outlined, color: const Color(0xFF8B9BFF), size: 14.sp),
+            SizedBox(width: 6.w),
+            Expanded(
+              child: Text(
+                loc.isNotEmpty ? loc : order.carrier,
+                style: TextStyle(color: Colors.white54, fontSize: 11.sp, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (eta.isNotEmpty)
+              Text(
+                eta,
+                style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 11.sp, fontWeight: FontWeight.w800),
+              ),
+          ],
+        ),
+        SizedBox(height: 16.h),
+
+        // Step nodes + connecting line
+        Row(
+          children: List.generate(steps.length * 2 - 1, (i) {
+            // Odd indices = connector lines between steps
+            if (i.isOdd) {
+              final stepIndex = i ~/ 2 + 1; // steps completed up to here
+              final filled = stepIndex < current;
+              return Expanded(
+                child: Container(
+                  height: 2.h,
+                  decoration: BoxDecoration(
+                    gradient: filled
+                        ? const LinearGradient(
+                            colors: [Color(0xFF8B9BFF), Color(0xFF6B4BFF)],
+                          )
+                        : null,
+                    color: filled ? null : Colors.white10,
+                    borderRadius: BorderRadius.circular(1.r),
+                  ),
+                ),
+              );
+            }
+
+            final stepIndex = i ~/ 2 + 1; // 1-based
+            final isDone    = stepIndex < current;
+            final isActive  = stepIndex == current;
+            final stepData  = steps[i ~/ 2];
+
+            return Column(
+              children: [
+                Container(
+                  width: 36.r,
+                  height: 36.r,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isDone
+                        ? const Color(0xFF8B9BFF)
+                        : isActive
+                            ? const Color(0xFF8B9BFF).withOpacity(0.18)
+                            : Colors.white.withOpacity(0.05),
+                    border: Border.all(
+                      color: isActive
+                          ? const Color(0xFF8B9BFF)
+                          : isDone
+                              ? const Color(0xFF8B9BFF)
+                              : Colors.white10,
+                      width: isActive ? 1.5 : 1,
+                    ),
+                    boxShadow: isActive
+                        ? [BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.35), blurRadius: 8.r)]
+                        : null,
+                  ),
+                  child: Icon(
+                    stepData["icon"] as IconData,
+                    size: 16.sp,
+                    color: isDone
+                        ? Colors.black
+                        : isActive
+                            ? const Color(0xFF8B9BFF)
+                            : Colors.white24,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  stepData["label"] as String,
+                  style: TextStyle(
+                    color: isDone || isActive ? Colors.white : Colors.white24,
+                    fontSize: 9.sp,
+                    fontWeight: isDone || isActive ? FontWeight.w800 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ],
     );
   }
 

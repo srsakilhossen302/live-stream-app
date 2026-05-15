@@ -13,7 +13,6 @@ class PurchaseModel {
   final String trackingId;
   final OrderStatus status;
   
-  // Track Order specific data
   final String? estimatedDelivery;
   final String? location;
   final double? itemPrice;
@@ -22,6 +21,7 @@ class PurchaseModel {
   final double? processingFee;
   final double? buyerContribution;
   final double? totalPaid;
+  final int trackingStep; // 1=Order Placed, 2=Processing, 3=Shipped, 4=Out for Delivery, 5=Delivered
 
   PurchaseModel({
     required this.id,
@@ -41,5 +41,6 @@ class PurchaseModel {
     this.processingFee,
     this.buyerContribution,
     this.totalPaid,
+    this.trackingStep = 1,
   });
 }
