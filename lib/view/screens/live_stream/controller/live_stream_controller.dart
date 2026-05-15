@@ -13,6 +13,8 @@ class LiveStreamModel {
   final String productImage;
   final RxBool isFollowing = false.obs;
   final RxBool isLiked = false.obs;
+  final RxInt likeCount = 1200.obs;   // multi-tap boost count
+  final RxBool isBookmarked = false.obs;
 
   LiveStreamModel({
     required this.videoUrl,
@@ -175,6 +177,24 @@ class LiveStreamController extends GetxController {
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP);
     }
+  }
+
+  void addLike(LiveStreamModel stream) {
+    stream.isLiked.value = true;
+    stream.likeCount.value++;
+  }
+
+  void toggleBookmark(LiveStreamModel stream) {
+    stream.isBookmarked.value = !stream.isBookmarked.value;
+    Get.snackbar(
+      stream.isBookmarked.value ? '🔖 Saved' : 'Removed',
+      stream.isBookmarked.value ? 'Stream bookmarked!' : 'Bookmark removed.',
+      backgroundColor: const Color(0xFF1E1E2C),
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 1),
+      margin: const EdgeInsets.all(12),
+    );
   }
 
   @override

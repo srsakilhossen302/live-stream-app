@@ -302,23 +302,64 @@ class LiveStreamScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(width: 12.w),
+                 SizedBox(width: 12.w),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Obx(() => _buildActionButton(
-                          stream.isLiked.value
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          "1.2K",
-                          color: stream.isLiked.value
-                              ? const Color(0xFFFF41FF)
-                              : Colors.white,
-                          onTap: () => stream.isLiked.toggle(),
-                        )),
+                    // Multi-tap Like (boost)
+                    Obx(() {
+                      final liked = stream.isLiked.value;
+                      final count = stream.likeCount.value;
+                      final label = count >= 1000
+                          ? '${(count / 1000).toStringAsFixed(count % 1000 == 0 ? 0 : 1)}K'
+                          : '$count';
+                      return GestureDetector(
+                        onTap: () => controller.addLike(stream),
+                        child: Column(
+                          children: [
+                            Container(
+                              margin: EdgeInsets.only(bottom: 4.h),
+                              padding: EdgeInsets.all(12.r),
+                              decoration: BoxDecoration(
+                                color: liked
+                                    ? const Color(0xFFFF41FF).withOpacity(0.18)
+                                    : Colors.black.withOpacity(0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                liked ? Icons.favorite : Icons.favorite_border,
+                                color: liked ? const Color(0xFFFF41FF) : Colors.white,
+                                size: 24.sp,
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(bottom: 16.h),
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    // Bookmark
+                    Obx(() {
+                      final bookmarked = stream.isBookmarked.value;
+                      return _buildActionButton(
+                        bookmarked ? Icons.bookmark : Icons.bookmark_border_outlined,
+                        '',
+                        color: bookmarked ? const Color(0xFF8B9BFF) : Colors.white,
+                        onTap: () => controller.toggleBookmark(stream),
+                      );
+                    }),
                     _buildActionButton(Icons.notifications_none, "", onTap: () => Get.toNamed(AppRoute.notifications)),
                     _buildActionButton(Icons.share_outlined, ""),
-                    SizedBox(height: 60.h), 
+                    SizedBox(height: 60.h),
                   ],
                 ),
               ],
