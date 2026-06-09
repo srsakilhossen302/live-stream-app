@@ -384,22 +384,34 @@ class HomeScreen extends GetView<HomeController> {
               SizedBox(height: 20.h),
 
               // Live Now Grid
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 18.w,
-                  mainAxisSpacing: 18.h,
-                  childAspectRatio: 0.85,
-                ),
-                itemCount: controller.liveItems.length,
-                itemBuilder: (context, index) {
-                  final item = controller.liveItems[index];
-                  return _buildLiveCard(item, index);
-                },
+              Obx(
+                () => controller.isLoading.value
+                    ? Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40.h),
+                          child: const CircularProgressIndicator(
+                            color: Color(0xFF8B9BFF),
+                          ),
+                        ),
+                      )
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 18.w,
+                          mainAxisSpacing: 18.h,
+                          childAspectRatio: 0.85,
+                        ),
+                        itemCount: controller.liveItems.length,
+                        itemBuilder: (context, index) {
+                          final item = controller.liveItems[index];
+                          return _buildLiveCard(item, index);
+                        },
+                      ),
               ),
-              SizedBox(height: 32.h),
+
+              SizedBox(height: 100.h), // Bottom padding for navigation bar
             ],
           ),
         ),
