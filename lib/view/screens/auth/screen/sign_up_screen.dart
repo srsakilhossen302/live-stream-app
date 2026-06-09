@@ -46,59 +46,59 @@ class SignUpScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 40.h),
+                // SizedBox(height: 40.h),
                 
-                // Profile Photo Upload
-                Center(
-                  child: Column(
-                    children: [
-                      Stack(
-                        children: [
-                          Container(
-                            width: 110.r,
-                            height: 110.r,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2D264B),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFE5B6F2).withOpacity(0.3), width: 4),
-                            ),
-                            child: Icon(
-                              Icons.person_outline,
-                              size: 50.r,
-                              color: Colors.white24,
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: EdgeInsets.all(8.r),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF8B9BFF),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 16.r,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12.h),
-                      Text(
-                        "Upload Profile Photo",
-                        style: TextStyle(
-                          color: const Color(0xFF8B9BFF),
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 40.h),
+                // // Profile Photo Upload
+                // Center(
+                //   child: Column(
+                //     children: [
+                //       Stack(
+                //         children: [
+                //           Container(
+                //             width: 110.r,
+                //             height: 110.r,
+                //             decoration: BoxDecoration(
+                //               color: const Color(0xFF2D264B),
+                //               shape: BoxShape.circle,
+                //               border: Border.all(color: const Color(0xFFE5B6F2).withOpacity(0.3), width: 4),
+                //             ),
+                //             child: Icon(
+                //               Icons.person_outline,
+                //               size: 50.r,
+                //               color: Colors.white24,
+                //             ),
+                //           ),
+                //           Positioned(
+                //             bottom: 0,
+                //             right: 0,
+                //             child: Container(
+                //               padding: EdgeInsets.all(8.r),
+                //               decoration: const BoxDecoration(
+                //                 color: Color(0xFF8B9BFF),
+                //                 shape: BoxShape.circle,
+                //               ),
+                //               child: Icon(
+                //                 Icons.camera_alt,
+                //                 color: Colors.white,
+                //                 size: 16.r,
+                //               ),
+                //             ),
+                //           ),
+                //         ],
+                //       ),
+                //       SizedBox(height: 12.h),
+                //       Text(
+                //         "Upload Profile Photo",
+                //         style: TextStyle(
+                //           color: const Color(0xFF8B9BFF),
+                //           fontSize: 14.sp,
+                //           fontWeight: FontWeight.w500,
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
+                // SizedBox(height: 40.h),
 
                 // Form Fields
                 _buildFieldLabel("First Name"),
@@ -205,26 +205,37 @@ class SignUpScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   height: 56.h,
-                  child: ElevatedButton(
-                    onPressed: () => controller.onSignUp(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B9BFF),
-                      foregroundColor: const Color(0xFF0F0B1E),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16.r),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Sign Up",
-                          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
+                  child: Obx(
+                    () => ElevatedButton(
+                      onPressed: controller.isLoading.value ? null : () => controller.onSignUp(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B9BFF),
+                        foregroundColor: const Color(0xFF0F0B1E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
                         ),
-                        SizedBox(width: 8.w),
-                        Icon(Icons.arrow_forward, size: 20.sp),
-                      ],
+                        elevation: 0,
+                      ),
+                      child: controller.isLoading.value
+                          ? SizedBox(
+                              width: 24.w,
+                              height: 24.h,
+                              child: const CircularProgressIndicator(
+                                color: Color(0xFF0F0B1E),
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Sign Up",
+                                  style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
+                                ),
+                                SizedBox(width: 8.w),
+                                Icon(Icons.arrow_forward, size: 20.sp),
+                              ],
+                            ),
                     ),
                   ),
                 ),
