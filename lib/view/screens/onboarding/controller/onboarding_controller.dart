@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/app_route.dart';
 import '../../../../core/utils/app_images.dart';
+import '../../../../data/helpers/shared_prefe.dart';
 
 class OnboardingController extends GetxController {
   final pageController = PageController();
@@ -32,18 +33,20 @@ class OnboardingController extends GetxController {
     currentPage.value = index;
   }
 
-  void onGetStarted() {
+  Future<void> onGetStarted() async {
     if (currentPage.value < onboardingPages.length - 1) {
       pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeIn,
       );
     } else {
+      await SharePrefsHelper.setBool("hasSeenOnboarding", true);
       Get.offNamed(AppRoute.login);
     }
   }
 
-  void onSkip() {
+  Future<void> onSkip() async {
+    await SharePrefsHelper.setBool("hasSeenOnboarding", true);
     Get.offNamed(AppRoute.login);
   }
 

@@ -9,11 +9,27 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SharePrefsHelper.init();
   DependencyInjection.init();
-  runApp(const MyApp());
+
+  final String accessToken = SharePrefsHelper.getString(
+    SharePrefsHelper.accessTokenKey,
+  );
+  final bool hasSeenOnboarding = SharePrefsHelper.getBool("hasSeenOnboarding");
+
+  String initialRoute;
+  if (accessToken.isNotEmpty) {
+    initialRoute = AppRoute.main;
+  } else if (hasSeenOnboarding) {
+    initialRoute = AppRoute.login;
+  } else {
+    initialRoute = AppRoute.onboarding;
+  }
+
+  runApp(MyApp(initialRoute: initialRoute));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +46,7 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
             fontFamily: 'Inter',
           ),
-          initialRoute: AppRoute.onboarding,
+          initialRoute: initialRoute,
           getPages: AppRoute.routes,
         );
       },

@@ -28,34 +28,38 @@ class ProfileScreen extends GetView<ProfileController> {
                   ),
                   Text(
                     "Profile",
-                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
                     SizedBox(height: 8.h),
-                    
+
                     // Profile Info — Facebook-style cover
                     _buildProfileHeader(),
-                    
+
                     SizedBox(height: 24.h),
-                    
+
                     // Stats Row
                     _buildStatsRow(),
-                    
+
                     SizedBox(height: 32.h),
-                    
+
                     // Tabs
                     _buildTabBar(),
-                    
+
                     SizedBox(height: 24.h),
-                    
+
                     // Content Section
                     Obx(() {
                       if (controller.selectedTab.value == 1) {
@@ -66,7 +70,7 @@ class ProfileScreen extends GetView<ProfileController> {
                         return _buildListingsGrid();
                       }
                     }),
-                    
+
                     SizedBox(height: 120.h),
                   ],
                 ),
@@ -121,12 +125,20 @@ class ProfileScreen extends GetView<ProfileController> {
                                 color: Colors.white.withOpacity(0.08),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(Icons.add_photo_alternate_outlined, color: Colors.white38, size: 28.sp),
+                              child: Icon(
+                                Icons.add_photo_alternate_outlined,
+                                color: Colors.white38,
+                                size: 28.sp,
+                              ),
                             ),
                             SizedBox(height: 10.h),
                             Text(
                               "Add Cover Photo",
-                              style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         )
@@ -141,16 +153,30 @@ class ProfileScreen extends GetView<ProfileController> {
                   child: GestureDetector(
                     onTap: _showCoverOptions,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 8.h,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.55),
                         borderRadius: BorderRadius.circular(20.r),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.camera_alt_outlined, color: Colors.white, size: 16.sp),
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            color: Colors.white,
+                            size: 16.sp,
+                          ),
                           SizedBox(width: 6.w),
-                          Text("Edit Cover", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w700)),
+                          Text(
+                            "Edit Cover",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -166,7 +192,10 @@ class ProfileScreen extends GetView<ProfileController> {
                       padding: EdgeInsets.all(3.r),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF0D0D1A), width: 4),
+                        border: Border.all(
+                          color: const Color(0xFF0D0D1A),
+                          width: 4,
+                        ),
                       ),
                       child: CircleAvatar(
                         radius: 48.r,
@@ -184,7 +213,11 @@ class ProfileScreen extends GetView<ProfileController> {
                           color: Color(0xFF8B9BFF),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.camera_alt, color: Colors.black, size: 13.sp),
+                        child: Icon(
+                          Icons.camera_alt,
+                          color: Colors.black,
+                          size: 13.sp,
+                        ),
                       ),
                     ),
                   ],
@@ -211,28 +244,52 @@ class ProfileScreen extends GetView<ProfileController> {
                       children: [
                         Text(
                           "Julian Draxler",
-                          style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                         SizedBox(height: 3.h),
                         Text(
                           "@jdraxler_collector",
-                          style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            color: Colors.white38,
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
                     // Verified badge
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 6.h,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF8B9BFF).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.3)),
+                        border: Border.all(
+                          color: const Color(0xFF8B9BFF).withOpacity(0.3),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.verified, color: const Color(0xFF8B9BFF), size: 14.sp),
+                          Icon(
+                            Icons.verified,
+                            color: const Color(0xFF8B9BFF),
+                            size: 14.sp,
+                          ),
                           SizedBox(width: 5.w),
-                          Text("Verified", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                          Text(
+                            "Verified",
+                            style: TextStyle(
+                              color: const Color(0xFF8B9BFF),
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -241,12 +298,20 @@ class ProfileScreen extends GetView<ProfileController> {
                 SizedBox(height: 12.h),
                 Text(
                   "Collector & trader of rare sneakers and vintage cards. Trusted deals only.",
-                  style: TextStyle(color: Colors.white70, fontSize: 13.sp, fontWeight: FontWeight.w500, height: 1.5),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
+                  ),
                 ),
                 SizedBox(height: 16.h),
                 // Rating pill
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 14.w,
+                    vertical: 8.h,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF161622),
                     borderRadius: BorderRadius.circular(20.r),
@@ -254,11 +319,29 @@ class ProfileScreen extends GetView<ProfileController> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.stars, color: const Color(0xFFFF8BFF), size: 16.sp),
+                      Icon(
+                        Icons.stars,
+                        color: const Color(0xFFFF8BFF),
+                        size: 16.sp,
+                      ),
                       SizedBox(width: 6.w),
-                      Text("9.0/10", style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                      Text(
+                        "9.0/10",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                       SizedBox(width: 6.w),
-                      Text("124 REVIEWS", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w900)),
+                      Text(
+                        "124 REVIEWS",
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -290,7 +373,14 @@ class ProfileScreen extends GetView<ProfileController> {
               ),
             ),
             SizedBox(height: 24.h),
-            Text("Cover Photo", style: TextStyle(color: Colors.white, fontSize: 17.sp, fontWeight: FontWeight.w900)),
+            Text(
+              "Cover Photo",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17.sp,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             SizedBox(height: 24.h),
             _buildSheetOption(
               icon: Icons.add_photo_alternate_outlined,
@@ -328,7 +418,12 @@ class ProfileScreen extends GetView<ProfileController> {
     );
   }
 
-  Widget _buildSheetOption({required IconData icon, required String label, Color? color, required VoidCallback onTap}) {
+  Widget _buildSheetOption({
+    required IconData icon,
+    required String label,
+    Color? color,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -342,13 +437,19 @@ class ProfileScreen extends GetView<ProfileController> {
           children: [
             Icon(icon, color: color ?? Colors.white70, size: 22.sp),
             SizedBox(width: 16.w),
-            Text(label, style: TextStyle(color: color ?? Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w700)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color ?? Colors.white,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-
 
   Widget _buildStatsRow() {
     return Container(
@@ -367,9 +468,24 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget _buildStatItem(String label, String value, Color color) {
     return Column(
       children: [
-        Text(label, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 1)),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white38,
+            fontSize: 11.sp,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
+        ),
         SizedBox(height: 8.h),
-        Text(value, style: TextStyle(color: color, fontSize: 24.sp, fontWeight: FontWeight.w900)),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 24.sp,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
       ],
     );
   }
@@ -378,7 +494,10 @@ class ProfileScreen extends GetView<ProfileController> {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       padding: EdgeInsets.all(6.r),
-      decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(32.r)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161622),
+        borderRadius: BorderRadius.circular(32.r),
+      ),
       child: Row(
         children: List.generate(controller.tabs.length, (index) {
           return Expanded(
@@ -389,7 +508,9 @@ class ProfileScreen extends GetView<ProfileController> {
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF282C36) : Colors.transparent,
+                    color: isSelected
+                        ? const Color(0xFF282C36)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(28.r),
                   ),
                   child: Text(
@@ -424,10 +545,35 @@ class ProfileScreen extends GetView<ProfileController> {
         ),
         itemCount: 4,
         itemBuilder: (context, index) {
-          if (index == 0) return _buildListingCard("Nike Dunk Low 'Retro'", "\$180", "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1000&auto=format&fit=crop", isLive: true, hasTrade: true);
-          if (index == 1) return _buildListingCard("Supreme Classic Tee", "\$85", "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop", isSold: true);
-          if (index == 2) return _buildListingCard("Seiko Prospex 'Blue'", "\$420", "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1000&auto=format&fit=crop", isLive: true);
-          return _buildListingCard("Pokemon Charizard V", "\$1,200", "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop", isLive: true, hasTrade: true);
+          if (index == 0)
+            return _buildListingCard(
+              "Nike Dunk Low 'Retro'",
+              "\$180",
+              "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1000&auto=format&fit=crop",
+              isLive: true,
+              hasTrade: true,
+            );
+          if (index == 1)
+            return _buildListingCard(
+              "Supreme Classic Tee",
+              "\$85",
+              "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop",
+              isSold: true,
+            );
+          if (index == 2)
+            return _buildListingCard(
+              "Seiko Prospex 'Blue'",
+              "\$420",
+              "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1000&auto=format&fit=crop",
+              isLive: true,
+            );
+          return _buildListingCard(
+            "Pokemon Charizard V",
+            "\$1,200",
+            "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop",
+            isLive: true,
+            hasTrade: true,
+          );
         },
       ),
     );
@@ -445,13 +591,19 @@ class ProfileScreen extends GetView<ProfileController> {
               return Padding(
                 padding: EdgeInsets.only(right: 12.w),
                 child: Obx(() {
-                  final isSelected = controller.selectedActivityFilter.value == index;
+                  final isSelected =
+                      controller.selectedActivityFilter.value == index;
                   return GestureDetector(
                     onTap: () => controller.changeActivityFilter(index),
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 10.h,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF8B9BFF) : const Color(0xFF161622),
+                        color: isSelected
+                            ? const Color(0xFF8B9BFF)
+                            : const Color(0xFF161622),
                         borderRadius: BorderRadius.circular(24.r),
                       ),
                       child: Text(
@@ -470,7 +622,7 @@ class ProfileScreen extends GetView<ProfileController> {
           ),
         ),
         SizedBox(height: 32.h),
-        
+
         // Activity List
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -529,9 +681,18 @@ class ProfileScreen extends GetView<ProfileController> {
                 width: 48.r,
                 height: 48.r,
                 padding: EdgeInsets.all(12.r),
-                decoration: const BoxDecoration(color: Color(0xFF161622), shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF161622),
+                  shape: BoxShape.circle,
+                ),
                 child: svgPath != null
-                    ? SvgPicture.asset(svgPath, colorFilter: const ColorFilter.mode(Color(0xFFFF8BFF), BlendMode.srcIn))
+                    ? SvgPicture.asset(
+                        svgPath,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFFFF8BFF),
+                          BlendMode.srcIn,
+                        ),
+                      )
                     : Icon(icon, color: const Color(0xFFFF8BFF), size: 22.sp),
               ),
               if (!isLast)
@@ -545,7 +706,7 @@ class ProfileScreen extends GetView<ProfileController> {
             ],
           ),
           SizedBox(width: 20.w),
-          
+
           // Content
           Expanded(
             child: Padding(
@@ -556,12 +717,33 @@ class ProfileScreen extends GetView<ProfileController> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(title, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
-                      Text(time, style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w600)),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        time,
+                        style: TextStyle(
+                          color: Colors.white24,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 6.h),
-                  Text(subtitle, style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -585,7 +767,14 @@ class ProfileScreen extends GetView<ProfileController> {
           _buildSettingsTile(
             svgPath: "assets/icons/Username.svg",
             title: "Username",
-            trailing: Text("@jdraxler_collector", style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700)),
+            trailing: Text(
+              "@jdraxler_collector",
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ]),
         SizedBox(height: 32.h),
@@ -613,31 +802,31 @@ class ProfileScreen extends GetView<ProfileController> {
           ),
         ]),
         SizedBox(height: 48.h),
-        
+
         // Logout Button
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Container(
-            width: double.infinity,
-            height: 80.h,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A0A10),
-              borderRadius: BorderRadius.circular(32.r),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.logout_rounded, color: const Color(0xFFFF4B6E), size: 24.sp),
-                SizedBox(width: 12.w),
-                Text(
-                  "Logout",
-                  style: TextStyle(color: const Color(0xFFFF4B6E), fontSize: 16.sp, fontWeight: FontWeight.w900),
-                ),
-              ],
-            ),
-          ),
-        ),
+        // Padding(
+        //   padding: EdgeInsets.symmetric(horizontal: 24.w),
+        //   child: Container(
+        //     width: double.infinity,
+        //     height: 80.h,
+        //     decoration: BoxDecoration(
+        //       color: const Color(0xFF1A0A10),
+        //       borderRadius: BorderRadius.circular(32.r),
+        //       border: Border.all(color: Colors.white.withOpacity(0.05)),
+        //     ),
+        //     child: Row(
+        //       mainAxisAlignment: MainAxisAlignment.center,
+        //       children: [
+        //         Icon(Icons.logout_rounded, color: const Color(0xFFFF4B6E), size: 24.sp),
+        //         SizedBox(width: 12.w),
+        //         Text(
+        //           "Logout",
+        //           style: TextStyle(color: const Color(0xFFFF4B6E), fontSize: 16.sp, fontWeight: FontWeight.w900),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
@@ -650,7 +839,12 @@ class ProfileScreen extends GetView<ProfileController> {
           padding: EdgeInsets.only(left: 24.w, bottom: 16.h),
           child: Text(
             title,
-            style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
         Container(
@@ -659,15 +853,19 @@ class ProfileScreen extends GetView<ProfileController> {
             color: const Color(0xFF11111A),
             borderRadius: BorderRadius.circular(32.r),
           ),
-          child: Column(
-            children: children,
-          ),
+          child: Column(children: children),
         ),
       ],
     );
   }
 
-  Widget _buildSettingsTile({required String svgPath, required String title, bool showArrow = false, Widget? trailing, VoidCallback? onTap}) {
+  Widget _buildSettingsTile({
+    required String svgPath,
+    required String title,
+    bool showArrow = false,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -677,25 +875,43 @@ class ProfileScreen extends GetView<ProfileController> {
             SvgPicture.asset(
               svgPath,
               width: 24.w,
-              colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF8B9BFF),
+                BlendMode.srcIn,
+              ),
             ),
             SizedBox(width: 20.w),
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             if (trailing != null) trailing!,
             if (showArrow)
-              Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 20.sp),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white24,
+                size: 20.sp,
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildListingCard(String title, String price, String imageUrl, {bool isLive = false, bool hasTrade = false, bool isSold = false}) {
+  Widget _buildListingCard(
+    String title,
+    String price,
+    String imageUrl, {
+    bool isLive = false,
+    bool hasTrade = false,
+    bool isSold = false,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
@@ -709,8 +925,13 @@ class ProfileScreen extends GetView<ProfileController> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-                    image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24.r),
+                    ),
+                    image: DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 if (isLive)
@@ -718,13 +939,33 @@ class ProfileScreen extends GetView<ProfileController> {
                     top: 12.h,
                     left: 12.w,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                      decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(8.r)),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B9BFF),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
                       child: Row(
                         children: [
-                          Container(width: 6.r, height: 6.r, decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle)),
+                          Container(
+                            width: 6.r,
+                            height: 6.r,
+                            decoration: const BoxDecoration(
+                              color: Colors.black,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                           SizedBox(width: 6.w),
-                          Text("LIVE", style: TextStyle(color: Colors.black, fontSize: 9.sp, fontWeight: FontWeight.w900)),
+                          Text(
+                            "LIVE",
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 9.sp,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -733,13 +974,29 @@ class ProfileScreen extends GetView<ProfileController> {
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.black45,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24.r),
+                      ),
                     ),
                     child: Center(
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(10.r), border: Border.all(color: Colors.white12)),
-                        child: Text("SOLD", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(10.r),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                        child: Text(
+                          "SOLD",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -751,17 +1008,46 @@ class ProfileScreen extends GetView<ProfileController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 SizedBox(height: 8.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(price, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 16.sp, fontWeight: FontWeight.w900)),
+                    Text(
+                      price,
+                      style: TextStyle(
+                        color: const Color(0xFF8B9BFF),
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                     if (hasTrade)
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                        decoration: BoxDecoration(color: const Color(0xFF2E1E5D), borderRadius: BorderRadius.circular(6.r)),
-                        child: Text("TRADE", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 8.sp, fontWeight: FontWeight.w900)),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2E1E5D),
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          "TRADE",
+                          style: TextStyle(
+                            color: const Color(0xFF8B9BFF),
+                            fontSize: 8.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                       ),
                   ],
                 ),
