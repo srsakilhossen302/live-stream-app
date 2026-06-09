@@ -97,19 +97,30 @@ class LoginScreen extends GetView<LoginController> {
                   SizedBox(
                     width: double.infinity,
                     height: 60.h,
-                    child: ElevatedButton(
-                      onPressed: () => controller.onLogin(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8B9BFF),
-                        foregroundColor: const Color(0xFF0F0B1E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.r),
+                    child: Obx(
+                      () => ElevatedButton(
+                        onPressed: controller.isLoading.value ? null : () => controller.onLogin(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B9BFF),
+                          foregroundColor: const Color(0xFF0F0B1E),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          elevation: 0,
                         ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        "Login",
-                        style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
+                        child: controller.isLoading.value
+                            ? SizedBox(
+                                width: 24.w,
+                                height: 24.h,
+                                child: const CircularProgressIndicator(
+                                  color: Color(0xFF0F0B1E),
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : Text(
+                                "Login",
+                                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
+                              ),
                       ),
                     ),
                   ),

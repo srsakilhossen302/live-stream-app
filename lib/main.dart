@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'core/app_route.dart';
+import 'core/dependency.dart';
+import 'data/helpers/shared_prefe.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SharePrefsHelper.init();
+  DependencyInjection.init();
   runApp(const MyApp());
 }
 

@@ -1,14 +1,105 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/app_route.dart';
+import '../../../../data/helpers/shared_prefe.dart';
+import '../../../../data/services/api_client.dart';
+import '../../../../data/services/api_url.dart';
 
 class LoginController extends GetxController {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  void onLogin() {
-    Get.offAllNamed(AppRoute.main);
+  final RxBool isLoading = false.obs;
+  final ApiClient _apiClient = Get.find<ApiClient>();
+
+  Future<void> onLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty) {
+      Get.snackbar(
+        "Required",
+        "Email or username cannot be empty",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    if (password.isEmpty) {
+      Get.snackbar(
+        "Required",
+        "Password cannot be empty",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    isLoading.value = true;
+
+    try {
+      final response = await _apiClient.postData(
+        ApiUrl.login,
+        {
+          "email": email,
+          "password": password,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['data'] != null) {
+          final dataMap = responseData['data'];
+          final accessToken = dataMap['accessToken'] ?? '';
+          final refreshToken = dataMap['refreshToken'] ?? '';
+
+          if (accessToken.isNotEmpty) {
+            await SharePrefsHelper.setString(SharePrefsHelper.accessTokenKey, accessToken);
+          }
+          if (refreshToken.isNotEmpty) {
+            await SharePrefsHelper.setString(SharePrefsHelper.refreshTokenKey, refreshToken);
+          }
+          await SharePrefsHelper.setBool(SharePrefsHelper.isLoginKey, true);
+        }
+
+        Get.snackbar(
+          "Success",
+          "Login Successful!",
+          backgroundColor: Colors.green.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+        Get.offAllNamed(AppRoute.main);
+      } else {
+        String errorMessage = "Login failed. Please try again.";
+        try {
+          final data = jsonDecode(response.body);
+          if (data['message'] != null) {
+            errorMessage = data['message'];
+          } else if (data['error'] != null) {
+            errorMessage = data['error'];
+          }
+        } catch (_) {}
+
+        Get.snackbar(
+          "Error",
+          errorMessage,
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "An unexpected error occurred. Please check your connection.",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void onSignUp() {
