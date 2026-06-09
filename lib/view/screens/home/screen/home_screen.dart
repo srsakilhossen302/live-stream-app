@@ -36,14 +36,21 @@ class HomeScreen extends GetView<HomeController> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Hello, Alex 👋",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32.sp,
-                      fontWeight: FontWeight.w900,
+                  Expanded(
+                    child: Obx(
+                      () => Text(
+                        "Hello, ${controller.fullName.value} 👋",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ),
+                  SizedBox(width: 12.w),
                   GestureDetector(
                     onTap: () => Get.toNamed(AppRoute.notifications),
                     child: Stack(
@@ -54,7 +61,11 @@ class HomeScreen extends GetView<HomeController> {
                             color: Colors.white.withOpacity(0.06),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24.sp),
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            color: Colors.white,
+                            size: 24.sp,
+                          ),
                         ),
                         Positioned(
                           top: 8.r,
@@ -82,7 +93,10 @@ class HomeScreen extends GetView<HomeController> {
                 height: 67.h,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(36.r),
-                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1,
+                  ),
                   color: Colors.white.withOpacity(0.01),
                 ),
                 child: Row(
@@ -91,7 +105,10 @@ class HomeScreen extends GetView<HomeController> {
                     SvgPicture.asset(
                       "assets/icons/Go Live.svg",
                       width: 36.w,
-                      colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF8B9BFF),
+                        BlendMode.srcIn,
+                      ),
                     ),
                     SizedBox(width: 14.w),
                     Text(
@@ -135,7 +152,6 @@ class HomeScreen extends GetView<HomeController> {
                 ),
               ),
               */
-
               SizedBox(height: 28.h),
 
               // Category Chips
@@ -351,7 +367,7 @@ class HomeScreen extends GetView<HomeController> {
                     ],
                   ),
                   TextButton(
-                    onPressed: () => Get.to(()=>PurchasesScreen()),
+                    onPressed: () => Get.to(() => PurchasesScreen()),
                     child: Text(
                       "SEE ALL",
                       style: TextStyle(
@@ -429,114 +445,117 @@ class HomeScreen extends GetView<HomeController> {
     return GestureDetector(
       onTap: () => Get.toNamed(AppRoute.liveStream, arguments: item),
       child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10.r,
-            offset: Offset(0, 5.h),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28.r),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.network(item.image, fit: BoxFit.cover),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.85)],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(12.r),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      _buildSmallBadge("LIVE", const Color(0xFFFF4B67)),
-                      const Spacer(),
-                      _buildSmallBadge(
-                        item.viewers,
-                        Colors.black.withOpacity(0.4),
-                        icon: Icons.visibility_outlined,
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  if (index == 0)
-                    Center(
-                      child: Container(
-                        margin: EdgeInsets.only(bottom: 20.h),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 8.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E2C).withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(color: Colors.white10),
-                        ),
-                        child: Text(
-                          "LIVE PREVIEW",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  Text(
-                    item.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 10.r,
-                        backgroundImage: const NetworkImage(
-                          "https://i.pravatar.cc/150?u=avatar",
-                        ),
-                      ),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          item.curator,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10.r,
+              offset: Offset(0, 5.h),
             ),
           ],
         ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28.r),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.network(item.image, fit: BoxFit.cover),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.85),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(12.r),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _buildSmallBadge("LIVE", const Color(0xFFFF4B67)),
+                        const Spacer(),
+                        _buildSmallBadge(
+                          item.viewers,
+                          Colors.black.withOpacity(0.4),
+                          icon: Icons.visibility_outlined,
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    if (index == 0)
+                      Center(
+                        child: Container(
+                          margin: EdgeInsets.only(bottom: 20.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 8.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E2C).withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(color: Colors.white10),
+                          ),
+                          child: Text(
+                            "LIVE PREVIEW",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 10.r,
+                          backgroundImage: const NetworkImage(
+                            "https://i.pravatar.cc/150?u=avatar",
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            item.curator,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
