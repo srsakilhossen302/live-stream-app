@@ -791,12 +791,14 @@ class ProfileScreen extends GetView<ProfileController> {
           _buildSettingsTile(
             svgPath: "assets/icons/Username.svg",
             title: "Username",
-            trailing: Text(
-              "@jdraxler_collector",
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w700,
+            trailing: Obx(
+              () => Text(
+                controller.username.value,
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
