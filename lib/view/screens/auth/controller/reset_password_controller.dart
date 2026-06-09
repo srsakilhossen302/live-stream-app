@@ -50,6 +50,8 @@ class ResetPasswordController extends GetxController {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
+          'token': token,
+          'forget-password-token': token,
         },
       );
 
