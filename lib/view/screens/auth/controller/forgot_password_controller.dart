@@ -1,37 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../../core/app_route.dart';
-import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
 
-class LoginController extends GetxController {
+class ForgotPasswordController extends GetxController {
   final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-
   final RxBool isLoading = false.obs;
   final ApiClient _apiClient = Get.find<ApiClient>();
 
-  Future<void> onLogin() async {
+  Future<void> onForgotPassword() async {
     final email = emailController.text.trim();
-    final password = passwordController.text.trim();
 
     if (email.isEmpty) {
       Get.snackbar(
         "Required",
-        "Email or username cannot be empty",
-        backgroundColor: Colors.red.withOpacity(0.8),
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    if (password.isEmpty) {
-      Get.snackbar(
-        "Required",
-        "Password cannot be empty",
+        "Email address is required",
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,
       );
@@ -42,38 +27,28 @@ class LoginController extends GetxController {
 
     try {
       final response = await _apiClient.postData(
-        ApiUrl.login,
+        ApiUrl.forgotPassword,
         {
           "email": email,
-          "password": password,
         },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['data'] != null) {
-          final dataMap = responseData['data'];
-          final accessToken = dataMap['accessToken'] ?? '';
-          final refreshToken = dataMap['refreshToken'] ?? '';
-
-          if (accessToken.isNotEmpty) {
-            await SharePrefsHelper.setString(SharePrefsHelper.accessTokenKey, accessToken);
-          }
-          if (refreshToken.isNotEmpty) {
-            await SharePrefsHelper.setString(SharePrefsHelper.refreshTokenKey, refreshToken);
-          }
-          await SharePrefsHelper.setBool(SharePrefsHelper.isLoginKey, true);
-        }
-
         Get.snackbar(
           "Success",
-          "Login Successful!",
+          "Password reset request sent successfully!",
           backgroundColor: Colors.green.withOpacity(0.8),
           colorText: Colors.white,
+          duration: const Duration(seconds: 4),
         );
-        Get.offAllNamed(AppRoute.main);
+        emailController.clear();
+        await Future.delayed(const Duration(seconds: 1));
+        Get.toNamed(AppRoute.otp, arguments: {
+          'email': email,
+          'fromForgotPassword': true,
+        });
       } else {
-        String errorMessage = "Login failed. Please try again.";
+        String errorMessage = "Failed to send reset request. Please check the email.";
         try {
           final data = jsonDecode(response.body);
           if (data['message'] != null) {
@@ -102,18 +77,9 @@ class LoginController extends GetxController {
     }
   }
 
-  void onSignUp() {
-    Get.toNamed(AppRoute.signUp);
-  }
-
-  void onForgotPassword() {
-    Get.toNamed(AppRoute.forgotPassword);
-  }
-
   @override
   void onClose() {
     emailController.dispose();
-    passwordController.dispose();
     super.onClose();
   }
 }

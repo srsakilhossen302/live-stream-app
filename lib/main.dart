@@ -10,9 +10,7 @@ void main() async {
   await SharePrefsHelper.init();
   DependencyInjection.init();
 
-  final String accessToken = SharePrefsHelper.getString(
-    SharePrefsHelper.accessTokenKey,
-  );
+  final String accessToken = SharePrefsHelper.getString(SharePrefsHelper.accessTokenKey);
   final bool hasSeenOnboarding = SharePrefsHelper.getBool("hasSeenOnboarding");
 
   String initialRoute;

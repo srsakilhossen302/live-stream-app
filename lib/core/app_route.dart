@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 import '../view/screens/onboarding/screen/onboarding_screen.dart';
 import '../view/screens/auth/screen/login_screen.dart';
+import '../view/screens/auth/screen/forgot_password_screen.dart';
 import '../view/screens/auth/screen/sign_up_screen.dart';
 import '../view/screens/auth/screen/otp_screen.dart';
+import '../view/screens/auth/screen/reset_password_screen.dart';
 import '../view/screens/category/screen/category_screen.dart';
 import '../view/screens/main/screen/main_screen.dart';
 import '../view/screens/live_stream/screen/live_stream_screen.dart';
@@ -24,10 +26,12 @@ import '../view/screens/my_trades/screen/my_trades_screen.dart';
 import '../view/screens/trade_details/screen/make_offer_screen.dart';
 
 class AppRoute {
+  static const String forgotPassword = "/forgotPassword";
   static const String onboarding = "/onboarding";
   static const String login = "/login";
   static const String signUp = "/signUp";
   static const String otp = "/otp";
+  static const String resetPassword = "/resetPassword";
   static const String category = "/category";
   static const String main = "/main";
   static const String trackOrder = "/trackOrder";
@@ -48,10 +52,12 @@ class AppRoute {
   static const String newOffer = "/new_offer";
 
   static List<GetPage> routes = [
+    GetPage(name: forgotPassword, page: () => const ForgotPasswordScreen()),
     GetPage(name: onboarding, page: () => const OnboardingScreen()),
     GetPage(name: login, page: () => const LoginScreen()),
     GetPage(name: signUp, page: () => const SignUpScreen()),
     GetPage(name: otp, page: () => const OtpScreen()),
+    GetPage(name: resetPassword, page: () => const ResetPasswordScreen()),
     GetPage(name: category, page: () => const CategoryScreen()),
     GetPage(name: main, page: () => const MainScreen()),
     GetPage(name: trackOrder, page: () => const TrackOrderScreen()),
@@ -64,7 +70,10 @@ class AppRoute {
     GetPage(name: myTrades, page: () => const MyTradesScreen()),
     GetPage(name: makeOffer, page: () => const MakeOfferScreen()),
     GetPage(name: accountSettings, page: () => const AccountSettingsScreen()),
-    GetPage(name: profileInformation, page: () => const ProfileInformationScreen()),
+    GetPage(
+      name: profileInformation,
+      page: () => const ProfileInformationScreen(),
+    ),
     GetPage(name: changePassword, page: () => const ChangePasswordScreen()),
     GetPage(name: userPreferences, page: () => const UserPreferencesScreen()),
     GetPage(name: terms, page: () => const TermsConditionsScreen()),

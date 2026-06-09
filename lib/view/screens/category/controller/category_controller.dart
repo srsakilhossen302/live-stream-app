@@ -1,10 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/app_route.dart';
+import '../../../../data/services/api_client.dart';
+import '../../../../data/services/api_url.dart';
 
 class CategoryController extends GetxController {
   var selectedCategories = <int>{}.obs;
+  final RxBool isLoading = false.obs;
+  final ApiClient _apiClient = Get.find<ApiClient>();
 
   final List<CategoryModel> categories = [
     CategoryModel(id: 1, title: "Fine Art", subtitle: "Masterpieces & curated contemporary works.", icon: Icons.palette_outlined),
@@ -25,12 +30,70 @@ class CategoryController extends GetxController {
     }
   }
 
-  void onContinue() {
-    Get.offAllNamed(AppRoute.main);
+  Future<void> onContinue() async {
+    if (selectedCategories.isEmpty) {
+      Get.snackbar(
+        "Required",
+        "Please select at least one interest",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    isLoading.value = true;
+
+    try {
+      final selectedTitles = categories
+          .where((cat) => selectedCategories.contains(cat.id))
+          .map((cat) => cat.title)
+          .toList();
+
+      final response = await _apiClient.patchData(
+        ApiUrl.updateProfile,
+        {
+          "interest": selectedTitles,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar(
+          "Success",
+          "Interests updated successfully!",
+          backgroundColor: Colors.green.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+        Get.offAllNamed(AppRoute.main);
+      } else {
+        String errorMessage = "Failed to update interests.";
+        try {
+          final data = jsonDecode(response.body);
+          if (data['message'] != null) {
+            errorMessage = data['message'];
+          }
+        } catch (_) {}
+
+        Get.snackbar(
+          "Error",
+          errorMessage,
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "An unexpected error occurred. Please check your connection.",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void onSkip() {
-    Get.log("Skip Clicked");
+    Get.offAllNamed(AppRoute.main);
   }
 
   void onClose() {

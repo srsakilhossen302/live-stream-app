@@ -26,19 +26,27 @@ class CategoryScreen extends GetView<CategoryController> {
                   ),
                   Text(
                     "Auction Live",
-                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextButton(
                     onPressed: () => controller.onSkip(),
                     child: Text(
                       "Skip",
-                      style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 16.sp, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: const Color(0xFF8B9BFF),
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(24.r),
@@ -64,7 +72,7 @@ class CategoryScreen extends GetView<CategoryController> {
                       ),
                     ),
                     SizedBox(height: 32.h),
-                    
+
                     // Grid
                     GridView.builder(
                       shrinkWrap: true,
@@ -79,7 +87,8 @@ class CategoryScreen extends GetView<CategoryController> {
                       itemBuilder: (context, index) {
                         final category = controller.categories[index];
                         return Obx(() {
-                          final isSelected = controller.selectedCategories.contains(category.id);
+                          final isSelected = controller.selectedCategories
+                              .contains(category.id);
                           return _buildCategoryCard(category, isSelected);
                         });
                       },
@@ -88,26 +97,40 @@ class CategoryScreen extends GetView<CategoryController> {
                 ),
               ),
             ),
-            
+
             // Footer
             Padding(
               padding: EdgeInsets.all(24.r),
               child: SizedBox(
                 width: double.infinity,
                 height: 60.h,
-                child: ElevatedButton(
-                  onPressed: () => controller.onContinue(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B9BFF),
-                    foregroundColor: const Color(0xFF0F0B1E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.r),
+                child: Obx(
+                  () => ElevatedButton(
+                    onPressed: controller.isLoading.value ? null : () => controller.onContinue(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B9BFF),
+                      foregroundColor: const Color(0xFF0F0B1E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    "Continue",
-                    style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
+                    child: controller.isLoading.value
+                        ? SizedBox(
+                            width: 24.w,
+                            height: 24.h,
+                            child: const CircularProgressIndicator(
+                              color: Color(0xFF0F0B1E),
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : Text(
+                            "Continue",
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -127,7 +150,9 @@ class CategoryScreen extends GetView<CategoryController> {
           color: const Color(0xFF1E1E2C).withOpacity(0.5),
           borderRadius: BorderRadius.circular(24.r),
           border: Border.all(
-            color: isSelected ? const Color(0xFF8B9BFF) : Colors.white.withOpacity(0.05),
+            color: isSelected
+                ? const Color(0xFF8B9BFF)
+                : Colors.white.withOpacity(0.05),
             width: isSelected ? 2.w : 1.w,
           ),
         ),
@@ -147,7 +172,11 @@ class CategoryScreen extends GetView<CategoryController> {
                 const Spacer(),
                 Text(
                   category.title,
-                  style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 SizedBox(height: 4.h),
                 Text(
@@ -162,7 +191,11 @@ class CategoryScreen extends GetView<CategoryController> {
               Positioned(
                 top: 0,
                 right: 0,
-                child: Icon(Icons.check_circle, color: const Color(0xFF8B9BFF), size: 24.sp),
+                child: Icon(
+                  Icons.check_circle,
+                  color: const Color(0xFF8B9BFF),
+                  size: 24.sp,
+                ),
               ),
           ],
         ),

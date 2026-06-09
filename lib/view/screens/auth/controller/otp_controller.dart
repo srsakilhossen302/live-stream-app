@@ -12,15 +12,22 @@ class OtpController extends GetxController {
 
   final RxInt timerSeconds = 60.obs;
   bool _isTimerRunning = false;
-  
+
   String email = "";
+  bool fromForgotPassword = false;
   final RxBool isLoading = false.obs;
   final ApiClient _apiClient = Get.find<ApiClient>();
 
   @override
   void onInit() {
     super.onInit();
-    email = Get.arguments ?? "";
+    final args = Get.arguments;
+    if (args is Map) {
+      email = args['email'] ?? "";
+      fromForgotPassword = args['fromForgotPassword'] ?? false;
+    } else {
+      email = args ?? "";
+    }
     startTimer();
   }
 
@@ -42,40 +49,57 @@ class OtpController extends GetxController {
   Future<void> onVerify() async {
     String otp = pinController.text;
     if (otp.length != 6) {
-      Get.snackbar("Error", "Please enter 6-digit OTP", backgroundColor: Colors.red.withOpacity(0.8), colorText: Colors.white);
+      Get.snackbar(
+        "Error",
+        "Please enter 6-digit OTP",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
       return;
     }
 
     if (email.isEmpty) {
-      Get.snackbar("Error", "Email address is missing. Please try signing up again.", backgroundColor: Colors.red.withOpacity(0.8), colorText: Colors.white);
+      Get.snackbar(
+        "Error",
+        "Email address is missing. Please try signing up again.",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
       return;
     }
 
     isLoading.value = true;
 
     try {
-      final response = await _apiClient.postData(
-        ApiUrl.verifyAccount,
-        {
-          "email": email,
-          "oneTimeCode": otp,
-        },
-      );
+      final response = await _apiClient.postData(ApiUrl.verifyAccount, {
+        "email": email,
+        "oneTimeCode": otp,
+      });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        if (responseData['data'] != null) {
-          final dataMap = responseData['data'];
-          final accessToken = dataMap['accessToken'] ?? '';
-          final refreshToken = dataMap['refreshToken'] ?? '';
+        print("--- OTP Verification Response: $responseData ---");
+        String? accessToken;
 
-          if (accessToken.isNotEmpty) {
-            await SharePrefsHelper.setString(SharePrefsHelper.accessTokenKey, accessToken);
-          }
-          if (refreshToken.isNotEmpty) {
-            await SharePrefsHelper.setString(SharePrefsHelper.refreshTokenKey, refreshToken);
-          }
+        if (responseData['data'] != null && responseData['data'] is Map) {
+          final dataMap = responseData['data'];
+          accessToken = dataMap['accessToken'] ?? dataMap['token'];
+        } else {
+          accessToken =
+              responseData['accessToken'] ??
+              responseData['token'] ??
+              (responseData['data'] is String ? responseData['data'] : null);
+        }
+
+        if (accessToken != null && accessToken.isNotEmpty) {
+          print("--- SAVING TOKEN: $accessToken ---");
+          await SharePrefsHelper.setString(
+            SharePrefsHelper.accessTokenKey,
+            accessToken,
+          );
           await SharePrefsHelper.setBool(SharePrefsHelper.isLoginKey, true);
+        } else {
+          print("--- NO TOKEN FOUND IN RESPONSE ---");
         }
 
         Get.snackbar(
@@ -84,7 +108,12 @@ class OtpController extends GetxController {
           backgroundColor: Colors.green.withOpacity(0.8),
           colorText: Colors.white,
         );
-        Get.offAllNamed(AppRoute.category);
+
+        if (fromForgotPassword) {
+          Get.toNamed(AppRoute.resetPassword);
+        } else {
+          Get.offAllNamed(AppRoute.category);
+        }
       } else {
         String errorMessage = "Verification failed. Please check the code.";
         try {
@@ -115,10 +144,47 @@ class OtpController extends GetxController {
     }
   }
 
-  void onResend() {
+  Future<void> onResend() async {
     if (timerSeconds.value == 0) {
-      Get.log("OTP Resent");
-      startTimer();
+      isLoading.value = true;
+      try {
+        final response = await _apiClient.postData(ApiUrl.resendOtp, {
+          "email": email,
+        });
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          Get.snackbar(
+            "Success",
+            "OTP Resent Successfully!",
+            backgroundColor: Colors.green.withOpacity(0.8),
+            colorText: Colors.white,
+          );
+          startTimer();
+        } else {
+          String errorMessage = "Failed to resend OTP.";
+          try {
+            final data = jsonDecode(response.body);
+            if (data['message'] != null) {
+              errorMessage = data['message'];
+            }
+          } catch (_) {}
+          Get.snackbar(
+            "Error",
+            errorMessage,
+            backgroundColor: Colors.red.withOpacity(0.8),
+            colorText: Colors.white,
+          );
+        }
+      } catch (e) {
+        Get.snackbar(
+          "Error",
+          "An unexpected error occurred.",
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white,
+        );
+      } finally {
+        isLoading.value = false;
+      }
     }
   }
 

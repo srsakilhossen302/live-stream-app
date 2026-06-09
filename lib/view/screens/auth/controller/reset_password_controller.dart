@@ -1,37 +1,35 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../../core/app_route.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
 
-class LoginController extends GetxController {
-  final emailController = TextEditingController();
+class ResetPasswordController extends GetxController {
   final passwordController = TextEditingController();
-
+  final confirmPasswordController = TextEditingController();
   final RxBool isLoading = false.obs;
   final ApiClient _apiClient = Get.find<ApiClient>();
 
-  Future<void> onLogin() async {
-    final email = emailController.text.trim();
+  Future<void> onResetPassword() async {
     final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
 
-    if (email.isEmpty) {
+    if (password.isEmpty) {
       Get.snackbar(
-        "Required",
-        "Email or username cannot be empty",
+        "Error",
+        "Password is required",
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,
       );
       return;
     }
 
-    if (password.isEmpty) {
+    if (password != confirmPassword) {
       Get.snackbar(
-        "Required",
-        "Password cannot be empty",
+        "Error",
+        "Passwords do not match",
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,
       );
@@ -40,40 +38,32 @@ class LoginController extends GetxController {
 
     isLoading.value = true;
 
+    // Ensure headers are refreshed with the token saved during OTP
+    final token = SharePrefsHelper.getString(SharePrefsHelper.accessTokenKey);
+    print("--- ATTEMPTING RESET WITH TOKEN: $token ---");
+
     try {
       final response = await _apiClient.postData(
-        ApiUrl.login,
-        {
-          "email": email,
-          "password": password,
+        ApiUrl.resetPassword,
+        {"newPassword": password, "confirmPassword": confirmPassword},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['data'] != null) {
-          final dataMap = responseData['data'];
-          final accessToken = dataMap['accessToken'] ?? '';
-          final refreshToken = dataMap['refreshToken'] ?? '';
-
-          if (accessToken.isNotEmpty) {
-            await SharePrefsHelper.setString(SharePrefsHelper.accessTokenKey, accessToken);
-          }
-          if (refreshToken.isNotEmpty) {
-            await SharePrefsHelper.setString(SharePrefsHelper.refreshTokenKey, refreshToken);
-          }
-          await SharePrefsHelper.setBool(SharePrefsHelper.isLoginKey, true);
-        }
-
         Get.snackbar(
           "Success",
-          "Login Successful!",
+          "Password reset successful! Please login with your new password.",
           backgroundColor: Colors.green.withOpacity(0.8),
           colorText: Colors.white,
+          duration: const Duration(seconds: 4),
         );
-        Get.offAllNamed(AppRoute.main);
+        Get.offAllNamed(AppRoute.login);
       } else {
-        String errorMessage = "Login failed. Please try again.";
+        String errorMessage = "Failed to reset password.";
         try {
           final data = jsonDecode(response.body);
           if (data['message'] != null) {
@@ -93,7 +83,7 @@ class LoginController extends GetxController {
     } catch (e) {
       Get.snackbar(
         "Error",
-        "An unexpected error occurred. Please check your connection.",
+        "An unexpected error occurred.",
         backgroundColor: Colors.red.withOpacity(0.8),
         colorText: Colors.white,
       );
@@ -102,18 +92,10 @@ class LoginController extends GetxController {
     }
   }
 
-  void onSignUp() {
-    Get.toNamed(AppRoute.signUp);
-  }
-
-  void onForgotPassword() {
-    Get.toNamed(AppRoute.forgotPassword);
-  }
-
   @override
   void onClose() {
-    emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     super.onClose();
   }
 }
