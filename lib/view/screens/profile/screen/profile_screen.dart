@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/profile_controller.dart';
@@ -85,6 +86,17 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget _buildProfileHeader() {
     return Obx(() {
       final coverUrl = controller.coverPhotoUrl.value;
+      final profileUrl = controller.profileImageUrl.value;
+
+      if (controller.isLoading.value && controller.name.value == "User Name") {
+        return SizedBox(
+          height: 300.h,
+          child: const Center(
+            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+          ),
+        );
+      }
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -94,20 +106,19 @@ class ProfileScreen extends GetView<ProfileController> {
             children: [
               // Cover image / placeholder
               GestureDetector(
-                onTap: controller.changeCoverPhoto,
-                onLongPress: () => _showCoverOptions(),
+                onTap: () => _showImagePickerSheet(isCover: true),
                 child: Container(
                   width: double.infinity,
                   height: 180.h,
                   decoration: BoxDecoration(
                     color: const Color(0xFF11111E),
-                    image: coverUrl != null
+                    image: coverUrl.isNotEmpty
                         ? DecorationImage(
                             image: NetworkImage(coverUrl),
                             fit: BoxFit.cover,
                           )
                         : null,
-                    gradient: coverUrl == null
+                    gradient: coverUrl.isEmpty
                         ? const LinearGradient(
                             colors: [Color(0xFF0D0D1A), Color(0xFF1A1040)],
                             begin: Alignment.topLeft,
@@ -115,7 +126,7 @@ class ProfileScreen extends GetView<ProfileController> {
                           )
                         : null,
                   ),
-                  child: coverUrl == null
+                  child: coverUrl.isEmpty
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -146,12 +157,12 @@ class ProfileScreen extends GetView<ProfileController> {
                 ),
               ),
               // Edit cover button (top-right)
-              if (coverUrl != null)
+              if (coverUrl.isNotEmpty)
                 Positioned(
                   top: 12.h,
                   right: 12.w,
                   child: GestureDetector(
-                    onTap: _showCoverOptions,
+                    onTap: () => _showImagePickerSheet(isCover: true),
                     child: Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 12.w,
@@ -186,41 +197,67 @@ class ProfileScreen extends GetView<ProfileController> {
               Positioned(
                 bottom: -48.h,
                 left: 20.w,
-                child: Stack(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(3.r),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF0D0D1A),
-                          width: 4,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 48.r,
-                        backgroundImage: const NetworkImage(
-                          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 4.h,
-                      right: 4.w,
-                      child: Container(
-                        padding: EdgeInsets.all(6.r),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF8B9BFF),
+                child: GestureDetector(
+                  onTap: () => _showImagePickerSheet(isCover: false),
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(3.r),
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF0D0D1A),
+                            width: 4,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.camera_alt,
-                          color: Colors.black,
-                          size: 13.sp,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(48.r),
+                          child: profileUrl.isNotEmpty
+                              ? Image.network(
+                                  profileUrl,
+                                  width: 96.r,
+                                  height: 96.r,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      CircleAvatar(
+                                        radius: 48.r,
+                                        backgroundColor: Colors.white10,
+                                        child: Icon(
+                                          Icons.person,
+                                          color: Colors.white24,
+                                          size: 40.sp,
+                                        ),
+                                      ),
+                                )
+                              : CircleAvatar(
+                                  radius: 48.r,
+                                  backgroundColor: Colors.white10,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.white24,
+                                    size: 40.sp,
+                                  ),
+                                ),
                         ),
                       ),
-                    ),
-                  ],
+                      // Positioned(
+                      //   bottom: 4.h,
+                      //   right: 4.w,
+                      //   child: Container(
+                      //     padding: EdgeInsets.all(6.r),
+                      //     decoration: const BoxDecoration(
+                      //       color: Color(0xFF8B9BFF),
+                      //       shape: BoxShape.circle,
+                      //     ),
+                      //     child: Icon(
+                      //       Icons.camera_alt,
+                      //       color: Colors.black,
+                      //       size: 13.sp,
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -243,7 +280,7 @@ class ProfileScreen extends GetView<ProfileController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Julian Draxler",
+                          controller.name.value,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 22.sp,
@@ -252,7 +289,7 @@ class ProfileScreen extends GetView<ProfileController> {
                         ),
                         SizedBox(height: 3.h),
                         Text(
-                          "@jdraxler_collector",
+                          controller.username.value,
                           style: TextStyle(
                             color: Colors.white38,
                             fontSize: 13.sp,
@@ -297,7 +334,7 @@ class ProfileScreen extends GetView<ProfileController> {
                 ),
                 SizedBox(height: 12.h),
                 Text(
-                  "Collector & trader of rare sneakers and vintage cards. Trusted deals only.",
+                  controller.description.value,
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 13.sp,
@@ -353,102 +390,89 @@ class ProfileScreen extends GetView<ProfileController> {
     });
   }
 
-  void _showCoverOptions() {
+  void _showImagePickerSheet({required bool isCover}) {
     Get.bottomSheet(
       Container(
-        padding: EdgeInsets.all(24.r),
+        padding: EdgeInsets.all(20.r),
         decoration: BoxDecoration(
-          color: const Color(0xFF161622),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+          color: const Color(0xFF1E1E2C),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: Colors.white12,
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
-            SizedBox(height: 24.h),
             Text(
-              "Cover Photo",
+              "Update ${isCover ? 'Cover' : 'Profile'} Photo",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 17.sp,
-                fontWeight: FontWeight.w900,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: 24.h),
-            _buildSheetOption(
-              icon: Icons.add_photo_alternate_outlined,
-              label: "Choose from Library",
-              onTap: () {
-                Get.back();
-                controller.changeCoverPhoto();
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildSourceItem(
+                  icon: Icons.camera_alt_rounded,
+                  label: "Camera",
+                  onTap: () {
+                    Get.back();
+                    controller.updateImage(
+                      ImageSource.camera,
+                      isCover: isCover,
+                    );
+                  },
+                ),
+                _buildSourceItem(
+                  icon: Icons.photo_library_rounded,
+                  label: "Gallery",
+                  onTap: () {
+                    Get.back();
+                    controller.updateImage(
+                      ImageSource.gallery,
+                      isCover: isCover,
+                    );
+                  },
+                ),
+              ],
             ),
-            SizedBox(height: 12.h),
-            _buildSheetOption(
-              icon: Icons.camera_alt_outlined,
-              label: "Take a Photo",
-              onTap: () {
-                Get.back();
-                controller.changeCoverPhoto();
-              },
-            ),
-            if (controller.coverPhotoUrl.value != null) ...[
-              SizedBox(height: 12.h),
-              _buildSheetOption(
-                icon: Icons.delete_outline_rounded,
-                label: "Remove Cover Photo",
-                color: const Color(0xFFFF4B6E),
-                onTap: () {
-                  Get.back();
-                  controller.removeCoverPhoto();
-                },
-              ),
-            ],
-            SizedBox(height: 16.h),
+            SizedBox(height: 24.h),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSheetOption({
+  Widget _buildSourceItem({
     required IconData icon,
     required String label,
-    Color? color,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color ?? Colors.white70, size: 22.sp),
-            SizedBox(width: 16.w),
-            Text(
-              label,
-              style: TextStyle(
-                color: color ?? Colors.white,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w700,
-              ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.r),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B9BFF).withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
+            child: Icon(icon, color: const Color(0xFF8B9BFF), size: 32.sp),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            label,
+            style: TextStyle(color: Colors.white, fontSize: 14.sp),
+          ),
+        ],
       ),
     );
+  }
+
+  void _showCoverOptions() {
+    _showImagePickerSheet(isCover: true);
   }
 
   Widget _buildStatsRow() {

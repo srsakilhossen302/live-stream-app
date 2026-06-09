@@ -4,12 +4,15 @@ import 'package:get/get.dart';
 import '../../../../core/app_route.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../controller/profile_information_controller.dart';
 
 class AccountSettingsScreen extends StatelessWidget {
   const AccountSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(ProfileInformationController());
+
     return CustomBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -30,175 +33,218 @@ class AccountSettingsScreen extends StatelessWidget {
           ),
           centerTitle: true,
         ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
-              SizedBox(height: 32.h),
-              
-              // Profile Header
-              Center(
-                child: Column(
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 130.r,
-                          height: 130.r,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF8B9BFF), Color(0xFFFF8BFF)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF8B9BFF).withOpacity(0.3),
-                                blurRadius: 20.r,
-                                spreadRadius: 2.r,
-                              ),
-                            ],
-                          ),
-                        ),
-                        CircleAvatar(
-                          radius: 60.r,
-                          backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 24.h),
-                    Text(
-                      "Julian Sterling",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E2C),
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Text(
-                        "CHANGE PICTURE",
-                        style: TextStyle(
-                          color: const Color(0xFF8B9BFF),
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              SizedBox(height: 48.h),
-              
-              // Account Details Section
-              _buildSectionTitle("ACCOUNT DETAILS"),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF11111E),
-                  borderRadius: BorderRadius.circular(24.r),
-                ),
-                child: Column(
-                  children: [
-                    _buildSettingsTile(
-                      icon: Icons.person_outline_rounded,
-                      title: "Profile Information",
-                      showArrow: true,
-                      onTap: () => Get.toNamed(AppRoute.profileInformation),
-                    ),
-                    Divider(color: Colors.white.withOpacity(0.05), height: 1),
-                    _buildSettingsTile(
-                      icon: Icons.lock_outline_rounded,
-                      title: "Security & Password",
-                      showArrow: true,
-                      onTap: () => Get.toNamed(AppRoute.changePassword),
-                    ),
-                  ],
-                ),
-              ),
-              
-              SizedBox(height: 32.h),
-              
-              // Preferences Section
-              _buildSectionTitle("PREFERENCES"),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF11111E),
-                  borderRadius: BorderRadius.circular(24.r),
-                ),
-                child: Column(
-                  children: [
-                    _buildSettingsTile(
-                      icon: Icons.account_balance_wallet_outlined,
-                      title: "Payment Methods",
-                      showArrow: true,
-                    ),
-                    Divider(color: Colors.white.withOpacity(0.05), height: 1),
-                    _buildSettingsTile(
-                      icon: Icons.tune_rounded,
-                      title: "Preferences",
-                      showArrow: true,
-                      onTap: () => Get.toNamed(AppRoute.userPreferences),
-                    ),
-                    Divider(color: Colors.white.withOpacity(0.05), height: 1),
-                    _buildSettingsTile(
-                      icon: Icons.visibility_outlined,
-                      title: "Public Profile",
-                      subtitle: "Visible to other bidders",
-                      trailing: Switch(
-                        value: true,
-                        onChanged: (v) {},
-                        activeColor: const Color(0xFF8B9BFF),
-                        activeTrackColor: const Color(0xFF8B9BFF).withOpacity(0.3),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              SizedBox(height: 48.h),
-              
-              // Sign Out Button
-              GestureDetector(
-                onTap: () => _showSignOutDialog(context),
-                child: Container(
-                  width: double.infinity,
-                  height: 70.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E2C),
-                    borderRadius: BorderRadius.circular(35.r),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+        body: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+            );
+          }
+          return SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              children: [
+                SizedBox(height: 32.h),
+
+                // Profile Header
+                Center(
+                  child: Column(
                     children: [
-                      Icon(Icons.logout_rounded, color: Colors.white38, size: 24.sp),
-                      SizedBox(width: 12.w),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 130.r,
+                            height: 130.r,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF8B9BFF), Color(0xFFFF8BFF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF8B9BFF,
+                                  ).withOpacity(0.3),
+                                  blurRadius: 20.r,
+                                  spreadRadius: 2.r,
+                                ),
+                              ],
+                            ),
+                          ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(60.r),
+                            child: controller.profileImageUrl.value.isNotEmpty
+                                ? Image.network(
+                                    controller.profileImageUrl.value,
+                                    width: 120.r,
+                                    height: 120.r,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            CircleAvatar(
+                                              radius: 60.r,
+                                              backgroundColor: Colors.white10,
+                                              child: Icon(
+                                                Icons.person,
+                                                color: Colors.white24,
+                                                size: 60.sp,
+                                              ),
+                                            ),
+                                  )
+                                : CircleAvatar(
+                                    radius: 60.r,
+                                    backgroundColor: Colors.white10,
+                                    child: Icon(
+                                      Icons.person,
+                                      color: Colors.white24,
+                                      size: 60.sp,
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24.h),
                       Text(
-                        "Sign Out",
+                        controller.fullNameController.text.isNotEmpty
+                            ? controller.fullNameController.text
+                            : "User Name",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18.sp,
+                          fontSize: 24.sp,
                           fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      // SizedBox(height: 12.h),
+                      // Container(
+                      //   padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                      //   decoration: BoxDecoration(
+                      //     color: const Color(0xFF1E1E2C),
+                      //     borderRadius: BorderRadius.circular(20.r),
+                      //   ),
+                      //   child: Text(
+                      //     "CHANGE PICTURE",
+                      //     style: TextStyle(
+                      //       color: const Color(0xFF8B9BFF),
+                      //       fontSize: 12.sp,
+                      //       fontWeight: FontWeight.w900,
+                      //       letterSpacing: 1,
+                      //     ),
+                      //   ),
+                      // ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 48.h),
+
+                // Account Details Section
+                _buildSectionTitle("ACCOUNT DETAILS"),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF11111E),
+                    borderRadius: BorderRadius.circular(24.r),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildSettingsTile(
+                        icon: Icons.person_outline_rounded,
+                        title: "Profile Information",
+                        showArrow: true,
+                        onTap: () => Get.toNamed(AppRoute.profileInformation),
+                      ),
+                      Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                      _buildSettingsTile(
+                        icon: Icons.lock_outline_rounded,
+                        title: "Security & Password",
+                        showArrow: true,
+                        onTap: () => Get.toNamed(AppRoute.changePassword),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 32.h),
+
+                // Preferences Section
+                _buildSectionTitle("PREFERENCES"),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF11111E),
+                    borderRadius: BorderRadius.circular(24.r),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildSettingsTile(
+                        icon: Icons.account_balance_wallet_outlined,
+                        title: "Payment Methods",
+                        showArrow: true,
+                      ),
+                      Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                      _buildSettingsTile(
+                        icon: Icons.tune_rounded,
+                        title: "Preferences",
+                        showArrow: true,
+                        onTap: () => Get.toNamed(AppRoute.userPreferences),
+                      ),
+                      Divider(color: Colors.white.withOpacity(0.05), height: 1),
+                      _buildSettingsTile(
+                        icon: Icons.visibility_outlined,
+                        title: "Public Profile",
+                        subtitle: "Visible to other bidders",
+                        trailing: Switch(
+                          value: true,
+                          onChanged: (v) {},
+                          activeColor: const Color(0xFF8B9BFF),
+                          activeTrackColor: const Color(
+                            0xFF8B9BFF,
+                          ).withOpacity(0.3),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              
-              SizedBox(height: 48.h),
-            ],
-          ),
-        ),
+
+                SizedBox(height: 48.h),
+
+                // Sign Out Button
+                GestureDetector(
+                  onTap: () => _showSignOutDialog(context),
+                  child: Container(
+                    width: double.infinity,
+                    height: 70.h,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1E2C),
+                      borderRadius: BorderRadius.circular(35.r),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white38,
+                          size: 24.sp,
+                        ),
+                        SizedBox(width: 12.w),
+                        Text(
+                          "Sign Out",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 48.h),
+              ],
+            ),
+          );
+        }),
       ),
     );
   }
@@ -268,7 +314,11 @@ class AccountSettingsScreen extends StatelessWidget {
               ),
             ),
             if (showArrow)
-              Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 24.sp),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white24,
+                size: 24.sp,
+              ),
             if (trailing != null) trailing,
           ],
         ),
@@ -306,10 +356,7 @@ class AccountSettingsScreen extends StatelessWidget {
               Text(
                 "Are you sure you want to sign out?",
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 14.sp,
-                ),
+                style: TextStyle(color: Colors.white54, fontSize: 14.sp),
               ),
               SizedBox(height: 24.h),
               Row(

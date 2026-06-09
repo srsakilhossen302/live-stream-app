@@ -39,6 +39,7 @@ dependencies:
   pinput: ^5.0.0
   http: ^1.6.0
   shared_preferences: ^2.5.5
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
