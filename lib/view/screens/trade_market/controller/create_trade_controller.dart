@@ -29,7 +29,7 @@ class CreateTradeController extends GetxController {
     "TCG",
     "Digital Assets",
   ];
-  final conditions = ["New", "Mint", "Near Mint", "Used", "Poor"];
+  final conditions = ["Mint", "Near Mint", "Excellent", "Good", "Fair"];
 
   // Image handling
   final RxList<File> selectedImages = <File>[].obs;
@@ -51,11 +51,13 @@ class CreateTradeController extends GetxController {
 
   void setCategory(String val) => selectedCategory.value = val;
   void setCondition(String val) => selectedCondition.value = val;
-  void setTargetCategory(String val) => targetCategory.value = val;
-
   Future<void> pickImages() async {
     try {
-      final List<XFile> images = await _picker.pickMultiImage();
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 20,
+        maxWidth: 600,
+        maxHeight: 600,
+      );
       if (images.isNotEmpty) {
         selectedImages.addAll(images.map((img) => File(img.path)));
       }
@@ -63,6 +65,10 @@ class CreateTradeController extends GetxController {
       Get.snackbar("Error", "Failed to pick images");
     }
   }
+
+  void setTargetCategory(String val) => targetCategory.value = val;
+
+
 
   Future<void> postTrade() async {
     final title = itemNameController.text.trim();
@@ -79,6 +85,16 @@ class CreateTradeController extends GetxController {
       return;
     }
 
+    if (selectedImages.isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Please select at least one image",
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     isLoading.value = true;
 
     try {
@@ -86,23 +102,30 @@ class CreateTradeController extends GetxController {
         SharePrefsHelper.userIdKey,
       );
 
-      final Map<String, String> fields = {
+      // Convert images to base64 strings
+      final List<String> base64Images = [];
+      for (var file in selectedImages) {
+        final bytes = await file.readAsBytes();
+        final base64Str = base64Encode(bytes);
+        final mimeType = file.path.split('.').last.toLowerCase();
+        base64Images.add("data:image/$mimeType;base64,$base64Str");
+      }
+
+      final Map<String, dynamic> requestBody = {
         "title": title,
         "description": description,
         "category": selectedCategory.value,
         "condition": selectedCondition.value,
-        "estValue": estValue,
-        "buyNowPrice": estValue,
-        "allowTrade": "true",
+        "estValue": double.tryParse(estValue) ?? 0.0,
+        "buyNowPrice": double.tryParse(estValue) ?? 0.0,
+        "allowTrade": true,
         "sellerId": userId,
+        "images": base64Images,
       };
 
-      // Exactly like profile info update, but for POST and potentially multiple images
-      final response = await _apiClient.postMultipart(
+      final response = await _apiClient.postData(
         ApiUrl.products,
-        fields,
-        filePaths: selectedImages.map((f) => f.path).toList(),
-        fieldName: 'images',
+        requestBody,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
