@@ -13,4 +13,7 @@ class ApiUrl {
 
   // User
   static const String profile = "/users/profile";
+
+  // Products
+  static const String products = "/products";
 }

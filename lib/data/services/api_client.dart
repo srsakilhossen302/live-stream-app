@@ -60,6 +60,71 @@ class ApiClient {
     }
   }
 
+  // POST Multipart Request
+  Future<http.Response> postMultipart(
+    String uri,
+    Map<String, String> fields, {
+    List<String>? filePaths,
+    String fieldName = 'images',
+    Map<String, String>? headers,
+  }) async {
+    final url = Uri.parse('$baseUrl$uri');
+    final Map<String, String> requestHeaders = headers ?? getHeader();
+    requestHeaders.remove('Content-Type');
+
+    if (kDebugMode) {
+      print('=== API POST Multipart Request ===');
+      print('URL: $url');
+      print('Headers: $requestHeaders');
+      print('Fields: $fields');
+      if (filePaths != null) print('Files: $filePaths (field: $fieldName)');
+    }
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+      request.headers.addAll(requestHeaders);
+
+      // Separate 'data' from fields if you want to use the combined pattern
+      // But let's try the direct fields first as requested by standard multipart
+      fields.forEach((key, value) {
+        request.fields[key] = value;
+      });
+
+      if (filePaths != null) {
+        for (String path in filePaths) {
+          final mimeType = path.endsWith('.png') ? 'png' : 'jpeg';
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              fieldName, // This must match the backend's expected field name
+              path,
+              contentType: MediaType('image', mimeType),
+            ),
+          );
+        }
+      }
+
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
+      final response = await http.Response.fromStream(
+        streamedResponse,
+      ).timeout(const Duration(seconds: 30));
+
+      if (kDebugMode) {
+        print('=== API Response (${response.statusCode}) ===');
+        print('Response Body: ${response.body}');
+      }
+
+      return response;
+    } catch (e) {
+      if (kDebugMode) {
+        print('=== API Error ===');
+        print('Error: $e');
+      }
+      rethrow;
+    }
+  }
+
   // PATCH Request
   Future<http.Response> patchData(
     String uri,
