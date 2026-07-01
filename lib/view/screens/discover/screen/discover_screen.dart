@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/discover_controller.dart';
 import '../../trade_details/screen/trade_details_screen.dart';
 import '../../../../core/app_route.dart';
+import '../../../../data/services/api_url.dart';
 
 class DiscoverScreen extends GetView<DiscoverController> {
   const DiscoverScreen({super.key});
@@ -18,33 +20,38 @@ class DiscoverScreen extends GetView<DiscoverController> {
           children: [
             _buildAppBar(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 16.h),
-                    _buildHeroText(),
-                    SizedBox(height: 24.h),
-                    _buildSearchBar(),
-                    SizedBox(height: 24.h),
-                    _buildFilterBar(),
-                    SizedBox(height: 32.h),
+              child: RefreshIndicator(
+                onRefresh: () => controller.fetchDiscoverData(),
+                color: const Color(0xFF8B9BFF),
+                backgroundColor: const Color(0xFF11111A),
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 16.h),
+                      _buildHeroText(),
+                      SizedBox(height: 24.h),
+                      _buildSearchBar(),
+                      SizedBox(height: 24.h),
+                      _buildFilterBar(),
+                      SizedBox(height: 32.h),
 
-                    // Tabs handle their own bottom sections now
-                    Obx(() {
-                      switch (controller.selectedFilter.value) {
-                        case 1:
-                          return _buildLiveShowsTab();
-                        case 2:
-                          return _buildTradeMarketTab();
-                        default:
-                          return _buildAllTab();
-                      }
-                    }),
-                    SizedBox(height: 140.h),
-                  ],
+                      // Tabs handle their own bottom sections now
+                      Obx(() {
+                        switch (controller.selectedFilter.value) {
+                          case 1:
+                            return _buildLiveShowsTab();
+                          case 2:
+                            return _buildTradeMarketTab();
+                          default:
+                            return _buildAllTab();
+                        }
+                      }),
+                      SizedBox(height: 140.h),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -71,77 +78,127 @@ class DiscoverScreen extends GetView<DiscoverController> {
   }
 
   Widget _buildLiveShowsTab({bool isAllTab = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader("Featured", onSeeAll: () {}, seeAllText: "VIEW ALL →"),
-        SizedBox(height: 18.h),
-        Row(
-          children: controller.featuredLiveItems.map((item) {
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: item == controller.featuredLiveItems.last ? 0 : 16.w),
-                child: _buildSmallFeaturedCard(
-                  item['category']!,
-                  item['title']!,
-                  item['price']!,
-                  item['image']!,
-                  item['badge']!,
+    return Obx(() {
+      if (controller.isLoading.value && controller.liveShows.isEmpty) {
+        return SizedBox(
+          height: 200.h,
+          child: const Center(
+            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+          ),
+        );
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (controller.featuredLiveItems.isNotEmpty) ...[
+            _buildSectionHeader("Featured", onSeeAll: () {}, seeAllText: "VIEW ALL →"),
+            SizedBox(height: 18.h),
+            Row(
+              children: controller.featuredLiveItems.map((item) {
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: item == controller.featuredLiveItems.last ? 0 : 16.w),
+                    child: _buildSmallFeaturedCard(
+                      item['category']!,
+                      item['title']!,
+                      item['price']!,
+                      item['image']!,
+                      item['badge']!,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 40.h),
+          ],
+          Text("Live Now", style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+          SizedBox(height: 18.h),
+          if (controller.liveShows.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 32.h),
+              child: Center(
+                child: Text(
+                  "No live shows currently broadcasting.",
+                  style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700),
                 ),
               ),
-            );
-          }).toList(),
-        ),
-        SizedBox(height: 40.h),
-        Text("Live Now", style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-        SizedBox(height: 18.h),
-        ...controller.liveShows.map((show) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: 20.h),
-            child: _buildLiveCard(show['title']!, show['host']!, show['viewers']!, show['image']!),
-          );
-        }).toList(),
-        if (!isAllTab) ...[
-          SizedBox(height: 32.h),
-          _buildTrendingTagsSection(),
-          SizedBox(height: 24.h),
-          _buildTopSellersSection(),
+            )
+          else
+            ...controller.liveShows.map((show) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: 20.h),
+                child: _buildLiveCard(show['title']!, show['host']!, show['viewers']!, show['image']!),
+              );
+            }).toList(),
+          if (!isAllTab) ...[
+            SizedBox(height: 32.h),
+            _buildTrendingTagsSection(),
+            SizedBox(height: 24.h),
+            _buildTopSellersSection(),
+          ],
         ],
-      ],
-    );
+      );
+    });
   }
 
   Widget _buildTradeMarketTab({bool isAllTab = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader("Featured Trades", onSeeAll: () {}),
-        SizedBox(height: 18.h),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: controller.featuredTrades.map((item) {
+    return Obx(() {
+      if (controller.isLoading.value && controller.tradeMarketItems.isEmpty) {
+        return SizedBox(
+          height: 200.h,
+          child: const Center(
+            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+          ),
+        );
+      }
+
+      final marketList = controller.filteredTradeMarketItems;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (controller.featuredTrades.isNotEmpty) ...[
+            _buildSectionHeader("Featured Trades", onSeeAll: () {}),
+            SizedBox(height: 18.h),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: controller.featuredTrades.map((item) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: 16.w),
+                    child: _buildLargeFeaturedCard(item),
+                  );
+                }).toList(),
+              ),
+            ),
+            SizedBox(height: 40.h),
+          ],
+          _buildSectionHeader("Available for Trade", showFilter: true),
+          SizedBox(height: 20.h),
+          if (marketList.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 32.h),
+              child: Center(
+                child: Text(
+                  "No items available for trade.",
+                  style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700),
+                ),
+              ),
+            )
+          else
+            ...marketList.map((item) {
               return Padding(
-                padding: EdgeInsets.only(right: 16.w),
-                child: _buildLargeFeaturedCard(item['title']!, item['price']!, item['image']!),
+                padding: EdgeInsets.only(bottom: 16.h),
+                child: _buildTradeListItem(item),
               );
             }).toList(),
-          ),
-        ),
-        SizedBox(height: 40.h),
-        _buildSectionHeader("Available for Trade", showFilter: true),
-        SizedBox(height: 20.h),
-        ...controller.tradeMarketItems.map((item) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: 16.h),
-            child: _buildTradeListItem(item['title']!, "EST. VALUE", item['value']!, item['lookingFor']!, item['image']!, item['tag']!),
-          );
-        }).toList(),
-        SizedBox(height: 32.h),
-        _buildDiscoverGridSection(),
-      ],
-    );
+          SizedBox(height: 32.h),
+          _buildDiscoverGridSection(),
+        ],
+      );
+    });
   }
 
   // --- UI COMPONENTS ---
@@ -185,6 +242,8 @@ class DiscoverScreen extends GetView<DiscoverController> {
           SizedBox(width: 14.w),
           Expanded(
             child: TextField(
+              controller: controller.searchController,
+              onChanged: (val) => controller.searchQuery.value = val,
               style: TextStyle(color: Colors.white, fontSize: 16.sp),
               decoration: InputDecoration(
                 hintText: "Search deals & more",
@@ -193,7 +252,15 @@ class DiscoverScreen extends GetView<DiscoverController> {
               ),
             ),
           ),
-          Icon(Icons.tune_rounded, color: Colors.white, size: 22.sp),
+          Obx(() => controller.searchQuery.value.isNotEmpty
+              ? GestureDetector(
+                  onTap: () {
+                    controller.searchController.clear();
+                    controller.searchQuery.value = "";
+                  },
+                  child: Icon(Icons.clear, color: Colors.white, size: 20.sp),
+                )
+              : Icon(Icons.tune_rounded, color: Colors.white, size: 22.sp)),
         ],
       ),
     );
@@ -339,42 +406,67 @@ class DiscoverScreen extends GetView<DiscoverController> {
     );
   }
 
-  Widget _buildLargeFeaturedCard(String title, String price, String imgUrl) {
+  Widget _buildLargeFeaturedCard(Map<String, dynamic> item) {
+    final title = item['title'].toString();
+    final price = item['price'].toString();
+    final imgUrl = item['image'].toString();
     return GestureDetector(
-      onTap: () => Get.to(() => const TradeDetailsScreen()),
+      onTap: () => Get.to(() => const TradeDetailsScreen(), arguments: item['raw']),
       child: Container(
         height: 400.h,
         width: 0.85.sw,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(40.r), image: DecorationImage(image: NetworkImage(imgUrl), fit: BoxFit.cover)),
-        child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(40.r), gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black.withOpacity(0.9)])),
-          padding: EdgeInsets.all(28.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(title, style: TextStyle(color: Colors.white, fontSize: 28.sp, fontWeight: FontWeight.w900, height: 1.1)),
-              Text(price, style: TextStyle(color: Colors.white38, fontSize: 15.sp, fontWeight: FontWeight.w700)),
-              SizedBox(height: 24.h),
-              SizedBox(
-                width: double.infinity,
-                height: 52.h,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B9BFF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26.r))),
-                  child: Text("Inquire Trade", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900)),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40.r),
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(child: _buildDiscoverProductImage(imgUrl)),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter, 
+                    end: Alignment.bottomCenter, 
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.9)],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(28.r),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(title, style: TextStyle(color: Colors.white, fontSize: 28.sp, fontWeight: FontWeight.w900, height: 1.1)),
+                  Text(price, style: TextStyle(color: Colors.white38, fontSize: 15.sp, fontWeight: FontWeight.w700)),
+                  SizedBox(height: 24.h),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52.h,
+                    child: ElevatedButton(
+                      onPressed: () => Get.to(() => const TradeDetailsScreen(), arguments: item['raw']),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B9BFF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26.r))),
+                      child: Text("Inquire Trade", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildTradeListItem(String title, String valLabel, String val, String lookingFor, String img, String tag) {
+  Widget _buildTradeListItem(Map<String, dynamic> item) {
+    final title = item['title'].toString();
+    final val = item['value'].toString();
+    final lookingFor = item['lookingFor'].toString();
+    final img = item['image'].toString();
     return GestureDetector(
-      onTap: () => Get.to(() => const TradeDetailsScreen()),
+      onTap: () => Get.to(() => const TradeDetailsScreen(), arguments: item['raw']),
       child: Container(
         padding: EdgeInsets.all(20.r),
         decoration: BoxDecoration(color: const Color(0xFF11111A), borderRadius: BorderRadius.circular(24.r)),
@@ -383,7 +475,12 @@ class DiscoverScreen extends GetView<DiscoverController> {
             Container(
               width: 80.w,
               height: 80.w,
-              decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16.r), image: DecorationImage(image: NetworkImage(img), fit: BoxFit.contain)),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.black, 
+                borderRadius: BorderRadius.circular(16.r), 
+              ),
+              child: _buildDiscoverProductImage(img),
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -393,13 +490,55 @@ class DiscoverScreen extends GetView<DiscoverController> {
                   Text(title, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
                   SizedBox(height: 6.h),
                   Text(val, style: TextStyle(color: const Color(0xFFD677FF), fontSize: 14.sp, fontWeight: FontWeight.w900)),
-                  Text(lookingFor, style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w700)),
+                  Text(lookingFor, style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w700), maxLines: 2, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
             Icon(Icons.chevron_right, color: Colors.white38, size: 20.sp),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDiscoverProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
+    if (imgStr.isEmpty) {
+      return Image.network(
+        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+        fit: fit,
+      );
+    }
+    
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final base64Content = imgStr.split('base64,').last;
+        final bytes = base64Decode(base64Content);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => Image.network(
+            "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+            fit: fit,
+          ),
+        );
+      } catch (_) {
+        return Image.network(
+          "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+          fit: fit,
+        );
+      }
+    }
+    
+    final cleanUrl = imgStr.startsWith('http')
+        ? imgStr
+        : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => Image.network(
+        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+        fit: fit,
       ),
     );
   }

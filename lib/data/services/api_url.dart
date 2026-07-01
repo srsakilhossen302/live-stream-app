@@ -25,4 +25,10 @@ class ApiUrl {
 
   // Trades
   static const String tradeOffers = "/trades/offers";
+
+  // Category
+  static const String category = "/category";
+
+  // Auctions
+  static const String liveStreams = "/auctions/streams";
 }

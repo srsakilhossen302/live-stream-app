@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/trade_details_controller.dart';
+import '../../../../data/services/api_url.dart';
 
 class TradeDetailsScreen extends GetView<TradeDetailsController> {
   const TradeDetailsScreen({super.key});
@@ -32,155 +34,129 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
         ),
         body: Stack(
           children: [
-            SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Image Section
-                  _buildImageGallery(),
-                  
-                  Padding(
-                    padding: EdgeInsets.all(24.r),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("APPAREL • BRAND NEW", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1)),
-                        SizedBox(height: 8.h),
-                        Text("Off-White Tee – Chicago Edition", style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900)),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Trader Info Card
-                        _buildTraderCard(),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Offering Box
-                        _buildTradeBox(
-                          title: "OFFERING",
-                          name: "Off-White Tee",
-                          subName: "Chicago Edition Capsule",
-                          isOffering: true,
-                        ),
-                        
-                        // Swap Icon
-                        Center(
-                          child: Container(
-                            height: 48.h,
-                            width: 48.h,
-                            margin: EdgeInsets.symmetric(vertical: 12.h),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF282C36),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10.r, offset: const Offset(0, 4)),
-                              ],
-                            ),
-                            child: Center(
-                              child: SvgPicture.asset(
-                                "assets/icons/updaont.svg",
-                                width: 22.sp,
-                                height: 22.sp,
-                                colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+            Obx(() {
+              final product = controller.product;
+              
+              final category = (product['category'] ?? "APPAREL").toString().toUpperCase();
+              final condition = (product['condition'] ?? "BRAND NEW").toString().toUpperCase();
+              final title = product['title'] ?? "Off-White Tee – Chicago Edition";
+              final estValue = product['estValue'] ?? "250";
+              final description = product['description'] ?? "Exclusive Chicago Edition drop. Kept in original packaging since release. Looking for a high-end timepiece trade specifically, but open to hearing other luxury offers in the watch category.";
+
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDynamicImageGallery(product),
+                    
+                    Padding(
+                      padding: EdgeInsets.all(24.r),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("$category • $condition", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                          SizedBox(height: 8.h),
+                          Text(title, style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900)),
+                          
+                          SizedBox(height: 32.h),
+                          _buildDynamicTraderCard(product),
+                          SizedBox(height: 32.h),
+                          
+                          _buildTradeBox(
+                            title: "OFFERING",
+                            name: title,
+                            subName: "$condition condition",
+                            isOffering: true,
+                          ),
+                          
+                          Center(
+                            child: Container(
+                              height: 48.h,
+                              width: 48.h,
+                              margin: EdgeInsets.symmetric(vertical: 12.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF282C36),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10.r, offset: const Offset(0, 4)),
+                                ],
+                              ),
+                              child: Center(
+                                child: SvgPicture.asset(
+                                  "assets/icons/updaont.svg",
+                                  width: 22.sp,
+                                  height: 22.sp,
+                                  colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        
-                        // Looking For Box
-                        _buildTradeBox(
-                          title: "LOOKING FOR",
-                          name: "Rolex Submariner Date",
-                          subName: "\$5k-\$6k Range",
-                          isOffering: false,
-                          badge: "TOP PRIORITY",
-                        ),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        Text("DESCRIPTION", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                        SizedBox(height: 16.h),
-                        Text(
-                          "Exclusive Chicago Edition drop. Kept in original packaging since release. Looking for a high-end timepiece trade specifically, but open to hearing other luxury offers in the watch category.",
-                          style: TextStyle(color: Colors.white60, fontSize: 14.sp, height: 1.6, fontWeight: FontWeight.w500),
-                        ),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        Text("VERIFICATION METHODS", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                        SizedBox(height: 16.h),
-                        Row(
-                          children: [
-                            Expanded(child: _buildVerificationCard(null, "Platform Verified", "100% Secure Auth", iconData: Icons.shield_outlined)),
-                            SizedBox(width: 16.w),
-                            Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Direct Trade", "Peer-to-peer risk")),
-                          ],
-                        ),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Stats Row
-                        _buildStatsRow(),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        Text("SIMILAR TRADES", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                        SizedBox(height: 16.h),
-                        _buildSimilarTrades(),
-                        
-                        SizedBox(height: 120.h),
-                      ],
+                          
+                          _buildTradeBox(
+                            title: "LOOKING FOR",
+                            name: product.isEmpty ? "Rolex Submariner Date" : "Luxury / Equal Value Swaps",
+                            subName: product.isEmpty ? "\$5k-\$6k Range" : "Estimated Value: \$$estValue",
+                            isOffering: false,
+                            badge: product.isEmpty ? "TOP PRIORITY" : "ANY CATEGORY",
+                          ),
+                          
+                          SizedBox(height: 32.h),
+                          Text("DESCRIPTION", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                          SizedBox(height: 16.h),
+                          Text(
+                            description,
+                            style: TextStyle(color: Colors.white60, fontSize: 14.sp, height: 1.6, fontWeight: FontWeight.w500),
+                          ),
+                          
+                          SizedBox(height: 32.h),
+                          Text("VERIFICATION METHODS", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                          SizedBox(height: 16.h),
+                          Row(
+                            children: [
+                              Expanded(child: _buildVerificationCard(null, "Platform Verified", "100% Secure Auth", iconData: Icons.shield_outlined)),
+                              SizedBox(width: 16.w),
+                              Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Direct Trade", "Peer-to-peer risk")),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 32.h),
+                          _buildStatsRow(),
+                          SizedBox(height: 32.h),
+                          Text("SIMILAR TRADES", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                          SizedBox(height: 16.h),
+                          _buildSimilarTrades(),
+                          SizedBox(height: 120.h),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Bottom Action Button
-            Positioned(
-              left: 24.w,
-              right: 24.w,
-              bottom: 30.h,
-              child: Container(
-                height: 64.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32.r),
-                  boxShadow: [
-                    BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.3), blurRadius: 20.r, offset: const Offset(0, 10)),
                   ],
                 ),
-                child: ElevatedButton(
-                  onPressed: () => Get.toNamed('/make_offer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B9BFF),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32.r)),
-                    elevation: 0,
-                  ),
-                  child: Text("Make Offer", style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w900)),
-                ),
-              ),
-            ),
+              );
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildImageGallery() {
+  Widget _buildDynamicImageGallery(Map<String, dynamic> product) {
+    String galleryUrl = "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000";
+    final List? images = product['images'] as List?;
+    if (images != null && images.isNotEmpty) {
+      final path = images[0].toString();
+      galleryUrl = path.startsWith('http') ? path : "${ApiUrl.imageBaseUrl}${path.startsWith('/') ? path : '/$path'}";
+    }
+    
+    final estValue = product['estValue'] ?? "250";
+
     return Stack(
       children: [
         Container(
           height: 450.h,
           width: double.infinity,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF5F5F5),
-            image: DecorationImage(
-              image: NetworkImage("https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000&auto=format&fit=crop"),
-              fit: BoxFit.contain,
-            ),
-          ),
+          color: const Color(0xFFF5F5F5),
+          child: _buildDetailsProductImage(galleryUrl, fit: BoxFit.contain),
         ),
         Positioned(
           top: 20.h,
@@ -190,7 +166,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
             children: [
               _buildBadge("OPEN TRADE", const Color(0xFF8B9BFF)),
               SizedBox(height: 8.h),
-              _buildBadge("\$250 EST. VALUE", Colors.black.withOpacity(0.8)),
+              _buildBadge("\$$estValue EST. VALUE", Colors.black.withOpacity(0.8)),
             ],
           ),
         ),
@@ -203,7 +179,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(20.r)),
               child: Obx(() => Text(
-                "${controller.currentImageIndex.value} / ${controller.totalImages}",
+                "${controller.currentImageIndex.value == 0 ? 1 : controller.currentImageIndex.value} / ${controller.totalImages}",
                 style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
               )),
             ),
@@ -221,36 +197,57 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     );
   }
 
-  Widget _buildTraderCard() {
+  Widget _buildDynamicTraderCard(Map<String, dynamic> product) {
+    final seller = product['sellerId'];
+    final name = seller?['fullName'] ?? "Julian_D";
+    final rating = seller?['rating'] ?? "4.8";
+    final address = seller?['address'] ?? "New York, NY";
+    
+    String avatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974";
+    final sellerImage = seller?['image']?.toString();
+    if (sellerImage != null && sellerImage.isNotEmpty) {
+      avatarUrl = sellerImage.startsWith('http') ? sellerImage : "${ApiUrl.imageBaseUrl}${sellerImage.startsWith('/') ? sellerImage : '/$sellerImage'}";
+    }
+
     return GestureDetector(
       onTap: () => Get.toNamed('/trader_profile'),
       child: Container(
         padding: EdgeInsets.all(20.r),
-      decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
-      child: Row(
-        children: [
-          CircleAvatar(radius: 24.r, backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop")),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text("Julian_D", style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
-                    SizedBox(width: 4.w),
-                    Icon(Icons.verified, color: const Color(0xFF8B9BFF), size: 16.sp),
-                  ],
+        decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24.r,
+              backgroundColor: Colors.transparent,
+              child: ClipOval(
+                child: SizedBox(
+                  width: 48.r,
+                  height: 48.r,
+                  child: _buildDetailsProductImage(avatarUrl),
                 ),
-                SizedBox(height: 4.h),
-                Text("⭐ 4.8 • New York, NY", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w700)),
-              ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 28.sp),
-        ],
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(name, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
+                      SizedBox(width: 4.w),
+                      Icon(Icons.verified, color: const Color(0xFF8B9BFF), size: 16.sp),
+                    ],
+                  ),
+                  SizedBox(height: 4.h),
+                  Text("⭐ $rating • $address", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 28.sp),
+          ],
+        ),
       ),
-      )
     );
   }
 
@@ -421,6 +418,47 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
             ],
           ),
         )),
+      ),
+    );
+  }
+  Widget _buildDetailsProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
+    if (imgStr.isEmpty) {
+      return Image.network(
+        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+        fit: fit,
+      );
+    }
+    
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final base64Content = imgStr.split('base64,').last;
+        final bytes = base64Decode(base64Content);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => Image.network(
+            "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+            fit: fit,
+          ),
+        );
+      } catch (_) {
+        return Image.network(
+          "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+          fit: fit,
+        );
+      }
+    }
+    
+    final cleanUrl = imgStr.startsWith('http')
+        ? imgStr
+        : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => Image.network(
+        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+        fit: fit,
       ),
     );
   }

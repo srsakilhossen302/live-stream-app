@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'dart:convert';
 import '../../../../global/widgets/custom_background.dart';
 import '../../../../core/app_route.dart';
+import '../../../../data/services/api_url.dart';
 import '../controller/my_trades_controller.dart';
 import '../model/my_trade_model.dart';
 
@@ -222,7 +224,29 @@ class MyTradesScreen extends GetView<MyTradesController> {
               ],
             ),
             SizedBox(height: 24.h),
-            _buildActionButton("View Receipt", const Color(0xFF8B9BFF), Colors.black, fullWidth: true),
+            _buildActionButton(
+              "View Receipt",
+              const Color(0xFF8B9BFF),
+              Colors.black,
+              fullWidth: true,
+              onTap: () {
+                final productMap = {
+                  "title": trade.title,
+                  "description": "Completed Barter Trade Deal. Swapped items successfully. Status: COMPLETED",
+                  "category": "BARTER",
+                  "condition": "Completed Deal",
+                  "estValue": "N/A",
+                  "images": [trade.item1Image, trade.item2Image],
+                  "sellerId": {
+                    "fullName": trade.traderName,
+                    "image": trade.traderAvatar,
+                    "rating": "4.9",
+                    "address": "Verified Trader"
+                  }
+                };
+                Get.toNamed('/trade_details', arguments: productMap);
+              },
+            ),
             SizedBox(height: 24.h),
             Container(
               height: 180.h,
@@ -277,7 +301,30 @@ class MyTradesScreen extends GetView<MyTradesController> {
             SizedBox(height: 28.h),
             Row(
               children: [
-                Expanded(child: _buildActionButton("View Trade", const Color(0xFF1E1E2C), Colors.white, onTap: () => Get.toNamed('/trade_details'))),
+                Expanded(
+                  child: _buildActionButton(
+                    "View Trade",
+                    const Color(0xFF1E1E2C),
+                    Colors.white,
+                    onTap: () {
+                      final productMap = {
+                        "title": trade.title,
+                        "description": "Barter Trade Offer. Status: ${trade.status.name.toUpperCase()}",
+                        "category": "BARTER",
+                        "condition": "Negotiated Deal",
+                        "estValue": "N/A",
+                        "images": [trade.item1Image, trade.item2Image],
+                        "sellerId": {
+                          "fullName": trade.traderName,
+                          "image": trade.traderAvatar,
+                          "rating": "4.8",
+                          "address": "Verified Trader"
+                        }
+                      };
+                      Get.toNamed('/trade_details', arguments: productMap);
+                    },
+                  ),
+                ),
                 SizedBox(width: 16.w),
                 GestureDetector(
                   onTap: () => Get.toNamed('/message_details'),
@@ -311,10 +358,53 @@ class MyTradesScreen extends GetView<MyTradesController> {
     return Container(
       width: size,
       height: size,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(small ? 16.r : 24.r),
-        image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
+      ),
+      child: _buildTradeProductImage(url),
+    );
+  }
+
+  Widget _buildTradeProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
+    if (imgStr.isEmpty) {
+      return Image.network(
+        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+        fit: fit,
+      );
+    }
+    
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final base64Content = imgStr.split('base64,').last;
+        final bytes = base64Decode(base64Content);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => Image.network(
+            "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+            fit: fit,
+          ),
+        );
+      } catch (_) {
+        return Image.network(
+          "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+          fit: fit,
+        );
+      }
+    }
+    
+    final cleanUrl = imgStr.startsWith('http')
+        ? imgStr
+        : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => Image.network(
+        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
+        fit: fit,
       ),
     );
   }

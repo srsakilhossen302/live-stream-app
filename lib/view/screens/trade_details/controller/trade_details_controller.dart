@@ -1,7 +1,18 @@
 import 'package:get/get.dart';
 
 class TradeDetailsController extends GetxController {
-  // Mock data or state for the details screen
-  var currentImageIndex = 1.obs;
-  final totalImages = 5;
+  var currentImageIndex = 0.obs;
+  final RxMap<String, dynamic> product = <String, dynamic>{}.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (Get.arguments != null) {
+      if (Get.arguments is Map) {
+        product.assignAll(Map<String, dynamic>.from(Get.arguments));
+      }
+    }
+  }
+
+  int get totalImages => (product['images'] as List?)?.length ?? 1;
 }
