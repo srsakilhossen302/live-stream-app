@@ -5,14 +5,20 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/trade_details_controller.dart';
+import '../../discover/controller/discover_controller.dart';
 import '../../../../data/services/api_url.dart';
+import '../../../../data/helpers/shared_prefe.dart';
 
 class TradeDetailsScreen extends GetView<TradeDetailsController> {
   const TradeDetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Get.put(TradeDetailsController());
+    final detailsController = Get.put(TradeDetailsController());
+    if (Get.arguments != null && Get.arguments is Map) {
+      detailsController.product.assignAll(Map<String, dynamic>.from(Get.arguments));
+      detailsController.currentImageIndex.value = 0;
+    }
     return CustomBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -95,10 +101,10 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                           
                           _buildTradeBox(
                             title: "LOOKING FOR",
-                            name: product.isEmpty ? "Rolex Submariner Date" : "Luxury / Equal Value Swaps",
-                            subName: product.isEmpty ? "\$5k-\$6k Range" : "Estimated Value: \$$estValue",
+                            name: (product['lookingFor'] ?? "Equal Value Swaps").toString(),
+                            subName: "Estimated Value: \$${product['estValue'] ?? estValue}",
                             isOffering: false,
-                            badge: product.isEmpty ? "TOP PRIORITY" : "ANY CATEGORY",
+                            badge: "ANY CATEGORY",
                           ),
                           
                           SizedBox(height: 32.h),
@@ -125,12 +131,91 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                           SizedBox(height: 32.h),
                           Text("SIMILAR TRADES", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                           SizedBox(height: 16.h),
-                          _buildSimilarTrades(),
+                          _buildSimilarTrades(product),
                           SizedBox(height: 120.h),
                         ],
                       ),
                     ),
                   ],
+                ),
+              );
+            }),
+            
+            // Floating Bottom Action Bar
+            Obx(() {
+              final product = controller.product;
+              if (product.isEmpty) return const SizedBox.shrink();
+              
+              final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+              final seller = product['sellerId'];
+              final sellerId = (seller is Map) ? (seller['_id'] ?? seller['id'] ?? "") : seller.toString();
+              final isOwner = currentUserId.isNotEmpty && currentUserId == sellerId;
+              
+              if (isOwner) return const SizedBox.shrink();
+              
+              return Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.fromLTRB(24.w, 20.h, 24.w, 32.h),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.0),
+                        Colors.black.withOpacity(0.95),
+                        Colors.black,
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => Get.toNamed('/make_offer'),
+                          child: Container(
+                            height: 56.h,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E1E2C),
+                              borderRadius: BorderRadius.circular(28.r),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              "Inquire Trade",
+                              style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _showPurchaseConfirmation(context, product),
+                          child: Container(
+                            height: 56.h,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF8B9BFF),
+                              borderRadius: BorderRadius.circular(28.r),
+                            ),
+                            alignment: Alignment.center,
+                            child: controller.isOrdering.value
+                                ? SizedBox(
+                                    height: 20.h,
+                                    width: 20.h,
+                                    child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
+                                  )
+                                : Text(
+                                    "Buy Now",
+                                    style: TextStyle(color: Colors.black, fontSize: 15.sp, fontWeight: FontWeight.w900),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),
@@ -140,12 +225,109 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     );
   }
 
+  void _showPurchaseConfirmation(BuildContext context, Map<String, dynamic> product) {
+    final title = product['title'] ?? "Product";
+    final priceVal = product['buyNowPrice'] ?? product['estValue'] ?? "250";
+    final price = "\$${priceVal.toString()}";
+
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF11111A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 24.h),
+                decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2.r)),
+              ),
+            ),
+            Text("Confirm Purchase", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
+            SizedBox(height: 16.h),
+            Text("Are you sure you want to buy this item instantly?", style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w500)),
+            SizedBox(height: 24.h),
+            
+            Container(
+              padding: EdgeInsets.all(20.r),
+              decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60.r,
+                    height: 60.r,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12.r)),
+                    child: _buildDetailsProductImage(product['images']?.first?.toString() ?? ""),
+                  ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        SizedBox(height: 4.h),
+                        Text("Price: $price", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 13.sp, fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            SizedBox(height: 32.h),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => Get.back(),
+                    child: Container(
+                      height: 56.h,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: const Color(0xFF1E1E2C), borderRadius: BorderRadius.circular(28.r)),
+                      child: Text("Cancel", style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Get.back();
+                      controller.buyProduct();
+                    },
+                    child: Container(
+                      height: 56.h,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(28.r)),
+                      child: Text("Confirm Buy", style: TextStyle(color: Colors.black, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
   Widget _buildDynamicImageGallery(Map<String, dynamic> product) {
     String galleryUrl = "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000";
     final List? images = product['images'] as List?;
     if (images != null && images.isNotEmpty) {
       final path = images[0].toString();
-      galleryUrl = path.startsWith('http') ? path : "${ApiUrl.imageBaseUrl}${path.startsWith('/') ? path : '/$path'}";
+      galleryUrl = (path.startsWith('http') || path.startsWith('data:image/'))
+          ? path
+          : "${ApiUrl.imageBaseUrl}${path.startsWith('/') ? path : '/$path'}";
     }
     
     final estValue = product['estValue'] ?? "250";
@@ -203,10 +385,12 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     final rating = seller?['rating'] ?? "4.8";
     final address = seller?['address'] ?? "New York, NY";
     
-    String avatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974";
-    final sellerImage = seller?['image']?.toString();
+    String avatarUrl = "";
+    final sellerImage = (seller?['profile'] ?? seller?['image'] ?? seller?['profileImageUrl'])?.toString();
     if (sellerImage != null && sellerImage.isNotEmpty) {
-      avatarUrl = sellerImage.startsWith('http') ? sellerImage : "${ApiUrl.imageBaseUrl}${sellerImage.startsWith('/') ? sellerImage : '/$sellerImage'}";
+      avatarUrl = (sellerImage.startsWith('http') || sellerImage.startsWith('data:image/'))
+          ? sellerImage
+          : "${ApiUrl.imageBaseUrl}${sellerImage.startsWith('/') ? sellerImage : '/$sellerImage'}";
     }
 
     return GestureDetector(
@@ -218,14 +402,16 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
           children: [
             CircleAvatar(
               radius: 24.r,
-              backgroundColor: Colors.transparent,
-              child: ClipOval(
-                child: SizedBox(
-                  width: 48.r,
-                  height: 48.r,
-                  child: _buildDetailsProductImage(avatarUrl),
-                ),
-              ),
+              backgroundColor: Colors.white10,
+              child: avatarUrl.isNotEmpty
+                  ? ClipOval(
+                      child: SizedBox(
+                        width: 48.r,
+                        height: 48.r,
+                        child: _buildDetailsProductImage(avatarUrl),
+                      ),
+                    )
+                  : Icon(Icons.person, color: Colors.white24, size: 24.sp),
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -302,7 +488,14 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                 SizedBox(height: 8.h),
                 Row(
                   children: [
-                    Text(subName, style: TextStyle(color: Colors.white38, fontSize: 15.sp, fontWeight: FontWeight.w700)),
+                    Expanded(
+                      child: Text(
+                        subName,
+                        style: TextStyle(color: Colors.white38, fontSize: 15.sp, fontWeight: FontWeight.w700),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     if (badge != null) ...[
                       SizedBox(width: 14.w),
                       Container(
@@ -381,43 +574,92 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     return Container(height: 30.h, width: 1, color: Colors.white10);
   }
 
-  Widget _buildSimilarTrades() {
+  Widget _buildSimilarTrades(Map<String, dynamic> product) {
+    final List<Map<String, dynamic>> similarItems = [];
+    try {
+      final discoverCtrl = Get.find<DiscoverController>();
+      final String currentCategory = (product['category'] ?? "").toString();
+      final String currentTitle = (product['title'] ?? "").toString();
+      
+      final matched = discoverCtrl.tradeMarketItems.where((item) {
+        final raw = item['raw'];
+        if (raw == null) return false;
+        return raw['category']?.toString() == currentCategory && item['title'] != currentTitle;
+      }).toList();
+
+      if (matched.isNotEmpty) {
+        similarItems.addAll(matched.take(3).cast<Map<String, dynamic>>());
+      } else {
+        similarItems.addAll(discoverCtrl.tradeMarketItems
+            .where((item) => item['title'] != currentTitle)
+            .take(3)
+            .cast<Map<String, dynamic>>());
+      }
+    } catch (_) {}
+
+    if (similarItems.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+          child: Text(
+            "No similar trades found.",
+            style: TextStyle(color: Colors.white24, fontSize: 13.sp, fontWeight: FontWeight.w700),
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       child: Row(
-        children: List.generate(3, (index) => Container(
-          width: 280.w,
-          margin: EdgeInsets.only(right: 16.w),
-          padding: EdgeInsets.all(16.r),
-          decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
-          child: Row(
-            children: [
-              Container(
-                width: 70.w,
-                height: 70.w,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16.r),
-                  image: const DecorationImage(
-                    image: NetworkImage("https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=1000&auto=format&fit=crop"),
-                    fit: BoxFit.cover,
+        children: similarItems.map((item) {
+          final title = item['title'].toString();
+          final lookingFor = item['lookingFor'].toString();
+          final value = item['value'].toString();
+          final imgUrl = item['image'].toString();
+          
+          return GestureDetector(
+            onTap: () {
+              final detailsCtrl = Get.find<TradeDetailsController>();
+              detailsCtrl.product.assignAll(Map<String, dynamic>.from(item['raw']));
+              detailsCtrl.currentImageIndex.value = 0;
+            },
+            child: Container(
+              width: 280.w,
+              margin: EdgeInsets.only(right: 16.w),
+              padding: EdgeInsets.all(16.r),
+              decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
+              child: Row(
+                children: [
+                  Container(
+                    width: 70.w,
+                    height: 70.w,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: _buildDetailsProductImage(imgUrl),
                   ),
-                ),
+                  SizedBox(width: 16.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        SizedBox(height: 4.h),
+                        Text(lookingFor, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        SizedBox(height: 2.h),
+                        Text(value, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 11.sp, fontWeight: FontWeight.w900)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("OW Logo Hoodie", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
-                    SizedBox(height: 4.h),
-                    Text("Looking for Yeezy", style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700)),
-                    Text("\$50 + \$100 Est.", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 11.sp, fontWeight: FontWeight.w900)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        )),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

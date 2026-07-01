@@ -204,7 +204,13 @@ class MyTradesScreen extends GetView<MyTradesController> {
                         children: [
                           CircleAvatar(
                             radius: 14.r,
-                            backgroundImage: NetworkImage(trade.traderAvatar ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100"),
+                            backgroundColor: Colors.white10,
+                            backgroundImage: (trade.traderAvatar != null && trade.traderAvatar!.isNotEmpty)
+                                ? NetworkImage(trade.traderAvatar!)
+                                : null,
+                            child: (trade.traderAvatar == null || trade.traderAvatar!.isEmpty)
+                                ? Icon(Icons.person, color: Colors.white24, size: 14.sp)
+                                : null,
                           ),
                           SizedBox(width: 10.w),
                           Text(trade.traderName, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800)),

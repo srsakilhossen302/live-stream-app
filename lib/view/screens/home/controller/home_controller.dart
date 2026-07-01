@@ -11,10 +11,13 @@ class HomeController extends GetxController {
   final RxString fullName = "User".obs;
   final RxBool isLoading = false.obs;
 
+  final RxList<LiveItemModel> liveItems = <LiveItemModel>[].obs;
+
   @override
   void onInit() {
     super.onInit();
     fetchProfileData();
+    fetchLiveStreams();
   }
 
   Future<void> fetchProfileData() async {
@@ -35,6 +38,41 @@ class HomeController extends GetxController {
       }
     } catch (e) {
       Get.log("Error fetching profile on Home: $e");
+    }
+  }
+
+  Future<void> fetchLiveStreams() async {
+    try {
+      final response = await _apiClient.getData("${ApiUrl.liveStreams}?status=live");
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body)['data'] ?? [];
+        final parsedShows = data.map((item) {
+          final title = item['title'] ?? "Live Show";
+          final hostName = item['curator'] ?? item['sellerId']?['fullName'] ?? "Curator";
+          
+          String imageUrl = "";
+          final imagePath = item['image'] ?? "";
+          if (imagePath.isNotEmpty) {
+            imageUrl = imagePath.startsWith('http')
+                ? imagePath
+                : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
+          } else {
+            imageUrl = "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000";
+          }
+
+          return LiveItemModel(
+            title: title,
+            curator: hostName,
+            viewers: "${item['viewersCount'] ?? item['viewers'] ?? '0'}",
+            image: imageUrl,
+            raw: item,
+          );
+        }).toList();
+        
+        liveItems.assignAll(parsedShows);
+      }
+    } catch (e) {
+      Get.log("Error fetching live streams on Home: $e");
     } finally {
       isLoading.value = false;
     }
@@ -49,37 +87,6 @@ class HomeController extends GetxController {
     "Art",
   ];
 
-  final List<LiveItemModel> liveItems = [
-    LiveItemModel(
-      title: "HypeBeast Sneakers...",
-      curator: "KicksLovers_05",
-      viewers: "1.2K",
-      image:
-          "https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&q=80&w=300",
-    ),
-    LiveItemModel(
-      title: "Graded Pokemon Grail",
-      curator: "TCG_Master",
-      viewers: "400",
-      image:
-          "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?auto=format&fit=crop&q=80&w=300",
-    ),
-    LiveItemModel(
-      title: "Archive Designer Outlet",
-      curator: "Stack_Gallery",
-      viewers: "2.3K",
-      image:
-          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=300",
-    ),
-    LiveItemModel(
-      title: "Timepiece Tuesday",
-      curator: "ChronoSelect",
-      viewers: "3.6K",
-      image:
-          "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=300",
-    ),
-  ];
-
   void onCategorySelected(int index) {
     selectedCategoryIndex.value = index;
   }
@@ -90,11 +97,13 @@ class LiveItemModel {
   final String curator;
   final String viewers;
   final String image;
+  final Map<String, dynamic>? raw;
 
   LiveItemModel({
     required this.title,
     required this.curator,
     required this.viewers,
     required this.image,
+    this.raw,
   });
 }

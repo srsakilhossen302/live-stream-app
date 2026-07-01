@@ -57,19 +57,17 @@ class ProfileController extends GetxController {
         // Handle profile image
         final profilePath = data['profile'] ?? "";
         if (profilePath.isNotEmpty) {
-          final formattedPath = profilePath.startsWith('/')
+          profileImageUrl.value = (profilePath.startsWith('http') || profilePath.startsWith('data:image/'))
               ? profilePath
-              : '/$profilePath';
-          profileImageUrl.value = "${ApiUrl.imageBaseUrl}$formattedPath";
+              : "${ApiUrl.imageBaseUrl}${profilePath.startsWith('/') ? profilePath : '/$profilePath'}";
         }
 
         // Handle cover photo
         final coverPath = data['coverPhoto'] ?? "";
         if (coverPath.isNotEmpty) {
-          final formattedCoverPath = coverPath.startsWith('/')
+          coverPhotoUrl.value = (coverPath.startsWith('http') || coverPath.startsWith('data:image/'))
               ? coverPath
-              : '/$coverPath';
-          coverPhotoUrl.value = "${ApiUrl.imageBaseUrl}$formattedCoverPath";
+              : "${ApiUrl.imageBaseUrl}${coverPath.startsWith('/') ? coverPath : '/$coverPath'}";
         }
 
         // Handle additional fields

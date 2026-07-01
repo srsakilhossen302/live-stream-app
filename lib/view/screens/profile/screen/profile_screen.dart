@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/profile_controller.dart';
@@ -111,14 +112,9 @@ class ProfileScreen extends GetView<ProfileController> {
                 child: Container(
                   width: double.infinity,
                   height: 180.h,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: const Color(0xFF11111E),
-                    image: coverUrl.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(coverUrl),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
                     gradient: coverUrl.isEmpty
                         ? const LinearGradient(
                             colors: [Color(0xFF0D0D1A), Color(0xFF1A1040)],
@@ -127,8 +123,9 @@ class ProfileScreen extends GetView<ProfileController> {
                           )
                         : null,
                   ),
-                  child: coverUrl.isEmpty
-                      ? Column(
+                  child: coverUrl.isNotEmpty
+                      ? _buildProfileProductImage(coverUrl)
+                      : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
@@ -153,8 +150,7 @@ class ProfileScreen extends GetView<ProfileController> {
                               ),
                             ),
                           ],
-                        )
-                      : null,
+                        ),
                 ),
               ),
               // Edit cover button (top-right)
@@ -214,21 +210,10 @@ class ProfileScreen extends GetView<ProfileController> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(48.r),
                           child: profileUrl.isNotEmpty
-                              ? Image.network(
-                                  profileUrl,
+                              ? SizedBox(
                                   width: 96.r,
                                   height: 96.r,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      CircleAvatar(
-                                        radius: 48.r,
-                                        backgroundColor: Colors.white10,
-                                        child: Icon(
-                                          Icons.person,
-                                          color: Colors.white24,
-                                          size: 40.sp,
-                                        ),
-                                      ),
+                                  child: _buildProfileProductImage(profileUrl),
                                 )
                               : CircleAvatar(
                                   radius: 48.r,
@@ -608,7 +593,7 @@ class ProfileScreen extends GetView<ProfileController> {
             final imagesList = item['images'];
             if (imagesList != null && imagesList is List && imagesList.isNotEmpty) {
               final imagePath = imagesList[0].toString();
-              imageUrl = imagePath.startsWith('http')
+              imageUrl = (imagePath.startsWith('http') || imagePath.startsWith('data:image/'))
                   ? imagePath
                   : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
             }
@@ -624,6 +609,18 @@ class ProfileScreen extends GetView<ProfileController> {
               isLive: isLive,
               hasTrade: hasTrade,
               isSold: isSold,
+              onTap: () {
+                final Map<String, dynamic> itemWithSeller = Map<String, dynamic>.from(item);
+                if (itemWithSeller['sellerId'] == null || itemWithSeller['sellerId'] is String) {
+                  itemWithSeller['sellerId'] = {
+                    "fullName": controller.name.value,
+                    "image": controller.profileImageUrl.value,
+                    "rating": controller.rating.value.toString(),
+                    "address": "Verified Owner"
+                  };
+                }
+                Get.toNamed('/trade_details', arguments: itemWithSeller);
+              },
             );
           },
         ),
@@ -1026,39 +1023,34 @@ class ProfileScreen extends GetView<ProfileController> {
     bool isLive = false,
     bool hasTrade = false,
     bool isSold = false,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(24.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF161622),
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Stack(
               children: [
                 Container(
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
+                    color: Colors.black12,
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(24.r),
                     ),
-                    image: imageUrl.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(imageUrl),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
                   ),
-                  child: imageUrl.isEmpty
-                      ? const Center(
-                          child: Icon(
-                            Icons.image_not_supported_outlined,
-                            color: Colors.white24,
-                            size: 32,
-                          ),
-                        )
-                      : null,
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: double.infinity,
+                    child: _buildProfileProductImage(imageUrl),
+                  ),
                 ),
                 if (isLive)
                   Positioned(
@@ -1181,6 +1173,61 @@ class ProfileScreen extends GetView<ProfileController> {
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildProfileProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
+    if (imgStr.isEmpty) {
+      return const Center(
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: Colors.white24,
+          size: 32,
+        ),
+      );
+    }
+    
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final base64Content = imgStr.split('base64,').last;
+        final bytes = base64Decode(base64Content);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => const Center(
+            child: Icon(
+              Icons.broken_image_outlined,
+              color: Colors.white24,
+              size: 32,
+            ),
+          ),
+        );
+      } catch (_) {
+        return const Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: Colors.white24,
+            size: 32,
+          ),
+        );
+      }
+    }
+    
+    final cleanUrl = imgStr.startsWith('http')
+        ? imgStr
+        : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => const Center(
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: Colors.white24,
+          size: 32,
+        ),
       ),
     );
   }

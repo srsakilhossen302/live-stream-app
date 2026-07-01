@@ -8,6 +8,9 @@ import '../view/screens/auth/screen/reset_password_screen.dart';
 import '../view/screens/category/screen/category_screen.dart';
 import '../view/screens/main/screen/main_screen.dart';
 import '../view/screens/live_stream/screen/live_stream_screen.dart';
+import '../view/screens/live_stream/screen/go_live_setup_screen.dart';
+import '../view/screens/live_stream/screen/host_live_screen.dart';
+import '../view/screens/live_stream/screen/viewer_live_screen.dart';
 import '../view/screens/messages/screen/message_details_screen.dart';
 import '../view/screens/purchases/screen/track_order/screen/track_order_screen.dart';
 import '../view/screens/trade_details/screen/trade_details_screen.dart';
@@ -18,7 +21,6 @@ import '../view/screens/profile/screen/user_preferences_screen.dart';
 import '../view/screens/profile/screen/terms_conditions_screen.dart';
 import '../view/screens/notifications/screen/notifications_screen.dart';
 import '../view/screens/notifications/screen/trade_offer_screen.dart';
-
 import '../view/screens/trade_market/screen/create_trade_screen.dart';
 import '../view/screens/profile/screen/trader_profile_screen.dart';
 import '../view/screens/purchases/screen/purchases_screen.dart';
@@ -38,6 +40,9 @@ class AppRoute {
   static const String tradeDetails = "/trade_details";
   static const String messageDetails = "/message_details";
   static const String liveStream = "/live_stream";
+  static const String goLiveSetup = "/go_live_setup";
+  static const String hostLive = "/host_live";
+  static const String viewerLive = "/viewer_live";
   static const String createTrade = "/create_trade";
   static const String traderProfile = "/trader_profile";
   static const String purchases = "/purchases";
@@ -64,6 +69,9 @@ class AppRoute {
     GetPage(name: tradeDetails, page: () => const TradeDetailsScreen()),
     GetPage(name: messageDetails, page: () => const MessageDetailsScreen()),
     GetPage(name: liveStream, page: () => const LiveStreamScreen()),
+    GetPage(name: goLiveSetup, page: () => const GoLiveSetupScreen()),
+    GetPage(name: hostLive, page: () => const HostLiveScreen()),
+    GetPage(name: viewerLive, page: () => ViewerLiveScreen(streamData: Get.arguments ?? {})),
     GetPage(name: createTrade, page: () => const CreateTradeScreen()),
     GetPage(name: traderProfile, page: () => const TraderProfileScreen()),
     GetPage(name: purchases, page: () => const PurchasesScreen()),

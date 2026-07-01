@@ -132,7 +132,7 @@ class DiscoverController extends GetxController {
           final imagesList = item['images'];
           if (imagesList != null && imagesList is List && imagesList.isNotEmpty) {
             final imagePath = imagesList[0].toString();
-            imageUrl = imagePath.startsWith('http')
+            imageUrl = (imagePath.startsWith('http') || imagePath.startsWith('data:image/'))
                 ? imagePath
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           }
@@ -159,7 +159,7 @@ class DiscoverController extends GetxController {
           final imagesList = item['images'];
           if (imagesList != null && imagesList is List && imagesList.isNotEmpty) {
             final imagePath = imagesList[0].toString();
-            imageUrl = imagePath.startsWith('http')
+            imageUrl = (imagePath.startsWith('http') || imagePath.startsWith('data:image/'))
                 ? imagePath
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           }

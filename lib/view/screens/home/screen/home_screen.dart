@@ -88,38 +88,41 @@ class HomeScreen extends GetView<HomeController> {
               SizedBox(height: 20.h),
 
               // Go Live Button
-              Container(
-                width: double.infinity,
-                height: 67.h,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(36.r),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1,
+              GestureDetector(
+                onTap: () => Get.toNamed(AppRoute.goLiveSetup),
+                child: Container(
+                  width: double.infinity,
+                  height: 67.h,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(36.r),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                      width: 1,
+                    ),
+                    color: Colors.white.withOpacity(0.01),
                   ),
-                  color: Colors.white.withOpacity(0.01),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      "assets/icons/Go Live.svg",
-                      width: 36.w,
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF8B9BFF),
-                        BlendMode.srcIn,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        "assets/icons/Go Live.svg",
+                        width: 36.w,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF8B9BFF),
+                          BlendMode.srcIn,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 14.w),
-                    Text(
-                      "Go Live",
-                      style: TextStyle(
-                        color: const Color(0xFF8B9BFF),
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w900,
+                      SizedBox(width: 14.w),
+                      Text(
+                        "Go Live",
+                        style: TextStyle(
+                          color: const Color(0xFF8B9BFF),
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -305,7 +308,13 @@ class HomeScreen extends GetView<HomeController> {
                         width: double.infinity,
                         height: 60.h,
                         child: ElevatedButton(
-                          onPressed: () => Get.toNamed(AppRoute.liveStream),
+                          onPressed: () {
+                            if (controller.liveItems.isNotEmpty) {
+                              Get.toNamed(AppRoute.viewerLive, arguments: controller.liveItems.first.raw);
+                            } else {
+                              Get.snackbar("No Live Streams", "There are no active live streams right now.", snackPosition: SnackPosition.BOTTOM);
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8B9BFF),
                             foregroundColor: const Color(0xFF0F0B1E),
@@ -394,21 +403,31 @@ class HomeScreen extends GetView<HomeController> {
                           ),
                         ),
                       )
-                    : GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 18.w,
-                          mainAxisSpacing: 18.h,
-                          childAspectRatio: 0.85,
-                        ),
-                        itemCount: controller.liveItems.length,
-                        itemBuilder: (context, index) {
-                          final item = controller.liveItems[index];
-                          return _buildLiveCard(item, index);
-                        },
-                      ),
+                    : controller.liveItems.isEmpty
+                        ? Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32.h),
+                            child: Center(
+                              child: Text(
+                                "No live shows currently broadcasting.",
+                                style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          )
+                        : GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 18.w,
+                              mainAxisSpacing: 18.h,
+                              childAspectRatio: 0.85,
+                            ),
+                            itemCount: controller.liveItems.length,
+                            itemBuilder: (context, index) {
+                              final item = controller.liveItems[index];
+                              return _buildLiveCard(item, index);
+                            },
+                          ),
               ),
 
               SizedBox(height: 100.h), // Bottom padding for navigation bar
@@ -455,7 +474,13 @@ class HomeScreen extends GetView<HomeController> {
 
   Widget _buildLiveCard(LiveItemModel item, int index) {
     return GestureDetector(
-      onTap: () => Get.toNamed(AppRoute.liveStream, arguments: item),
+      onTap: () {
+        if (item.raw != null) {
+          Get.toNamed(AppRoute.viewerLive, arguments: item.raw);
+        } else {
+          Get.snackbar("Cannot Join", "Stream data is not available.", snackPosition: SnackPosition.BOTTOM);
+        }
+      },
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28.r),

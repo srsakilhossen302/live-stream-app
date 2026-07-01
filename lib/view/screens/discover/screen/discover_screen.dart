@@ -128,7 +128,10 @@ class DiscoverScreen extends GetView<DiscoverController> {
             ...controller.liveShows.map((show) {
               return Padding(
                 padding: EdgeInsets.only(bottom: 20.h),
-                child: _buildLiveCard(show['title']!, show['host']!, show['viewers']!, show['image']!),
+                child: GestureDetector(
+                  onTap: () => Get.toNamed(AppRoute.viewerLive, arguments: show['raw']),
+                  child: _buildLiveCard(show['title']!, show['host']!, show['viewers']!, show['image']!),
+                ),
               );
             }).toList(),
           if (!isAllTab) ...[
@@ -214,7 +217,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
             child: Icon(Icons.arrow_back, color: Colors.white, size: 22.sp),
           ),
           Text("Discover", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-          Text("Skip", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 16.sp, fontWeight: FontWeight.w800)),
+          SizedBox(width: 22.sp),
         ],
       ),
     );
