@@ -19,6 +19,77 @@ class ApiClient {
     };
   }
 
+  // Debug Log Helper for Requests
+  void _logRequest(String method, Uri url, Map<String, String> headers, {dynamic body, Map<String, String>? fields, List<String>? filePaths, String? fileFieldName}) {
+    if (!kDebugMode) return;
+    print('╔═══════════════════════════════════════════════════════════════════════════');
+    print('║ 🚀 [API REQUEST] -> ${method.toUpperCase()}');
+    print('╠═══════════════════════════════════════════════════════════════════════════');
+    print('║ 🔗 URL: $url');
+    print('║ 📂 Headers:');
+    headers.forEach((key, value) => print('║    • $key: $value'));
+    if (body != null) {
+      print('║ 📝 Body:');
+      try {
+        final parsed = body is String ? jsonDecode(body) : body;
+        final prettyString = const JsonEncoder.withIndent('  ').convert(parsed);
+        for (var line in prettyString.split('\n')) {
+          print('║    $line');
+        }
+      } catch (_) {
+        print('║    $body');
+      }
+    }
+    if (fields != null && fields.isNotEmpty) {
+      print('║ 📋 Fields:');
+      fields.forEach((key, value) => print('║    • $key: $value'));
+    }
+    if (filePaths != null && filePaths.isNotEmpty) {
+      print('║ 📁 Files (Field: $fileFieldName):');
+      for (var path in filePaths) {
+        print('║    • $path');
+      }
+    }
+    print('╚═══════════════════════════════════════════════════════════════════════════');
+  }
+
+  // Debug Log Helper for Responses
+  void _logResponse(String method, Uri url, http.Response response, DateTime startTime) {
+    if (!kDebugMode) return;
+    final duration = DateTime.now().difference(startTime).inMilliseconds;
+    final isSuccess = response.statusCode >= 200 && response.statusCode < 300;
+    final statusColor = isSuccess ? '✅' : '❌';
+    print('╔═══════════════════════════════════════════════════════════════════════════');
+    print('║ $statusColor [API RESPONSE] -> ${method.toUpperCase()} | Status: ${response.statusCode} | Time: ${duration}ms');
+    print('╠═══════════════════════════════════════════════════════════════════════════');
+    print('║ 🔗 URL: $url');
+    print('║ 💬 Response Body:');
+    try {
+      final parsed = jsonDecode(response.body);
+      final prettyString = const JsonEncoder.withIndent('  ').convert(parsed);
+      for (var line in prettyString.split('\n')) {
+        print('║    $line');
+      }
+    } catch (_) {
+      for (var line in response.body.split('\n')) {
+        print('║    $line');
+      }
+    }
+    print('╚═══════════════════════════════════════════════════════════════════════════');
+  }
+
+  // Debug Log Helper for Errors
+  void _logError(String method, Uri url, dynamic error, DateTime startTime) {
+    if (!kDebugMode) return;
+    final duration = DateTime.now().difference(startTime).inMilliseconds;
+    print('╔═══════════════════════════════════════════════════════════════════════════');
+    print('║ 💥 [API ERROR] -> ${method.toUpperCase()} | Time: ${duration}ms');
+    print('╠═══════════════════════════════════════════════════════════════════════════');
+    print('║ 🔗 URL: $url');
+    print('║ ⚠️ Error details: $error');
+    print('╚═══════════════════════════════════════════════════════════════════════════');
+  }
+
   // POST Request
   Future<http.Response> postData(
     String uri,
@@ -31,13 +102,9 @@ class ApiClient {
         ? jsonEncode(body)
         : body.toString();
 
-    if (kDebugMode) {
-      print('=== API POST Request ===');
-      print('URL: $url');
-      print('Headers: $requestHeaders');
-      print('Body: $requestBody');
-    }
+    _logRequest('POST', url, requestHeaders, body: body);
 
+    final startTime = DateTime.now();
     try {
       final response = await http.post(
         url,
@@ -45,17 +112,10 @@ class ApiClient {
         body: requestBody,
       );
 
-      if (kDebugMode) {
-        print('=== API Response (${response.statusCode}) ===');
-        print('Response Body: ${response.body}');
-      }
-
+      _logResponse('POST', url, response, startTime);
       return response;
     } catch (e) {
-      if (kDebugMode) {
-        print('=== API Error ===');
-        print('Error: $e');
-      }
+      _logError('POST', url, e, startTime);
       rethrow;
     }
   }
@@ -72,20 +132,20 @@ class ApiClient {
     final Map<String, String> requestHeaders = headers ?? getHeader();
     requestHeaders.remove('Content-Type');
 
-    if (kDebugMode) {
-      print('=== API POST Multipart Request ===');
-      print('URL: $url');
-      print('Headers: $requestHeaders');
-      print('Fields: $fields');
-      if (filePaths != null) print('Files: $filePaths (field: $fieldName)');
-    }
+    _logRequest(
+      'POST (Multipart)',
+      url,
+      requestHeaders,
+      fields: fields,
+      filePaths: filePaths,
+      fileFieldName: fieldName,
+    );
 
+    final startTime = DateTime.now();
     try {
       final request = http.MultipartRequest('POST', url);
       request.headers.addAll(requestHeaders);
 
-      // Separate 'data' from fields if you want to use the combined pattern
-      // But let's try the direct fields first as requested by standard multipart
       fields.forEach((key, value) {
         request.fields[key] = value;
       });
@@ -95,7 +155,7 @@ class ApiClient {
           final mimeType = path.endsWith('.png') ? 'png' : 'jpeg';
           request.files.add(
             await http.MultipartFile.fromPath(
-              fieldName, // This must match the backend's expected field name
+              fieldName,
               path,
               contentType: MediaType('image', mimeType),
             ),
@@ -110,17 +170,10 @@ class ApiClient {
         streamedResponse,
       ).timeout(const Duration(seconds: 30));
 
-      if (kDebugMode) {
-        print('=== API Response (${response.statusCode}) ===');
-        print('Response Body: ${response.body}');
-      }
-
+      _logResponse('POST (Multipart)', url, response, startTime);
       return response;
     } catch (e) {
-      if (kDebugMode) {
-        print('=== API Error ===');
-        print('Error: $e');
-      }
+      _logError('POST (Multipart)', url, e, startTime);
       rethrow;
     }
   }
@@ -137,13 +190,9 @@ class ApiClient {
         ? jsonEncode(body)
         : body.toString();
 
-    if (kDebugMode) {
-      print('=== API PATCH Request ===');
-      print('URL: $url');
-      print('Headers: $requestHeaders');
-      print('Body: $requestBody');
-    }
+    _logRequest('PATCH', url, requestHeaders, body: body);
 
+    final startTime = DateTime.now();
     try {
       final response = await http.patch(
         url,
@@ -151,17 +200,10 @@ class ApiClient {
         body: requestBody,
       );
 
-      if (kDebugMode) {
-        print('=== API Response (${response.statusCode}) ===');
-        print('Response Body: ${response.body}');
-      }
-
+      _logResponse('PATCH', url, response, startTime);
       return response;
     } catch (e) {
-      if (kDebugMode) {
-        print('=== API Error ===');
-        print('Error: $e');
-      }
+      _logError('PATCH', url, e, startTime);
       rethrow;
     }
   }
@@ -176,18 +218,18 @@ class ApiClient {
   }) async {
     final url = Uri.parse('$baseUrl$uri');
     final Map<String, String> requestHeaders = headers ?? getHeader();
-    requestHeaders.remove(
-      'Content-Type',
-    ); // Multipart handles its own Content-Type
+    requestHeaders.remove('Content-Type');
 
-    if (kDebugMode) {
-      print('=== API PATCH Multipart Request ===');
-      print('URL: $url');
-      print('Headers: $requestHeaders');
-      print('Fields: $fields');
-      if (filePath != null) print('File: $filePath (field: $fieldName)');
-    }
+    _logRequest(
+      'PATCH (Multipart)',
+      url,
+      requestHeaders,
+      fields: fields,
+      filePaths: filePath != null ? [filePath] : null,
+      fileFieldName: fieldName,
+    );
 
+    final startTime = DateTime.now();
     try {
       final request = http.MultipartRequest('PATCH', url);
       request.headers.addAll(requestHeaders);
@@ -211,17 +253,10 @@ class ApiClient {
         streamedResponse,
       ).timeout(const Duration(seconds: 30));
 
-      if (kDebugMode) {
-        print('=== API Response (${response.statusCode}) ===');
-        print('Response Body: ${response.body}');
-      }
-
+      _logResponse('PATCH (Multipart)', url, response, startTime);
       return response;
     } catch (e) {
-      if (kDebugMode) {
-        print('=== API Error ===');
-        print('Error: $e');
-      }
+      _logError('PATCH (Multipart)', url, e, startTime);
       rethrow;
     }
   }
@@ -234,26 +269,16 @@ class ApiClient {
     final url = Uri.parse('$baseUrl$uri');
     final Map<String, String> requestHeaders = headers ?? getHeader();
 
-    if (kDebugMode) {
-      print('=== API GET Request ===');
-      print('URL: $url');
-      print('Headers: $requestHeaders');
-    }
+    _logRequest('GET', url, requestHeaders);
 
+    final startTime = DateTime.now();
     try {
       final response = await http.get(url, headers: requestHeaders);
 
-      if (kDebugMode) {
-        print('=== API Response (${response.statusCode}) ===');
-        print('Response Body: ${response.body}');
-      }
-
+      _logResponse('GET', url, response, startTime);
       return response;
     } catch (e) {
-      if (kDebugMode) {
-        print('=== API Error ===');
-        print('Error: $e');
-      }
+      _logError('GET', url, e, startTime);
       rethrow;
     }
   }

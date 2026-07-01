@@ -1,6 +1,6 @@
 class ApiUrl {
-  static const String baseUrl = "http://10.10.7.50:5007/api/v1";
-  static const String imageBaseUrl = "http://10.10.7.50:5007";
+  static const String baseUrl = "http://10.10.26.173:5007/api/v1";
+  static const String imageBaseUrl = "http://10.10.26.173:5007";
 
   // Auth
   static const String login = "/auth/login";
@@ -16,4 +16,13 @@ class ApiUrl {
 
   // Products
   static const String products = "/products";
+
+  // Notifications
+  static const String myNotifications = "/notifications/my";
+
+  // Orders
+  static const String userOrders = "/orders/user";
+
+  // Trades
+  static const String tradeOffers = "/trades/offers";
 }

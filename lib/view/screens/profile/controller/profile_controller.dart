@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
 
@@ -23,6 +24,19 @@ class ProfileController extends GetxController {
   final RxString description = "Bio description...".obs;
   final RxString profileImageUrl = "".obs;
   final RxString coverPhotoUrl = "".obs;
+  final RxBool isVerified = false.obs;
+  final RxDouble rating = 9.0.obs;
+  final RxInt reviewsCount = 124.obs;
+  final RxInt activeCount = 0.obs;
+  final RxInt soldCount = 0.obs;
+
+  // User listings
+  final RxList<dynamic> userListings = <dynamic>[].obs;
+
+  // Activity data
+  final RxList<dynamic> notificationsList = <dynamic>[].obs;
+  final RxList<dynamic> purchasesList = <dynamic>[].obs;
+  final RxBool isActivityLoading = false.obs;
 
   @override
   void onInit() {
@@ -57,11 +71,77 @@ class ProfileController extends GetxController {
               : '/$coverPath';
           coverPhotoUrl.value = "${ApiUrl.imageBaseUrl}$formattedCoverPath";
         }
+
+        // Handle additional fields
+        isVerified.value = data['isVerified'] ?? false;
+        if (data['rating'] != null) {
+          rating.value = (data['rating'] as num).toDouble();
+        }
+        reviewsCount.value = data['reviewsCount'] ?? 124;
+
+        // Fetch products listed by this user and activity logs
+        final userId = data['id'] ?? data['_id'] ?? SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+        if (userId != null && userId.isNotEmpty) {
+          await fetchUserListings(userId);
+          await fetchActivityData(userId);
+        }
       }
     } catch (e) {
       Get.log("Error fetching profile: $e");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchUserListings(String userId) async {
+    try {
+      final response = await _apiClient.getData("${ApiUrl.products}?sellerId=$userId");
+      if (response.statusCode == 200) {
+        final list = jsonDecode(response.body)['data'] as List;
+        userListings.assignAll(list);
+
+        // Update active and sold counts based on listings
+        activeCount.value = list.where((item) => item['status'] == 'live' || item['status'] == 'active' || item['isSold'] != true).length;
+        soldCount.value = list.where((item) => item['status'] == 'sold' || item['isSold'] == true).length;
+      }
+    } catch (e) {
+      Get.log("Error fetching user listings: $e");
+    }
+  }
+
+  Future<void> fetchActivityData(String userId) async {
+    isActivityLoading.value = true;
+    try {
+      await Future.wait([
+        fetchNotifications(),
+        fetchPurchases(userId),
+      ]);
+    } finally {
+      isActivityLoading.value = false;
+    }
+  }
+
+  Future<void> fetchNotifications() async {
+    try {
+      final response = await _apiClient.getData(ApiUrl.myNotifications);
+      if (response.statusCode == 200) {
+        final list = jsonDecode(response.body)['data'] as List;
+        notificationsList.assignAll(list);
+      }
+    } catch (e) {
+      Get.log("Error fetching notifications: $e");
+    }
+  }
+
+  Future<void> fetchPurchases(String userId) async {
+    try {
+      final response = await _apiClient.getData("${ApiUrl.userOrders}?userId=$userId&role=buyer");
+      if (response.statusCode == 200) {
+        final list = jsonDecode(response.body)['data'] as List;
+        purchasesList.assignAll(list);
+      }
+    } catch (e) {
+      Get.log("Error fetching purchases: $e");
     }
   }
 

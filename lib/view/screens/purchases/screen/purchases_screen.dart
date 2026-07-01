@@ -97,15 +97,36 @@ class PurchasesScreen extends GetView<PurchasesController> {
             
             // Orders List
             Expanded(
-              child: Obx(() => ListView.builder(
-                padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
-                physics: const BouncingScrollPhysics(),
-                itemCount: controller.filteredPurchases.length,
-                itemBuilder: (context, index) {
-                  final order = controller.filteredPurchases[index];
-                  return _buildOrderCard(order);
-                },
-              )),
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+                  );
+                }
+
+                if (controller.filteredPurchases.isEmpty) {
+                  return Center(
+                    child: Text(
+                      "No purchases found.",
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: controller.filteredPurchases.length,
+                  itemBuilder: (context, index) {
+                    final order = controller.filteredPurchases[index];
+                    return _buildOrderCard(order);
+                  },
+                );
+              }),
             ),
           ],
         ),

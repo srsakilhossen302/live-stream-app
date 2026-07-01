@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/profile_controller.dart';
+import '../../../../data/services/api_url.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
   const ProfileScreen({super.key});
@@ -299,37 +300,40 @@ class ProfileScreen extends GetView<ProfileController> {
                       ],
                     ),
                     // Verified badge
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8B9BFF).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(
-                          color: const Color(0xFF8B9BFF).withOpacity(0.3),
+                    Obx(() {
+                      if (!controller.isVerified.value) return const SizedBox.shrink();
+                      return Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.verified,
-                            color: const Color(0xFF8B9BFF),
-                            size: 14.sp,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B9BFF).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20.r),
+                          border: Border.all(
+                            color: const Color(0xFF8B9BFF).withOpacity(0.3),
                           ),
-                          SizedBox(width: 5.w),
-                          Text(
-                            "Verified",
-                            style: TextStyle(
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.verified,
                               color: const Color(0xFF8B9BFF),
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w800,
+                              size: 14.sp,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                            SizedBox(width: 5.w),
+                            Text(
+                              "Verified",
+                              style: TextStyle(
+                                color: const Color(0xFF8B9BFF),
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
                 SizedBox(height: 12.h),
@@ -344,7 +348,7 @@ class ProfileScreen extends GetView<ProfileController> {
                 ),
                 SizedBox(height: 16.h),
                 // Rating pill
-                Container(
+                Obx(() => Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 14.w,
                     vertical: 8.h,
@@ -363,7 +367,7 @@ class ProfileScreen extends GetView<ProfileController> {
                       ),
                       SizedBox(width: 6.w),
                       Text(
-                        "9.0/10",
+                        "${controller.rating.value.toStringAsFixed(1)}/10",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12.sp,
@@ -372,7 +376,7 @@ class ProfileScreen extends GetView<ProfileController> {
                       ),
                       SizedBox(width: 6.w),
                       Text(
-                        "124 REVIEWS",
+                        "${controller.reviewsCount.value} REVIEWS",
                         style: TextStyle(
                           color: Colors.white38,
                           fontSize: 10.sp,
@@ -381,7 +385,7 @@ class ProfileScreen extends GetView<ProfileController> {
                       ),
                     ],
                   ),
-                ),
+                )),
               ],
             ),
           ),
@@ -478,14 +482,14 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget _buildStatsRow() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 40.w),
-      child: Row(
+      child: Obx(() => Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatItem("ACTIVE", "4", const Color(0xFF8B9BFF)),
+          _buildStatItem("ACTIVE", "${controller.activeCount.value}", const Color(0xFF8B9BFF)),
           Container(height: 30.h, width: 1, color: Colors.white10),
-          _buildStatItem("SOLD ITEM", "14", const Color(0xFFFF8BFF)),
+          _buildStatItem("SOLD ITEM", "${controller.soldCount.value}", const Color(0xFFFF8BFF)),
         ],
-      ),
+      )),
     );
   }
 
@@ -556,53 +560,76 @@ class ProfileScreen extends GetView<ProfileController> {
   }
 
   Widget _buildListingsGrid() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 16.w,
-          mainAxisSpacing: 16.h,
-        ),
-        itemCount: 4,
-        itemBuilder: (context, index) {
-          if (index == 0)
-            return _buildListingCard(
-              "Nike Dunk Low 'Retro'",
-              "\$180",
-              "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=1000&auto=format&fit=crop",
-              isLive: true,
-              hasTrade: true,
-            );
-          if (index == 1)
-            return _buildListingCard(
-              "Supreme Classic Tee",
-              "\$85",
-              "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop",
-              isSold: true,
-            );
-          if (index == 2)
-            return _buildListingCard(
-              "Seiko Prospex 'Blue'",
-              "\$420",
-              "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1000&auto=format&fit=crop",
-              isLive: true,
-            );
-          return _buildListingCard(
-            "Pokemon Charizard V",
-            "\$1,200",
-            "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop",
-            isLive: true,
-            hasTrade: true,
-          );
-        },
-      ),
-    );
-  }
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return SizedBox(
+          height: 200.h,
+          child: const Center(
+            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+          ),
+        );
+      }
+      
+      if (controller.userListings.isEmpty) {
+        return SizedBox(
+          height: 200.h,
+          child: Center(
+            child: Text(
+              "No listings posted yet.",
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        );
+      }
 
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 16.w,
+            mainAxisSpacing: 16.h,
+          ),
+          itemCount: controller.userListings.length,
+          itemBuilder: (context, index) {
+            final item = controller.userListings[index];
+            final title = item['title'] ?? "";
+            final priceVal = item['buyNowPrice'] ?? item['estValue'] ?? 0;
+            final price = "\$${priceVal.toString()}";
+
+            String imageUrl = "";
+            final imagesList = item['images'];
+            if (imagesList != null && imagesList is List && imagesList.isNotEmpty) {
+              final imagePath = imagesList[0].toString();
+              imageUrl = imagePath.startsWith('http')
+                  ? imagePath
+                  : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
+            }
+
+            final isLive = item['status'] == 'live' || item['status'] == 'active';
+            final isSold = item['status'] == 'sold' || item['isSold'] == true;
+            final hasTrade = item['allowTrade'] == true;
+
+            return _buildListingCard(
+              title,
+              price,
+              imageUrl,
+              isLive: isLive,
+              hasTrade: hasTrade,
+              isSold: isSold,
+            );
+          },
+        ),
+      );
+    });
+  }
   Widget _buildActivityTab() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,41 +675,103 @@ class ProfileScreen extends GetView<ProfileController> {
         SizedBox(height: 32.h),
 
         // Activity List
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
-              _buildActivityItem(
-                svgPath: "assets/icons/Order Delivered.svg",
-                title: "Order Delivered",
-                subtitle: "Your order #24891 has arrived",
-                time: "2h ago",
-                isFirst: true,
+        Obx(() {
+          if (controller.isActivityLoading.value) {
+            return SizedBox(
+              height: 200.h,
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
               ),
-              _buildActivityItem(
-                svgPath: "assets/icons/Trade Completed.svg",
-                title: "Trade Completed",
-                subtitle: "Trade with @user123 completed",
-                time: "5h ago",
+            );
+          }
+
+          final isPurchases = controller.selectedActivityFilter.value == 1;
+          final List<dynamic> currentList = isPurchases 
+              ? controller.purchasesList 
+              : controller.notificationsList;
+
+          if (currentList.isEmpty) {
+            return SizedBox(
+              height: 200.h,
+              child: Center(
+                child: Text(
+                  isPurchases ? "No purchases made yet." : "No activity logs available.",
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-              _buildActivityItem(
-                svgPath: "assets/icons/New Message.svg",
-                title: "New Message",
-                subtitle: "New message from @sellerX",
-                time: "Yesterday",
-              ),
-              _buildActivityItem(
-                svgPath: "assets/icons/Purchase Made.svg",
-                title: "Purchase Made",
-                subtitle: "You bought Pokémon Card Pack",
-                time: "2d ago",
-                isLast: true,
-              ),
-            ],
-          ),
-        ),
+            );
+          }
+
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              children: List.generate(currentList.length, (index) {
+                final item = currentList[index];
+                
+                String svgPath = "assets/icons/New Message.svg";
+                String title = "";
+                String subtitle = "";
+                String timeAgo = "";
+
+                if (isPurchases) {
+                  svgPath = "assets/icons/Purchase Made.svg";
+                  title = "Purchase Made";
+                  final product = item['productId'];
+                  final productTitle = (product is Map) ? (product['title'] ?? 'Item') : 'Item';
+                  subtitle = "You bought $productTitle";
+                  timeAgo = item['createdAt'] != null 
+                      ? _formatTimestamp(item['createdAt'].toString())
+                      : "Recently";
+                } else {
+                  final type = item['type'] ?? "";
+                  if (type.toString().toLowerCase().contains('order')) {
+                    svgPath = "assets/icons/Order Delivered.svg";
+                  } else if (type.toString().toLowerCase().contains('trade')) {
+                    svgPath = "assets/icons/Trade Completed.svg";
+                  } else {
+                    svgPath = "assets/icons/New Message.svg";
+                  }
+                  title = item['title'] ?? "Alert";
+                  subtitle = item['text'] ?? item['message'] ?? "";
+                  timeAgo = item['createdAt'] != null
+                      ? _formatTimestamp(item['createdAt'].toString())
+                      : "Just now";
+                }
+
+                return _buildActivityItem(
+                  svgPath: svgPath,
+                  title: title,
+                  subtitle: subtitle,
+                  time: timeAgo,
+                  isFirst: index == 0,
+                  isLast: index == currentList.length - 1,
+                );
+              }),
+            ),
+          );
+        }),
       ],
     );
+  }
+
+  String _formatTimestamp(String timestamp) {
+    try {
+      final dateTime = DateTime.parse(timestamp);
+      final difference = DateTime.now().difference(dateTime);
+      if (difference.inMinutes < 60) {
+        return "${difference.inMinutes}m ago";
+      } else if (difference.inHours < 24) {
+        return "${difference.inHours}h ago";
+      } else {
+        return "${difference.inDays}d ago";
+      }
+    } catch (_) {
+      return "Recently";
+    }
   }
 
   Widget _buildActivityItem({
@@ -954,11 +1043,22 @@ class ProfileScreen extends GetView<ProfileController> {
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(24.r),
                     ),
-                    image: DecorationImage(
-                      image: NetworkImage(imageUrl),
-                      fit: BoxFit.cover,
-                    ),
+                    image: imageUrl.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(imageUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
+                  child: imageUrl.isEmpty
+                      ? const Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Colors.white24,
+                            size: 32,
+                          ),
+                        )
+                      : null,
                 ),
                 if (isLive)
                   Positioned(

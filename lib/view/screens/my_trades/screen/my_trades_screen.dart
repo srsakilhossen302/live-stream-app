@@ -50,9 +50,36 @@ class MyTradesScreen extends GetView<MyTradesController> {
                     SizedBox(height: 24.h),
                     _buildFilters(),
                     SizedBox(height: 32.h),
-                    Obx(() => Column(
-                      children: controller.filteredTrades.map((trade) => _buildMyTradeCard(trade)).toList(),
-                    )),
+                    Obx(() {
+                      if (controller.isLoading.value) {
+                        return SizedBox(
+                          height: 300.h,
+                          child: const Center(
+                            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+                          ),
+                        );
+                      }
+
+                      if (controller.filteredTrades.isEmpty) {
+                        return SizedBox(
+                          height: 300.h,
+                          child: Center(
+                            child: Text(
+                              "No trades found.",
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: controller.filteredTrades.map((trade) => _buildMyTradeCard(trade)).toList(),
+                      );
+                    }),
                     SizedBox(height: 50.h),
                   ],
                 ),
