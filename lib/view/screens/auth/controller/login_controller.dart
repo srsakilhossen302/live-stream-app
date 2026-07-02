@@ -12,7 +12,12 @@ class LoginController extends GetxController {
   final passwordController = TextEditingController();
 
   final RxBool isLoading = false.obs;
+  final RxBool isObscured = true.obs;
   final ApiClient _apiClient = Get.find<ApiClient>();
+
+  void toggleObscure() {
+    isObscured.value = !isObscured.value;
+  }
 
   Future<void> onLogin() async {
     final email = emailController.text.trim();

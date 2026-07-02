@@ -194,13 +194,27 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                                   color: Colors.black26,
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
-                                child: img.isNotEmpty
-                                    ? Image.network(
-                                        img.startsWith('http') ? img : "${ApiUrl.imageBaseUrl}$img",
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
-                                      )
-                                    : Icon(Icons.image, color: Colors.white24, size: 22.sp),
+                                child: img.isEmpty
+                                    ? Icon(Icons.image, color: Colors.white24, size: 22.sp)
+                                    : img.startsWith('data:image/') && img.contains('base64,')
+                                        ? (() {
+                                            try {
+                                              final base64Content = img.split('base64,').last;
+                                              final bytes = base64Decode(base64Content);
+                                              return Image.memory(
+                                                bytes,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
+                                              );
+                                            } catch (_) {
+                                              return Icon(Icons.image, color: Colors.white24, size: 22.sp);
+                                            }
+                                          })()
+                                        : Image.network(
+                                            img.startsWith('http') ? img : "${ApiUrl.imageBaseUrl}$img",
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
+                                          ),
                               );
                             }),
                             SizedBox(width: 12.w),

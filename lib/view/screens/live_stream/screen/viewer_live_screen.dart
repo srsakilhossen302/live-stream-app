@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../data/services/api_url.dart';
 import '../controller/agora_live_controller.dart';
+import 'dart:convert';
 
 class ViewerLiveScreen extends StatefulWidget {
   final Map<String, dynamic> streamData;
@@ -62,14 +63,14 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Obx(() => ctrl.isLoading.value
+                      ctrl.isLoading.value
                           ? const CircularProgressIndicator(color: Color(0xFF8B9BFF))
-                          : Icon(Icons.live_tv_rounded, color: Colors.white24, size: 64.sp)),
+                          : Icon(Icons.live_tv_rounded, color: Colors.white24, size: 64.sp),
                       SizedBox(height: 16.h),
-                      Obx(() => Text(
+                      Text(
                         ctrl.isLoading.value ? "Connecting to stream..." : "Waiting for host...",
                         style: TextStyle(color: Colors.white38, fontSize: 14.sp),
-                      )),
+                      ),
                     ],
                   ),
                 ),
@@ -181,13 +182,27 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                               ),
                               child: Obx(() {
                                 final img = ctrl.currentProductImage.value;
-                                return img.isNotEmpty
-                                    ? Image.network(
-                                        img.startsWith('http') ? img : "${ApiUrl.imageBaseUrl}$img",
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
-                                      )
-                                    : Icon(Icons.image, color: Colors.white24, size: 22.sp);
+                                if (img.isEmpty) {
+                                  return Icon(Icons.image, color: Colors.white24, size: 22.sp);
+                                }
+                                if (img.startsWith('data:image/') && img.contains('base64,')) {
+                                  try {
+                                    final base64Content = img.split('base64,').last;
+                                    final bytes = base64Decode(base64Content);
+                                    return Image.memory(
+                                      bytes,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
+                                    );
+                                  } catch (_) {
+                                    return Icon(Icons.image, color: Colors.white24, size: 22.sp);
+                                  }
+                                }
+                                return Image.network(
+                                  img.startsWith('http') ? img : "${ApiUrl.imageBaseUrl}$img",
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
+                                );
                               }),
                             ),
                             SizedBox(width: 12.w),

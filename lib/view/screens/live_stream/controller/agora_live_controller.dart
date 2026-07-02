@@ -86,11 +86,16 @@ class AgoraLiveController extends GetxController {
     required String productId,
     required double startingBid,
     required int timerDuration,
+    String productTitle = "",
+    String productImage = "",
   }) async {
     isLoading.value = true;
     try {
       final sellerId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
       final channel = "stream_${sellerId}_${DateTime.now().millisecondsSinceEpoch}";
+
+      currentProductTitle.value = productTitle;
+      currentProductImage.value = productImage;
 
       // 1) Create stream on backend
       final streamRes = await _apiClient.postData(ApiUrl.startStream, {
@@ -98,6 +103,7 @@ class AgoraLiveController extends GetxController {
         "description": description,
         "sellerId": sellerId,
         "agoraChannelName": channel,
+        "status": "live",
       });
 
       if (streamRes.statusCode != 200 && streamRes.statusCode != 201) {
@@ -259,12 +265,21 @@ class AgoraLiveController extends GetxController {
         debugPrint("⚠️ Failed to fetch token from backend: ${response.statusCode}. Trying fallback with empty token.");
       }
 
-      // 1) Request permissions
-      final camStatus = await Permission.camera.request();
-      final micStatus = await Permission.microphone.request();
-      debugPrint("📷 Camera: $camStatus | 🎤 Mic: $micStatus");
+      // 1) Request permissions (only if Host)
+      if (isHost) {
+        final camStatus = await Permission.camera.request();
+        final micStatus = await Permission.microphone.request();
+        debugPrint("📷 Camera: $camStatus | 🎤 Mic: $micStatus");
+      }
 
       // 2) Create engine
+      if (engine != null) {
+        try {
+          await engine!.leaveChannel();
+          await engine!.release();
+        } catch (_) {}
+        engine = null;
+      }
       engine = createAgoraRtcEngine();
       await engine!.initialize(RtcEngineContext(appId: dynamicAppId));
       debugPrint("✅ Agora Engine initialized");

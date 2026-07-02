@@ -79,15 +79,27 @@ class LoginScreen extends GetView<LoginController> {
                       ),
                     ],
                   ),
-                  TextField(
-                    controller: controller.passwordController,
-                    obscureText: true,
-                    style: TextStyle(color: Colors.white, fontSize: 16.sp),
-                    decoration: InputDecoration(
-                      hintText: "••••••••",
-                      hintStyle: TextStyle(color: Colors.white24, fontSize: 16.sp),
-                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF8B9BFF))),
+                  Obx(
+                    () => TextField(
+                      controller: controller.passwordController,
+                      obscureText: controller.isObscured.value,
+                      style: TextStyle(color: Colors.white, fontSize: 16.sp),
+                      decoration: InputDecoration(
+                        hintText: "••••••••",
+                        hintStyle: TextStyle(color: Colors.white24, fontSize: 16.sp),
+                        enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
+                        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF8B9BFF))),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            controller.isObscured.value
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: Colors.white38,
+                            size: 20.sp,
+                          ),
+                          onPressed: () => controller.toggleObscure(),
+                        ),
+                      ),
                     ),
                   ),
                   

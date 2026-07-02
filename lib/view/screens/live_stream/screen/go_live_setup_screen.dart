@@ -66,6 +66,13 @@ class _GoLiveSetupScreenState extends State<GoLiveSetupScreen> {
     }
     setState(() => _isStarting = true);
 
+    final pTitle = _selectedProduct?['title']?.toString() ?? "";
+    final images = _selectedProduct?['images'];
+    String pImage = "";
+    if (images is List && images.isNotEmpty) {
+      pImage = images[0]?.toString() ?? "";
+    }
+
     final ctrl = Get.put(AgoraLiveController(), permanent: true);
     final success = await ctrl.startStream(
       title: _titleController.text.trim(),
@@ -73,6 +80,8 @@ class _GoLiveSetupScreenState extends State<GoLiveSetupScreen> {
       productId: _selectedProduct?['_id']?.toString() ?? "",
       startingBid: double.tryParse(_startingBidController.text) ?? 100,
       timerDuration: _timerDuration,
+      productTitle: pTitle,
+      productImage: pImage,
     );
 
     setState(() => _isStarting = false);
