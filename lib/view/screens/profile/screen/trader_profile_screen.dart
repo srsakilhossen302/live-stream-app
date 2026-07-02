@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../../../core/app_route.dart';
+import '../../messages/controller/messages_controller.dart';
 
 class TraderProfileScreen extends StatelessWidget {
   const TraderProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final args = Get.arguments as Map<String, dynamic>? ?? {};
+    final String traderId = args['id'] ?? args['_id'] ?? '';
+    final String traderName = args['name'] ?? args['fullName'] ?? '@Julian_D';
+    final String traderBio = args['description'] ?? args['bio'] ?? "Elite collector and trader of rare streetwear and luxury watches. Based in NY. Trusted for secure, authenticated swaps.";
+    final String traderAvatar = args['avatar'] ?? args['image'] ?? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop";
+    
     return CustomBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -37,7 +45,7 @@ class TraderProfileScreen extends StatelessWidget {
               SizedBox(height: 32.h),
               
               // Profile Header
-              _buildProfileHeader(),
+              _buildProfileHeader(traderName, traderAvatar, traderBio),
               
               SizedBox(height: 32.h),
               
@@ -61,7 +69,39 @@ class TraderProfileScreen extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 24.w),
                 child: Row(
                   children: [
-                    Expanded(child: _buildActionButton("Message", const Color(0xFF8B9BFF), Colors.black)),
+                    Expanded(
+                      child: _buildActionButton(
+                        "Message",
+                        const Color(0xFF8B9BFF),
+                        Colors.black,
+                        onTap: () async {
+                          if (traderId.isNotEmpty) {
+                            final messagesController = Get.put(MessagesController());
+                            final chatId = await messagesController.createChatRoom(traderId);
+                            if (chatId != null) {
+                              Get.toNamed(AppRoute.messageDetails, arguments: {
+                                "chatId": chatId,
+                                "name": traderName.startsWith('@') ? traderName : "@$traderName",
+                                "avatar": traderAvatar,
+                              });
+                            } else {
+                              Get.snackbar("Chat", "Starting chat room...", snackPosition: SnackPosition.BOTTOM);
+                              Get.toNamed(AppRoute.messageDetails, arguments: {
+                                "chatId": "mock_room_1",
+                                "name": traderName.startsWith('@') ? traderName : "@$traderName",
+                                "avatar": traderAvatar,
+                              });
+                            }
+                          } else {
+                            Get.toNamed(AppRoute.messageDetails, arguments: {
+                              "chatId": "mock_room_1",
+                              "name": traderName.startsWith('@') ? traderName : "@$traderName",
+                              "avatar": traderAvatar,
+                            });
+                          }
+                        },
+                      ),
+                    ),
                     SizedBox(width: 16.w),
                     Expanded(child: _buildActionButton("Follow", const Color(0xFF1C1C28), Colors.white)),
                   ],
@@ -86,14 +126,14 @@ class TraderProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(String name, String avatar, String bio) {
     return Column(
       children: [
         Stack(
           children: [
             CircleAvatar(
               radius: 60.r,
-              backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
+              backgroundImage: NetworkImage(avatar),
             ),
             Positioned(
               bottom: 0,
@@ -108,14 +148,14 @@ class TraderProfileScreen extends StatelessWidget {
         ),
         SizedBox(height: 20.h),
         Text(
-          "@Julian_D",
+          name.startsWith('@') ? name : "@$name",
           style: TextStyle(color: Colors.white, fontSize: 28.sp, fontWeight: FontWeight.w900, letterSpacing: -0.5),
         ),
         SizedBox(height: 12.h),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 40.w),
           child: Text(
-            "Elite collector and trader of rare streetwear and luxury watches. Based in NY. Trusted for secure, authenticated swaps.",
+            bio,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white60, fontSize: 14.sp, fontWeight: FontWeight.w500, height: 1.5),
           ),
@@ -142,17 +182,20 @@ class TraderProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(String text, Color bgColor, Color textColor) {
-    return Container(
-      height: 56.h,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(28.r),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(color: textColor, fontSize: 16.sp, fontWeight: FontWeight.w900),
+  Widget _buildActionButton(String text, Color bgColor, Color textColor, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 56.h,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(28.r),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          text,
+          style: TextStyle(color: textColor, fontSize: 16.sp, fontWeight: FontWeight.w900),
+        ),
       ),
     );
   }

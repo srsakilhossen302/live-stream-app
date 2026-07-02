@@ -7,6 +7,7 @@ import '../controller/purchases_controller.dart';
 import '../model/purchase_model.dart';
 import '../../main/controller/main_controller.dart';
 import '../../../../global/widgets/custom_bottom_navbar.dart';
+import '../../../../global/widgets/custom_shimmer.dart';
 
 class PurchasesScreen extends GetView<PurchasesController> {
   const PurchasesScreen({super.key});
@@ -99,8 +100,10 @@ class PurchasesScreen extends GetView<PurchasesController> {
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+                  return ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    itemCount: 3,
+                    itemBuilder: (context, index) => _buildPurchaseCardShimmer(),
                   );
                 }
 
@@ -474,6 +477,63 @@ class PurchasesScreen extends GetView<PurchasesController> {
       child: Text(
         text,
         style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  Widget _buildPurchaseCardShimmer() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 24.h),
+      padding: EdgeInsets.all(24.r),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161622),
+        borderRadius: BorderRadius.circular(32.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomShimmer.rectangular(height: 10.h, width: 60.w),
+                  SizedBox(height: 6.h),
+                  CustomShimmer.rectangular(height: 18.h, width: 120.w),
+                ],
+              ),
+              CustomShimmer.rectangular(
+                height: 24.h,
+                width: 80.w,
+                shapeBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+              ),
+            ],
+          ),
+          SizedBox(height: 24.h),
+          Row(
+            children: [
+              CustomShimmer.rectangular(
+                width: 88.w,
+                height: 88.w,
+                shapeBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.r)),
+              ),
+              SizedBox(width: 20.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomShimmer.rectangular(height: 18.h, width: 160.w),
+                    SizedBox(height: 6.h),
+                    CustomShimmer.rectangular(height: 14.h, width: 100.w),
+                    SizedBox(height: 8.h),
+                    CustomShimmer.rectangular(height: 13.h, width: 80.w),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

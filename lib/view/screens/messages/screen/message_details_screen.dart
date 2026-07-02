@@ -127,39 +127,47 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
         icon: const Icon(Icons.close, color: Colors.white),
         onPressed: () => Get.back(),
       ),
-      title: Row(
-        children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 18.r,
-                backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 10.r,
-                  height: 10.r,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF8BFF),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.black, width: 2),
+      title: Obx(() {
+        final avatar = controller.partnerAvatar.value;
+        final name = controller.partnerName.value;
+        return Row(
+          children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 18.r,
+                  backgroundImage: NetworkImage(
+                    avatar.isNotEmpty 
+                        ? avatar 
+                        : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(width: 12.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("@CardMaster", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
-              Text("ACTIVE NOW", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-            ],
-          ),
-        ],
-      ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 10.r,
+                    height: 10.r,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF8BFF),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(width: 12.w),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                Text("ACTIVE NOW", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+              ],
+            ),
+          ],
+        );
+      }),
     );
   }
 

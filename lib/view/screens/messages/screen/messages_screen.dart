@@ -74,52 +74,38 @@ class MessagesScreen extends GetView<MessagesController> {
                             );
                           }
 
+                          final updates = controller.updateLogs;
+                          final chats = controller.chatRooms;
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Updates Section
-                              _buildSectionHeader("UPDATES", badge: "2 NEW"),
-                              SizedBox(height: 16.h),
-                              _buildUpdateCard(
-                                name: "@CardMaster",
-                                message: "Your order has been shipped",
-                                time: "14:22",
-                                hasNew: true,
-                                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
-                                tags: ["#ORD-24891", "Shipped 🚚"],
-                              ),
-                              _buildUpdateCard(
-                                name: "@LuxeVault",
-                                message: "Trade request accepted",
-                                time: "Yesterday",
-                                avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop",
-                                tags: ["TRADE", "Completed 🤝"],
-                              ),
-                              
-                              SizedBox(height: 32.h),
-                              
-                              // Messages Section
-                              _buildSectionHeader("MESSAGES"),
-                              SizedBox(height: 16.h),
-                              _buildMessageRow(
-                                name: "@Retro_Rick",
-                                message: "can do \$450 if we close tonight. Let me know.",
-                                time: "Oct 24",
-                                avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974&auto=format&fit=crop",
-                              ),
-                              _buildMessageRow(
-                                name: "@AuctionQueen",
-                                message: "Congratulations! You won the Crimson Blade auction.",
-                                time: "Oct 20",
-                                isSpecial: true,
-                                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop",
-                              ),
-                              _buildMessageRow(
-                                name: "@Silent_Bidder",
-                                message: "Thanks for the smooth transaction. Left 5 stars.",
-                                time: "Oct 15",
-                                avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1974&auto=format&fit=crop",
-                              ),
+                              if (updates.isNotEmpty) ...[
+                                _buildSectionHeader("UPDATES", badge: "${updates.length} NEW"),
+                                SizedBox(height: 16.h),
+                                ...updates.map((up) => _buildUpdateCard(
+                                  name: up['name'] ?? '',
+                                  message: up['message'] ?? '',
+                                  time: up['time'] ?? '',
+                                  hasNew: up['hasNew'] == true,
+                                  avatar: up['avatar'] ?? '',
+                                  tags: List<String>.from(up['tags'] ?? []),
+                                )),
+                                SizedBox(height: 32.h),
+                              ],
+
+                              if (chats.isNotEmpty) ...[
+                                _buildSectionHeader("MESSAGES"),
+                                SizedBox(height: 16.h),
+                                ...chats.map((ch) => _buildMessageRow(
+                                  id: ch['id'] ?? '',
+                                  name: ch['name'] ?? '',
+                                  message: ch['message'] ?? '',
+                                  time: ch['time'] ?? '',
+                                  isSpecial: ch['isSpecial'] == true,
+                                  avatar: ch['avatar'] ?? '',
+                                )),
+                              ],
                             ],
                           );
                         }),
@@ -295,9 +281,13 @@ class MessagesScreen extends GetView<MessagesController> {
     );
   }
 
-  Widget _buildMessageRow({required String name, required String message, required String time, required String avatar, bool isSpecial = false}) {
+  Widget _buildMessageRow({required String id, required String name, required String message, required String time, required String avatar, bool isSpecial = false}) {
     return InkWell(
-      onTap: () => Get.toNamed(AppRoute.messageDetails),
+      onTap: () => Get.toNamed(AppRoute.messageDetails, arguments: {
+        "chatId": id,
+        "name": name,
+        "avatar": avatar,
+      }),
       borderRadius: BorderRadius.circular(16.r),
       child: Padding(
         padding: EdgeInsets.only(bottom: 24.h),

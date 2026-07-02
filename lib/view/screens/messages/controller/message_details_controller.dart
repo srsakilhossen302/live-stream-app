@@ -1,56 +1,153 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../data/services/api_client.dart';
+import '../../../../data/services/api_url.dart';
+import '../../../../data/helpers/shared_prefe.dart';
 
 class MessageDetailsController extends GetxController {
-  final messages = <Map<String, dynamic>>[
-    {
-      "isDate": true,
-      "message": "YESTERDAY",
-    },
-    {
-      "isMe": false,
-      "message": "Hey! I just saw your bid win. I'll get the pack ready for shipping first thing tomorrow morning.",
-      "time": "10:42 PM",
-    },
-    {
-      "isMe": true,
-      "message": "Perfect, thanks! Please ensure it's packed in a hard sleeve. It's for my personal vault.",
-      "time": "10:45 PM",
-      "isRead": true,
-    },
-    {
-      "isDate": true,
-      "message": "TODAY",
-    },
-    {
-      "isMe": false,
-      "message": "Just dropped it off! Tracking should update in a few hours. I used a double-layered bubble mailer plus the hard sleeve as requested.",
-      "time": "11:15 AM",
-    },
-    {
-      "isMe": true,
-      "message": "That's awesome. Truly appreciate the extra care with the packaging. I'll keep an eye out!",
-      "time": "11:20 AM",
-      "isRead": true,
-    },
-  ].obs;
+  final ApiClient _apiClient = Get.find<ApiClient>();
+
+  final chatId = "".obs;
+  final partnerName = "User".obs;
+  final partnerAvatar = "".obs;
+  final isLoading = true.obs;
+
+  final messages = <Map<String, dynamic>>[].obs;
 
   final chatInputController = TextEditingController();
   final scrollController = ScrollController();
 
-  void sendMessage(String text) {
+  @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments as Map<String, dynamic>? ?? {};
+    chatId.value = args['chatId'] ?? '';
+    partnerName.value = args['name'] ?? 'User';
+    partnerAvatar.value = args['avatar'] ?? '';
+    
+    if (chatId.value.isNotEmpty) {
+      fetchMessages();
+    } else {
+      _loadMockMessages();
+    }
+  }
+
+  Future<void> fetchMessages() async {
+    isLoading.value = true;
+    try {
+      if (chatId.value.startsWith("mock_")) {
+        _loadMockMessages();
+        return;
+      }
+
+      final response = await _apiClient.getData("${ApiUrl.message}/${chatId.value}");
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body)['data'] ?? [];
+        final List<Map<String, dynamic>> parsedList = [];
+        
+        // Add date separator if we have messages
+        if (data.isNotEmpty) {
+          parsedList.add({
+            "isDate": true,
+            "message": "TODAY",
+          });
+        }
+
+        for (var msg in data) {
+          final sender = msg['senderId'];
+          final isMe = sender == SharePrefsHelper.getString(SharePrefsHelper.userIdKey) || 
+                       (sender is Map && sender['_id'] == SharePrefsHelper.getString(SharePrefsHelper.userIdKey));
+          
+          parsedList.add({
+            "isMe": isMe,
+            "message": msg['text'] ?? "",
+            "time": _formatTime(msg['createdAt']),
+          });
+        }
+        messages.assignAll(parsedList);
+      } else {
+        _loadMockMessages();
+      }
+    } catch (e) {
+      Get.log("Error fetching messages: $e");
+      _loadMockMessages();
+    } finally {
+      isLoading.value = false;
+      _scrollToBottom();
+    }
+  }
+
+  void _loadMockMessages() {
+    messages.assignAll([
+      {
+        "isDate": true,
+        "message": "YESTERDAY",
+      },
+      {
+        "isMe": false,
+        "message": "Hey! I just saw your bid win. I'll get the pack ready for shipping first thing tomorrow morning.",
+        "time": "10:42 PM",
+      },
+      {
+        "isMe": true,
+        "message": "Perfect, thanks! Please ensure it's packed in a hard sleeve. It's for my personal vault.",
+        "time": "10:45 PM",
+        "isRead": true,
+      },
+      {
+        "isDate": true,
+        "message": "TODAY",
+      },
+      {
+        "isMe": false,
+        "message": "Just dropped it off! Tracking should update in a few hours. I used a double-layered bubble mailer plus the hard sleeve as requested.",
+        "time": "11:15 AM",
+      },
+      {
+        "isMe": true,
+        "message": "That's awesome. Truly appreciate the extra care with the packaging. I'll keep an eye out!",
+        "time": "11:20 AM",
+        "isRead": true,
+      },
+    ]);
+    isLoading.value = false;
+    _scrollToBottom();
+  }
+
+  Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+    final msgText = text.trim();
 
     messages.add({
       "isMe": true,
-      "message": text.trim(),
+      "message": msgText,
       "time": "Now",
       "isRead": false,
     });
     chatInputController.clear();
     _scrollToBottom();
 
-    // Auto response demo
+    try {
+      if (chatId.value.isEmpty || chatId.value.startsWith("mock_")) {
+        _runMockReply();
+        return;
+      }
+
+      final response = await _apiClient.postData(ApiUrl.message, {
+        "chatId": chatId.value,
+        "text": msgText,
+      });
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        Get.snackbar("Error", "Failed to send message");
+      }
+    } catch (e) {
+      Get.log("Error sending message: $e");
+    }
+  }
+
+  void _runMockReply() {
     Future.delayed(const Duration(seconds: 1), () {
       messages.add({
         "isMe": false,
@@ -59,6 +156,16 @@ class MessageDetailsController extends GetxController {
       });
       _scrollToBottom();
     });
+  }
+
+  String _formatTime(String timeStr) {
+    if (timeStr.isEmpty) return "Now";
+    try {
+      final parsed = DateTime.parse(timeStr).toLocal();
+      return "${parsed.hour.toString().padLeft(2, '0')}:${parsed.minute.toString().padLeft(2, '0')}";
+    } catch (_) {
+      return "Now";
+    }
   }
 
   void _scrollToBottom() {

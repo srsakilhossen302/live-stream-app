@@ -35,4 +35,8 @@ class ApiUrl {
   static const String addAuctionItem = "/auctions/item";
   static const String placeBid = "/auctions/bid";
   static const String agoraToken = "/auctions/token";
+
+  // Chats & Messages
+  static const String chat = "/chat";
+  static const String message = "/message";
 }

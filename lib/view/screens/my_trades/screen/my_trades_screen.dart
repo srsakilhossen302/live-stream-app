@@ -8,6 +8,7 @@ import '../../../../core/app_route.dart';
 import '../../../../data/services/api_url.dart';
 import '../controller/my_trades_controller.dart';
 import '../model/my_trade_model.dart';
+import '../../../../global/widgets/custom_shimmer.dart';
 
 class MyTradesScreen extends GetView<MyTradesController> {
   const MyTradesScreen({super.key});
@@ -54,11 +55,8 @@ class MyTradesScreen extends GetView<MyTradesController> {
                     SizedBox(height: 32.h),
                     Obx(() {
                       if (controller.isLoading.value) {
-                        return SizedBox(
-                          height: 300.h,
-                          child: const Center(
-                            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
-                          ),
+                        return Column(
+                          children: List.generate(3, (index) => _buildTradeCardShimmer()),
                         );
                       }
 
@@ -430,6 +428,50 @@ class MyTradesScreen extends GetView<MyTradesController> {
           text,
           style: TextStyle(color: textCol, fontSize: 15.sp, fontWeight: FontWeight.w900),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTradeCardShimmer() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 24.h),
+      padding: EdgeInsets.all(24.r),
+      decoration: BoxDecoration(
+        color: const Color(0xFF11111A),
+        borderRadius: BorderRadius.circular(32.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              CustomShimmer.rectangular(height: 12.h, width: 120.w),
+              CustomShimmer.rectangular(
+                height: 24.h,
+                width: 80.w,
+                shapeBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          CustomShimmer.rectangular(height: 20.h, width: 220.w),
+          SizedBox(height: 24.h),
+          Row(
+            children: [
+              CustomShimmer.circular(width: 40.r, height: 40.r),
+              SizedBox(width: 12.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomShimmer.rectangular(height: 14.h, width: 100.w),
+                  SizedBox(height: 6.h),
+                  CustomShimmer.rectangular(height: 12.h, width: 60.w),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
