@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/messages_controller.dart';
+import '../../../../global/widgets/custom_shimmer.dart';
 
 class MessagesScreen extends GetView<MessagesController> {
   const MessagesScreen({super.key});
@@ -54,49 +55,74 @@ class MessagesScreen extends GetView<MessagesController> {
                         
                         SizedBox(height: 32.h),
                         
-                        // Updates Section
-                        _buildSectionHeader("UPDATES", badge: "2 NEW"),
-                        SizedBox(height: 16.h),
-                        _buildUpdateCard(
-                          name: "@CardMaster",
-                          message: "Your order has been shipped",
-                          time: "14:22",
-                          hasNew: true,
-                          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
-                          tags: ["#ORD-24891", "Shipped 🚚"],
-                        ),
-                        _buildUpdateCard(
-                          name: "@LuxeVault",
-                          message: "Trade request accepted",
-                          time: "Yesterday",
-                          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop",
-                          tags: ["TRADE", "Completed 🤝"],
-                        ),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Messages Section
-                        _buildSectionHeader("MESSAGES"),
-                        SizedBox(height: 16.h),
-                        _buildMessageRow(
-                          name: "@Retro_Rick",
-                          message: "can do \$450 if we close tonight. Let me know.",
-                          time: "Oct 24",
-                          avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974&auto=format&fit=crop",
-                        ),
-                        _buildMessageRow(
-                          name: "@AuctionQueen",
-                          message: "Congratulations! You won the Crimson Blade auction.",
-                          time: "Oct 20",
-                          isSpecial: true,
-                          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop",
-                        ),
-                        _buildMessageRow(
-                          name: "@Silent_Bidder",
-                          message: "Thanks for the smooth transaction. Left 5 stars.",
-                          time: "Oct 15",
-                          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1974&auto=format&fit=crop",
-                        ),
+                        Obx(() {
+                          if (controller.isLoading.value) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader("UPDATES"),
+                                SizedBox(height: 16.h),
+                                _buildUpdateCardShimmer(),
+                                _buildUpdateCardShimmer(),
+                                SizedBox(height: 24.h),
+                                _buildSectionHeader("MESSAGES"),
+                                SizedBox(height: 16.h),
+                                _buildMessageRowShimmer(),
+                                _buildMessageRowShimmer(),
+                                _buildMessageRowShimmer(),
+                              ],
+                            );
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Updates Section
+                              _buildSectionHeader("UPDATES", badge: "2 NEW"),
+                              SizedBox(height: 16.h),
+                              _buildUpdateCard(
+                                name: "@CardMaster",
+                                message: "Your order has been shipped",
+                                time: "14:22",
+                                hasNew: true,
+                                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
+                                tags: ["#ORD-24891", "Shipped 🚚"],
+                              ),
+                              _buildUpdateCard(
+                                name: "@LuxeVault",
+                                message: "Trade request accepted",
+                                time: "Yesterday",
+                                avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop",
+                                tags: ["TRADE", "Completed 🤝"],
+                              ),
+                              
+                              SizedBox(height: 32.h),
+                              
+                              // Messages Section
+                              _buildSectionHeader("MESSAGES"),
+                              SizedBox(height: 16.h),
+                              _buildMessageRow(
+                                name: "@Retro_Rick",
+                                message: "can do \$450 if we close tonight. Let me know.",
+                                time: "Oct 24",
+                                avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974&auto=format&fit=crop",
+                              ),
+                              _buildMessageRow(
+                                name: "@AuctionQueen",
+                                message: "Congratulations! You won the Crimson Blade auction.",
+                                time: "Oct 20",
+                                isSpecial: true,
+                                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop",
+                              ),
+                              _buildMessageRow(
+                                name: "@Silent_Bidder",
+                                message: "Thanks for the smooth transaction. Left 5 stars.",
+                                time: "Oct 15",
+                                avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1974&auto=format&fit=crop",
+                              ),
+                            ],
+                          );
+                        }),
                         
                         SizedBox(height: 120.h),
                       ],
@@ -307,6 +333,90 @@ class MessagesScreen extends GetView<MessagesController> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUpdateCardShimmer() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161622),
+        borderRadius: BorderRadius.circular(24.r),
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CustomShimmer.circular(width: 48.r, height: 48.r),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CustomShimmer.rectangular(height: 16.h, width: 100.w),
+                        CustomShimmer.rectangular(height: 12.h, width: 40.w),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    CustomShimmer.rectangular(height: 14.h, width: 180.w),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              SizedBox(width: 64.w),
+              CustomShimmer.rectangular(
+                height: 24.h,
+                width: 80.w,
+                shapeBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+              ),
+              SizedBox(width: 8.w),
+              CustomShimmer.rectangular(
+                height: 24.h,
+                width: 80.w,
+                shapeBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageRowShimmer() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 24.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CustomShimmer.circular(width: 56.r, height: 56.r),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomShimmer.rectangular(height: 16.h, width: 100.w),
+                    CustomShimmer.rectangular(height: 12.h, width: 40.w),
+                  ],
+                ),
+                SizedBox(height: 8.h),
+                CustomShimmer.rectangular(height: 14.h, width: 220.w),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

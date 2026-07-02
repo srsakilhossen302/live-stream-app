@@ -4,8 +4,9 @@ import 'package:get/get.dart';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../../purchases/model/purchase_model.dart';
+import '../controller/message_details_controller.dart';
 
-class MessageDetailsScreen extends StatelessWidget {
+class MessageDetailsScreen extends GetView<MessageDetailsController> {
   const MessageDetailsScreen({super.key});
 
   PurchaseModel _getMockOrder() {
@@ -31,6 +32,7 @@ class MessageDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Get.put(MessageDetailsController());
     return CustomBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -41,71 +43,72 @@ class MessageDetailsScreen extends StatelessWidget {
             _buildPinnedItem(),
             
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.all(16.r),
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  _buildDateSeparator("YESTERDAY"),
-                  _buildMessageBubble(
-                    message: "Hey! I just saw your bid win. I'll get the pack ready for shipping first thing tomorrow morning.",
-                    time: "10:42 PM",
-                    isMe: false,
-                  ),
-                  _buildMessageBubble(
-                    message: "Perfect, thanks! Please ensure it's packed in a hard sleeve. It's for my personal vault.",
-                    time: "10:45 PM",
-                    isMe: true,
-                    isRead: true,
-                  ),
-                  
-                  _buildDateSeparator("TODAY"),
-                  
-                  Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.h),
-                      child: Text(
-                        "Your order has been shipped. You can now track its\nlive location below.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white38, fontSize: 12.sp, height: 1.5, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  
-                  // Tracking Card
-                  _buildTrackingCard(),
-                  
-                  _buildMessageBubble(
-                    message: "Just dropped it off! Tracking should update in a few hours. I used a double-layered bubble mailer plus the hard sleeve as requested.",
-                    time: "11:15 AM",
-                    isMe: false,
-                  ),
-                  _buildMessageBubble(
-                    message: "That's awesome. Truly appreciate the extra care with the packaging. I'll keep an eye out!",
-                    time: "11:20 AM",
-                    isMe: true,
-                    isRead: true,
-                  ),
-                  
-                  SizedBox(height: 24.h),
-                  
-                  // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionChip(
-                          Icons.location_on_outlined, 
-                          "TRACK ORDER",
-                          onTap: () => Get.toNamed(AppRoute.trackOrder, arguments: _getMockOrder()),
+              child: Obx(() {
+                return ListView.builder(
+                  controller: controller.scrollController,
+                  padding: EdgeInsets.all(16.r),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: controller.messages.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == controller.messages.length) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 24.h),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildActionChip(
+                                  Icons.location_on_outlined, 
+                                  "TRACK ORDER",
+                                  onTap: () => Get.toNamed(AppRoute.trackOrder, arguments: _getMockOrder()),
+                                ),
+                              ),
+                              SizedBox(width: 16.w),
+                              Expanded(child: _buildActionChip(Icons.check_circle_outline, "CONFIRM DELIVERY")),
+                            ],
+                          ),
+                          SizedBox(height: 100.h),
+                        ],
+                      );
+                    }
+
+                    final msg = controller.messages[index];
+                    final isDate = msg['isDate'] == true;
+                    if (isDate) {
+                      return _buildDateSeparator(msg['message'] ?? '');
+                    }
+
+                    final isMe = msg['isMe'] == true;
+                    final isRead = msg['isRead'] == true;
+
+                    return Column(
+                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        _buildMessageBubble(
+                          message: msg['message'] ?? '',
+                          time: msg['time'] ?? 'Now',
+                          isMe: isMe,
+                          isRead: isRead,
                         ),
-                      ),
-                      SizedBox(width: 16.w),
-                      Expanded(child: _buildActionChip(Icons.check_circle_outline, "CONFIRM DELIVERY")),
-                    ],
-                  ),
-                  
-                  SizedBox(height: 100.h),
-                ],
-              ),
+                        if (index == 4) ...[
+                          Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16.h),
+                              child: Text(
+                                "Your order has been shipped. You can now track its\nlive location below.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white38, fontSize: 12.sp, height: 1.5, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                          _buildTrackingCard(),
+                        ],
+                      ],
+                    );
+                  },
+                );
+              }),
             ),
             
             // Input Bar
@@ -459,12 +462,16 @@ class MessageDetailsScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: TextField(
+                      controller: controller.chatInputController,
                       style: TextStyle(color: Colors.white, fontSize: 14.sp),
                       decoration: InputDecoration(
                         hintText: "Type a message...",
                         hintStyle: TextStyle(color: Colors.white24, fontSize: 14.sp),
                         border: InputBorder.none,
                       ),
+                      onSubmitted: (val) {
+                        controller.sendMessage(val);
+                      },
                     ),
                   ),
                   Icon(Icons.sentiment_satisfied_alt_outlined, color: Colors.white24, size: 24.sp),
@@ -473,11 +480,16 @@ class MessageDetailsScreen extends StatelessWidget {
             ),
           ),
           SizedBox(width: 16.w),
-          Container(
-            height: 56.h,
-            width: 56.h,
-            decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
-            child: Icon(Icons.send_rounded, color: Colors.black, size: 24.sp),
+          GestureDetector(
+            onTap: () {
+              controller.sendMessage(controller.chatInputController.text);
+            },
+            child: Container(
+              height: 56.h,
+              width: 56.h,
+              decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
+              child: Icon(Icons.send_rounded, color: Colors.black, size: 24.sp),
+            ),
           ),
         ],
       ),
