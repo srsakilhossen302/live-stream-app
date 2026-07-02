@@ -8,6 +8,7 @@ import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/profile_controller.dart';
 import '../../../../data/services/api_url.dart';
+import '../../../../global/widgets/custom_shimmer.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
   const ProfileScreen({super.key});
@@ -25,10 +26,6 @@ class ProfileScreen extends GetView<ProfileController> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                  ),
                   Text(
                     "Profile",
                     style: TextStyle(
@@ -91,12 +88,7 @@ class ProfileScreen extends GetView<ProfileController> {
       final profileUrl = controller.profileImageUrl.value;
 
       if (controller.isLoading.value && controller.name.value == "User Name") {
-        return SizedBox(
-          height: 300.h,
-          child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
-          ),
-        );
+        return _buildProfileHeaderShimmer();
       }
 
       return Column(
@@ -547,12 +539,7 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget _buildListingsGrid() {
     return Obx(() {
       if (controller.isLoading.value) {
-        return SizedBox(
-          height: 200.h,
-          child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
-          ),
-        );
+        return _buildListingsGridShimmer();
       }
       
       if (controller.userListings.isEmpty) {
@@ -674,12 +661,7 @@ class ProfileScreen extends GetView<ProfileController> {
         // Activity List
         Obx(() {
           if (controller.isActivityLoading.value) {
-            return SizedBox(
-              height: 200.h,
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
-              ),
-            );
+            return _buildActivityListShimmer();
           }
 
           final isPurchases = controller.selectedActivityFilter.value == 1;
@@ -1227,6 +1209,108 @@ class ProfileScreen extends GetView<ProfileController> {
           Icons.image_not_supported_outlined,
           color: Colors.white24,
           size: 32,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeaderShimmer() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CustomShimmer.rectangular(height: 170.h),
+        SizedBox(height: 50.h),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CustomShimmer.circular(width: 90.r, height: 90.r),
+              SizedBox(height: 16.h),
+              CustomShimmer.rectangular(height: 22.h, width: 180.w),
+              SizedBox(height: 8.h),
+              CustomShimmer.rectangular(height: 14.h, width: 100.w),
+              SizedBox(height: 12.h),
+              CustomShimmer.rectangular(height: 14.h, width: 250.w),
+              SizedBox(height: 20.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CustomShimmer.rectangular(height: 50.h, width: 100.w),
+                  CustomShimmer.rectangular(height: 50.h, width: 100.w),
+                  CustomShimmer.rectangular(height: 50.h, width: 100.w),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListingsGridShimmer() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 16.w,
+          mainAxisSpacing: 16.h,
+        ),
+        itemCount: 4,
+        itemBuilder: (context, index) {
+          return Container(
+            padding: EdgeInsets.all(12.r),
+            decoration: BoxDecoration(
+              color: const Color(0xFF11111A),
+              borderRadius: BorderRadius.circular(24.r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: const CustomShimmer.rectangular(height: double.infinity),
+                  ),
+                ),
+                SizedBox(height: 12.h),
+                CustomShimmer.rectangular(height: 14.h, width: 100.w),
+                SizedBox(height: 8.h),
+                CustomShimmer.rectangular(height: 12.h, width: 60.w),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActivityListShimmer() {
+    return Column(
+      children: List.generate(
+        4,
+        (index) => Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          child: Row(
+            children: [
+              CustomShimmer.circular(width: 48.r, height: 48.r),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomShimmer.rectangular(height: 14.h, width: 180.w),
+                    SizedBox(height: 6.h),
+                    CustomShimmer.rectangular(height: 12.h, width: 120.w),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -7,6 +7,7 @@ import '../controller/discover_controller.dart';
 import '../../trade_details/screen/trade_details_screen.dart';
 import '../../../../core/app_route.dart';
 import '../../../../data/services/api_url.dart';
+import '../../../../global/widgets/custom_shimmer.dart';
 
 class DiscoverScreen extends GetView<DiscoverController> {
   const DiscoverScreen({super.key});
@@ -80,10 +81,13 @@ class DiscoverScreen extends GetView<DiscoverController> {
   Widget _buildLiveShowsTab({bool isAllTab = false}) {
     return Obx(() {
       if (controller.isLoading.value && controller.liveShows.isEmpty) {
-        return SizedBox(
-          height: 200.h,
-          child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+        return Column(
+          children: List.generate(
+            2,
+            (index) => Padding(
+              padding: EdgeInsets.only(bottom: 20.h),
+              child: _buildLiveShowShimmer(),
+            ),
           ),
         );
       }
@@ -148,10 +152,13 @@ class DiscoverScreen extends GetView<DiscoverController> {
   Widget _buildTradeMarketTab({bool isAllTab = false}) {
     return Obx(() {
       if (controller.isLoading.value && controller.tradeMarketItems.isEmpty) {
-        return SizedBox(
-          height: 200.h,
-          child: const Center(
-            child: CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+        return Column(
+          children: List.generate(
+            3,
+            (index) => Padding(
+              padding: EdgeInsets.only(bottom: 16.h),
+              child: _buildTradeItemShimmer(),
+            ),
           ),
         );
       }
@@ -704,6 +711,89 @@ class DiscoverScreen extends GetView<DiscoverController> {
           if (showDot) ...[Icon(Icons.circle, color: Colors.white, size: 6.sp), SizedBox(width: 6.w)],
           if (icon != null) ...[Icon(icon, color: Colors.white, size: 14.sp), SizedBox(width: 6.w)],
           Text(text, style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveShowShimmer() {
+    return Container(
+      height: 320.h,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF11111A),
+        borderRadius: BorderRadius.circular(32.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+              child: const CustomShimmer.rectangular(height: double.infinity),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.all(20.r),
+            child: Row(
+              children: [
+                CustomShimmer.circular(width: 40.r, height: 40.r),
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomShimmer.rectangular(height: 16.h, width: 150.w),
+                      SizedBox(height: 8.h),
+                      CustomShimmer.rectangular(height: 12.h, width: 80.w),
+                    ],
+                  ),
+                ),
+                CustomShimmer.rectangular(
+                  height: 36.h,
+                  width: 70.w,
+                  shapeBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTradeItemShimmer() {
+    return Container(
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        color: const Color(0xFF11111A),
+        borderRadius: BorderRadius.circular(24.r),
+      ),
+      child: Row(
+        children: [
+          CustomShimmer.rectangular(
+            width: 80.w,
+            height: 80.w,
+            shapeBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomShimmer.rectangular(height: 16.h, width: 140.w),
+                SizedBox(height: 8.h),
+                CustomShimmer.rectangular(height: 14.h, width: 60.w),
+                SizedBox(height: 8.h),
+                CustomShimmer.rectangular(height: 12.h, width: 180.w),
+              ],
+            ),
+          ),
+          CustomShimmer.rectangular(
+            width: 20.w,
+            height: 20.w,
+            shapeBorder: const CircleBorder(),
+          ),
         ],
       ),
     );

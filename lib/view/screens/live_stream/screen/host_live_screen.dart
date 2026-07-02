@@ -18,6 +18,7 @@ class HostLiveScreen extends StatefulWidget {
 
 class _HostLiveScreenState extends State<HostLiveScreen> {
   final TextEditingController _chatController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   late AgoraLiveController ctrl;
 
   @override
@@ -29,6 +30,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
   @override
   void dispose() {
     _chatController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -285,22 +287,186 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
   }
 
   Widget _buildChat(AgoraLiveController ctrl) {
-    return Obx(() {
-      final msgs = ctrl.chatMessages.toList().reversed.take(4).toList();
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: msgs.map((m) => Padding(
-          padding: EdgeInsets.only(bottom: 4.h),
-          child: RichText(
-            text: TextSpan(
+    return Container(
+      height: 200.h,
+      alignment: Alignment.bottomLeft,
+      child: Obx(() {
+        _scrollToBottom();
+        return ListView.builder(
+          controller: _scrollController,
+          shrinkWrap: true,
+          padding: EdgeInsets.only(bottom: 8.h),
+          itemCount: ctrl.chatMessages.length,
+          itemBuilder: (context, index) {
+            final m = ctrl.chatMessages[index];
+            return Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 8.h),
+                child: _buildCommentBubble(m),
+              ),
+            );
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildCommentBubble(Map<String, String> m) {
+    final user = m['user'] ?? '';
+    final msg = m['msg'] ?? '';
+    final role = m['role'] ?? 'viewer';
+    final isBid = m['isBid'] == 'true';
+
+    if (isBid) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E2C).withOpacity(0.6),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.3), width: 0.8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.gavel_rounded, color: const Color(0xFF8B9BFF), size: 14.sp),
+            SizedBox(width: 6.w),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: "$user ",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextSpan(
+                    text: msg,
+                    style: TextStyle(
+                      color: const Color(0xFF8B9BFF),
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final isHost = role == 'host';
+    if (isHost) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF8B9BFF).withOpacity(0.55),
+              const Color(0xFFBD8BFF).withOpacity(0.55),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: const Color(0xFFBD8BFF).withOpacity(0.5), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFBD8BFF).withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                TextSpan(text: "${m['user']}: ", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 12.sp, fontWeight: FontWeight.w800)),
-                TextSpan(text: m['msg'], style: TextStyle(color: Colors.white, fontSize: 12.sp)),
+                Text(
+                  user,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child: Text(
+                    "HOST",
+                    style: TextStyle(
+                      color: const Color(0xFF8B9BFF),
+                      fontSize: 8.sp,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               ],
             ),
-          ),
-        )).toList(),
+            SizedBox(height: 2.h),
+            Text(
+              msg,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       );
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white10, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            user,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            msg,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13.sp,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
@@ -325,7 +491,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                 contentPadding: EdgeInsets.symmetric(vertical: 11.h),
               ),
               onSubmitted: (val) {
-                ctrl.sendChatMessage(val);
+                ctrl.sendChatMessage(val, role: 'host');
                 _chatController.clear();
               },
             ),
@@ -334,7 +500,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
         SizedBox(width: 10.w),
         GestureDetector(
           onTap: () {
-            ctrl.sendChatMessage(_chatController.text);
+            ctrl.sendChatMessage(_chatController.text, role: 'host');
             _chatController.clear();
           },
           child: Container(

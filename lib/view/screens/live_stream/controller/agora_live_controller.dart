@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
+import '../../profile/controller/profile_controller.dart';
 
 /// IMPORTANT: Replace with your Agora App ID from https://console.agora.io
 const String agoraAppId = "040148b3e0a14154bc4eb74663dabf5f";
@@ -49,6 +51,10 @@ class AgoraLiveController extends GetxController {
 
   // Messages / chat
   final RxList<Map<String, String>> chatMessages = <Map<String, String>>[].obs;
+
+  // Dynamic data stream parameters
+  int? _dataStreamId;
+  final RxInt likeCount = 1200.obs;
 
   @override
   void onInit() {
@@ -204,9 +210,40 @@ class AgoraLiveController extends GetxController {
       });
       if (res.statusCode == 200 || res.statusCode == 201) {
         currentBidPrice.value = amount;
-        chatMessages.add({"user": "You", "msg": "🔨 Placed bid: \$${amount.toStringAsFixed(0)}"});
+        
+        String usernameStr = "@username";
+        try {
+          final profileCtrl = Get.find<ProfileController>();
+          usernameStr = profileCtrl.username.value;
+        } catch (_) {}
+
+        chatMessages.add({
+          "user": usernameStr,
+          "msg": "🔨 Placed bid: \$${amount.toStringAsFixed(0)}",
+          "isBid": "true",
+        });
         Get.back(); // close bid sheet
         Get.snackbar("Bid Placed!", "Your bid of \$${amount.toStringAsFixed(0)} is live!", snackPosition: SnackPosition.BOTTOM);
+
+        // Broadcast bid via Data Stream
+        if (engine != null && _dataStreamId != null) {
+          try {
+            final payload = jsonEncode({
+              "type": "bid",
+              "username": usernameStr,
+              "amount": amount,
+            });
+            final bytes = utf8.encode(payload);
+            await engine!.sendStreamMessage(
+              streamId: _dataStreamId!,
+              data: Uint8List.fromList(bytes),
+              length: bytes.length,
+            );
+            debugPrint("✅ Broadcasted bid: $payload");
+          } catch (e) {
+            debugPrint("❌ Failed to broadcast bid: $e");
+          }
+        }
       } else {
         final body = jsonDecode(res.body);
         Get.snackbar("Error", body['message'] ?? "Bid failed", snackPosition: SnackPosition.BOTTOM);
@@ -216,10 +253,93 @@ class AgoraLiveController extends GetxController {
     }
   }
 
-  void sendChatMessage(String msg) {
+  Future<void> sendChatMessage(String msg, {required String role}) async {
     if (msg.trim().isEmpty) return;
-    chatMessages.add({"user": "You", "msg": msg.trim()});
-    // Note: clearing the TextField controller is done by the widget
+    final cleanMsg = msg.trim();
+    
+    // Get sender username from ProfileController
+    String usernameStr = "@username";
+    try {
+      final profileCtrl = Get.find<ProfileController>();
+      usernameStr = profileCtrl.username.value;
+    } catch (_) {
+      // Fallback
+    }
+
+    // Add message locally
+    chatMessages.add({
+      "user": usernameStr,
+      "msg": cleanMsg,
+      "role": role,
+    });
+
+    // Broadcast message via Data Stream
+    if (engine != null && _dataStreamId != null) {
+      try {
+        final payload = jsonEncode({
+          "type": "comment",
+          "username": usernameStr,
+          "message": cleanMsg,
+          "role": role,
+        });
+        final bytes = utf8.encode(payload);
+        await engine!.sendStreamMessage(
+          streamId: _dataStreamId!,
+          data: Uint8List.fromList(bytes),
+          length: bytes.length,
+        );
+        debugPrint("✅ Broadcasted comment: $payload");
+      } catch (e) {
+        debugPrint("❌ Failed to broadcast comment: $e");
+      }
+    }
+  }
+
+  void sendLike() {
+    likeCount.value++;
+    if (engine != null && _dataStreamId != null) {
+      try {
+        final payload = jsonEncode({
+          "type": "like",
+        });
+        final bytes = utf8.encode(payload);
+        engine!.sendStreamMessage(
+          streamId: _dataStreamId!,
+          data: Uint8List.fromList(bytes),
+          length: bytes.length,
+        );
+        debugPrint("✅ Broadcasted like");
+      } catch (e) {
+        debugPrint("❌ Failed to broadcast like: $e");
+      }
+    }
+  }
+
+  void _handleIncomingStreamMessage(Map<String, dynamic> payload) {
+    final type = payload['type'];
+    if (type == 'comment') {
+      final username = payload['username'] ?? '';
+      final msg = payload['message'] ?? '';
+      final role = payload['role'] ?? 'viewer';
+      chatMessages.add({
+        "user": username,
+        "msg": msg,
+        "role": role,
+      });
+    } else if (type == 'bid') {
+      final username = payload['username'] ?? '';
+      final amount = double.tryParse(payload['amount']?.toString() ?? '0') ?? 0.0;
+      if (amount > currentBidPrice.value) {
+        currentBidPrice.value = amount;
+      }
+      chatMessages.add({
+        "user": username,
+        "msg": "🔨 Placed bid: \$${amount.toStringAsFixed(0)}",
+        "isBid": "true",
+      });
+    } else if (type == 'like') {
+      likeCount.value++;
+    }
   }
 
   void toggleCamera() {
@@ -286,9 +406,27 @@ class AgoraLiveController extends GetxController {
 
       // 3) Event handlers
       engine!.registerEventHandler(RtcEngineEventHandler(
-        onJoinChannelSuccess: (connection, elapsed) {
+        onJoinChannelSuccess: (connection, elapsed) async {
           debugPrint("✅ Joined channel: ${connection.channelId}");
           isLocalVideoReady.value = true;
+          try {
+            _dataStreamId = await engine?.createDataStream(
+              const DataStreamConfig(syncWithAudio: false, ordered: true),
+            );
+            debugPrint("✅ Agora Data Stream created with ID: $_dataStreamId");
+          } catch (e) {
+            debugPrint("❌ Failed to create Agora Data Stream: $e");
+          }
+        },
+        onStreamMessage: (connection, remoteUid, streamId, data, length, sentTs) {
+          try {
+            final payloadStr = utf8.decode(data);
+            final payload = jsonDecode(payloadStr);
+            debugPrint("📩 Received Data Stream message: $payload");
+            _handleIncomingStreamMessage(payload);
+          } catch (e) {
+            debugPrint("❌ Error decoding stream message: $e");
+          }
         },
         onUserJoined: (connection, uid, elapsed) {
           debugPrint("👤 Remote user joined: $uid");
