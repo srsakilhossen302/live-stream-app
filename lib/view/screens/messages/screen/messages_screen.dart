@@ -77,6 +77,51 @@ class MessagesScreen extends GetView<MessagesController> {
                           final updates = controller.updateLogs;
                           final chats = controller.chatRooms;
 
+                          if (updates.isEmpty && chats.isEmpty) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(vertical: 60.h),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(20.r),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF161622),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.chat_bubble_outline_rounded,
+                                        color: const Color(0xFF8B9BFF),
+                                        size: 40.sp,
+                                      ),
+                                    ),
+                                    SizedBox(height: 20.h),
+                                    Text(
+                                      "No messages yet",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Text(
+                                      "You don't have any conversations yet.\nStart chatting to trade or purchase items!",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w500,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

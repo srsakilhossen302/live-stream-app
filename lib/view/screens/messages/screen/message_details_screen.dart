@@ -44,6 +44,70 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
             
             Expanded(
               child: Obx(() {
+                if (controller.messages.isEmpty) {
+                  return ListView(
+                    controller: controller.scrollController,
+                    padding: EdgeInsets.all(16.r),
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      SizedBox(height: 80.h),
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(20.r),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF161622),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.forum_outlined,
+                                color: const Color(0xFF8B9BFF),
+                                size: 40.sp,
+                              ),
+                            ),
+                            SizedBox(height: 20.h),
+                            Text(
+                              "No messages yet",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              "Say hello to start the conversation!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 80.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildActionChip(
+                              Icons.location_on_outlined, 
+                              "TRACK ORDER",
+                              onTap: () => Get.toNamed(AppRoute.trackOrder, arguments: _getMockOrder()),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Expanded(child: _buildActionChip(Icons.check_circle_outline, "CONFIRM DELIVERY")),
+                        ],
+                      ),
+                      SizedBox(height: 100.h),
+                    ],
+                  );
+                }
+
                 return ListView.builder(
                   controller: controller.scrollController,
                   padding: EdgeInsets.all(16.r),

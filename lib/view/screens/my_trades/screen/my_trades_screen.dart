@@ -331,7 +331,14 @@ class MyTradesScreen extends GetView<MyTradesController> {
                 ),
                 SizedBox(width: 16.w),
                 GestureDetector(
-                  onTap: () => Get.toNamed('/message_details'),
+                  onTap: () => Get.toNamed(
+                    AppRoute.messageDetails,
+                    arguments: {
+                      "chatId": "mock_room_1",
+                      "name": trade.traderName.startsWith('@') ? trade.traderName : "@${trade.traderName}",
+                      "avatar": trade.traderAvatar,
+                    },
+                  ),
                   child: Container(
                     height: 56.h,
                     width: 64.w,

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
 import '../../../../data/helpers/shared_prefe.dart';
+import '../../../../data/services/socket_service.dart';
 
 class MessageDetailsController extends GetxController {
   final ApiClient _apiClient = Get.find<ApiClient>();
@@ -26,10 +27,105 @@ class MessageDetailsController extends GetxController {
     partnerName.value = args['name'] ?? 'User';
     partnerAvatar.value = args['avatar'] ?? '';
     
+    // Ensure socket is initialized
+    try {
+      final socketService = Get.find<SocketService>();
+      if (socketService.socket == null || !socketService.isConnected.value) {
+        socketService.initSocket();
+      }
+    } catch (e) {
+      Get.log("Could not auto-initialize socket in message details: $e");
+    }
+
     if (chatId.value.isNotEmpty) {
       fetchMessages();
+      _setupSocketListener();
     } else {
       _loadMockMessages();
+    }
+  }
+
+  void _setupSocketListener() {
+    try {
+      final socketService = Get.find<SocketService>();
+      
+      // Join chat room
+      socketService.joinChat(chatId.value);
+      
+      // Listen to events
+      socketService.socket?.on('messageReceived', _onMessageReceived);
+      socketService.socket?.on('newMessage', _onMessageReceived);
+      socketService.socket?.on('message', _onMessageReceived);
+    } catch (e) {
+      Get.log("Error setting up socket listener: $e");
+    }
+  }
+
+  void _onMessageReceived(dynamic data) {
+    Get.log("📩 [Socket] Message received: $data");
+    if (data == null) return;
+
+    try {
+      Map<String, dynamic> msgMap;
+      if (data is String) {
+        msgMap = Map<String, dynamic>.from(jsonDecode(data));
+      } else {
+        msgMap = Map<String, dynamic>.from(data);
+      }
+
+      final String text = msgMap['text'] ?? msgMap['message'] ?? '';
+      if (text.isEmpty) return;
+
+      final senderId = msgMap['senderId'] ?? msgMap['sender'] ?? '';
+      final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+
+      bool isMe = false;
+      if (senderId is String) {
+        isMe = senderId == currentUserId;
+      } else if (senderId is Map) {
+        isMe = senderId['_id'] == currentUserId || senderId['id'] == currentUserId;
+      }
+
+      // Verify if it is for the current chat room
+      final String incomingChatId = msgMap['chatId'] ?? '';
+      if (incomingChatId.isNotEmpty && incomingChatId != chatId.value) {
+        Get.log("ℹ️ [Socket] Message is for another room ($incomingChatId), ignored.");
+        return;
+      }
+
+      final formattedTime = _formatTime(msgMap['createdAt'] ?? '');
+
+      // Check if message already exists to avoid duplicates or update 'Now' state
+      int index = -1;
+      if (isMe) {
+        index = messages.indexWhere((msg) => msg['isMe'] == true && msg['message'] == text && (msg['time'] == 'Now' || msg['time'] == formattedTime));
+      } else {
+        index = messages.indexWhere((msg) => msg['message'] == text && msg['time'] == formattedTime);
+      }
+
+      if (index != -1) {
+        messages[index] = {
+          "isMe": isMe,
+          "message": text,
+          "time": formattedTime,
+          "isRead": msgMap['isRead'] == true,
+        };
+        messages.refresh();
+        Get.log("ℹ️ [Socket] Updated existing message timestamp/read status.");
+        return;
+      }
+
+      // Add to list
+      messages.add({
+        "isMe": isMe,
+        "message": text,
+        "time": formattedTime,
+        "isRead": msgMap['isRead'] == true,
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      Get.log("❌ [Socket] Error parsing message: $e");
     }
   }
 
@@ -182,6 +278,17 @@ class MessageDetailsController extends GetxController {
 
   @override
   void onClose() {
+    if (chatId.value.isNotEmpty) {
+      try {
+        final socketService = Get.find<SocketService>();
+        socketService.leaveChat(chatId.value);
+        socketService.socket?.off('messageReceived', _onMessageReceived);
+        socketService.socket?.off('newMessage', _onMessageReceived);
+        socketService.socket?.off('message', _onMessageReceived);
+      } catch (e) {
+        Get.log("Error leaving socket room on close: $e");
+      }
+    }
     chatInputController.dispose();
     scrollController.dispose();
     super.onClose();

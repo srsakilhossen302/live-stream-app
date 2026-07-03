@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
+import '../../../../data/services/socket_service.dart';
 
 class HomeController extends GetxController {
   final ApiClient _apiClient = Get.find<ApiClient>();
@@ -34,6 +35,12 @@ class HomeController extends GetxController {
         final String userId = data['id'] ?? data['_id'] ?? "";
         if (userId.isNotEmpty) {
           await SharePrefsHelper.setString(SharePrefsHelper.userIdKey, userId);
+          // Initialize Socket.io connection since we have userId now
+          try {
+            Get.find<SocketService>().initSocket();
+          } catch (e) {
+            Get.log("Socket connection failed to initialize: $e");
+          }
         }
       }
     } catch (e) {
