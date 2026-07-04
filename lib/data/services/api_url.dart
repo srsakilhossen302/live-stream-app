@@ -28,7 +28,7 @@ class ApiUrl {
 
   // Category
   static const String category = "/category";
-
+ 
   // Auctions / Live Streams / and streaming get
   static const String liveStreams = "/auctions/streams";
   static const String startStream = "/auctions/stream";

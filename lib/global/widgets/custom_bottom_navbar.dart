@@ -10,76 +10,81 @@ class CustomBottomNavbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<MainController>();
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
     return SizedBox(
-      height: 145.h,
+      height: 145.h + bottomPadding,
       child: Stack(
         alignment: Alignment.topCenter,
         clipBehavior: Clip.none,
         children: [
           // Invisible spacer to expand hit-test area
-          SizedBox(height: 145.h, width: double.infinity),
+          SizedBox(height: 145.h + bottomPadding, width: double.infinity),
           // Navbar Background (Moved down to accommodate the spacer)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-              height: 100.h,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: const Color(0xFF0F0B1E),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(40.r),
-              topRight: Radius.circular(40.r),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.6),
-                blurRadius: 30.r,
-                offset: const Offset(0, -10),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.only(left: 12.w, right: 12.w, bottom: 10.h),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _navItem(controller, 0, "assets/icons/Home-navBar.svg", "Home"),
-              _navItem(controller, 1, "assets/icons/Messg-navbar.svg", "Message"),
-              _navItem(controller, 2, "assets/icons/Discover-navBar.svg", "Discover"),
-              _navItem(controller, 3, "assets/icons/Bidswap-navBar.svg", "BidShwap"),
-              _navItem(controller, 4, "assets/icons/Profile-navBar.svg", "Profile"),
-            ],
-            ),
-          ),
-        ),
-        // Floating Action Button
-        Positioned(
-          top: 0,
-          child: GestureDetector(
-            onTap: () => Get.toNamed('/create_trade'),
-            child: Container(
-              width: 72.w,
-              height: 72.w,
+              height: 100.h + bottomPadding,
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFF8B9BFF),
-                shape: BoxShape.circle,
+                color: const Color(0xFF0F0B1E),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(40.r),
+                  topRight: Radius.circular(40.r),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF8B9BFF).withOpacity(0.5),
-                    blurRadius: 25.r,
-                    offset: const Offset(0, 10),
+                    color: Colors.black.withOpacity(0.6),
+                    blurRadius: 30.r,
+                    offset: const Offset(0, -10),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFF0F0B1E), width: 6.w),
               ),
-              child: Icon(Icons.add, color: Colors.black, size: 38.sp),
+              padding: EdgeInsets.only(
+                left: 12.w,
+                right: 12.w,
+                bottom: 10.h + bottomPadding,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _navItem(controller, 0, "assets/icons/Home-navBar.svg", "Home"),
+                  _navItem(controller, 1, "assets/icons/Messg-navbar.svg", "Message"),
+                  _navItem(controller, 2, "assets/icons/Discover-navBar.svg", "Discover"),
+                  _navItem(controller, 3, "assets/icons/Bidswap-navBar.svg", "BidShwap"),
+                  _navItem(controller, 4, "assets/icons/Profile-navBar.svg", "Profile"),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-      )
-      );
+          // Floating Action Button
+          Positioned(
+            top: 0,
+            child: GestureDetector(
+              onTap: () => Get.toNamed('/create_trade'),
+              child: Container(
+                width: 72.w,
+                height: 72.w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B9BFF),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF8B9BFF).withOpacity(0.5),
+                      blurRadius: 25.r,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                  border: Border.all(color: const Color(0xFF0F0B1E), width: 6.w),
+                ),
+                child: Icon(Icons.add, color: Colors.black, size: 38.sp),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _navItem(MainController controller, int index, String iconPath, String label) {
