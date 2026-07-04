@@ -3,6 +3,12 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../helpers/shared_prefe.dart';
 import 'api_url.dart';
 
+class _SocketListener {
+  final String event;
+  final Function(dynamic) handler;
+  _SocketListener(this.event, this.handler);
+}
+
 class SocketService extends GetxService {
   static SocketService get to => Get.find();
 
@@ -11,7 +17,7 @@ class SocketService extends GetxService {
   String? _activeChatId;
 
   // Pending listeners registered before socket was ready
-  final Map<String, Function(dynamic)> _pendingListeners = {};
+  final List<_SocketListener> _pendingListeners = [];
 
   void initSocket() {
     final token = SharePrefsHelper.getString(SharePrefsHelper.accessTokenKey);
@@ -25,7 +31,6 @@ class SocketService extends GetxService {
     if (socket != null) {
       if (socket!.connected) {
         Get.log('⚡ [SocketService] Already connected.');
-        // Still attach any pending listeners in case controller registered before connect
         _attachPendingListeners();
         return;
       } else {
@@ -44,8 +49,8 @@ class SocketService extends GetxService {
         IO.OptionBuilder()
             .setTransports(['websocket', 'polling'])
             .enableAutoConnect()
-            .disableReconnection()
-            .setReconnectionAttempts(5)
+            .enableReconnection() // Enable reconnection to make sockets robust!
+            .setReconnectionAttempts(10)
             .setReconnectionDelay(2000)
             .setQuery({'token': token, 'userId': userId})
             .build(),
@@ -85,12 +90,10 @@ class SocketService extends GetxService {
     }
   }
 
-  /// Register a named listener. If socket is already connected, attach immediately.
-  /// Otherwise it will be attached once socket connects.
+  /// Register a named listener. Supports multiple listeners for the same event name.
   void on(String event, Function(dynamic) handler) {
-    _pendingListeners[event] = handler;
+    _pendingListeners.add(_SocketListener(event, handler));
     if (socket != null && isConnected.value) {
-      socket?.off(event); // remove old handler first
       socket?.on(event, handler);
       Get.log('🎧 [SocketService] Listener attached for: $event');
     } else {
@@ -99,18 +102,23 @@ class SocketService extends GetxService {
   }
 
   /// Remove a named listener
-  void off(String event) {
-    _pendingListeners.remove(event);
-    socket?.off(event);
-    Get.log('🚫 [SocketService] Listener removed: $event');
+  void off(String event, [Function(dynamic)? handler]) {
+    if (handler != null) {
+      _pendingListeners.removeWhere((l) => l.event == event && l.handler == handler);
+      socket?.off(event, handler);
+    } else {
+      _pendingListeners.removeWhere((l) => l.event == event);
+      socket?.off(event);
+    }
+    Get.log('🚫 [SocketService] Listener(s) removed for: $event');
   }
 
   void _attachPendingListeners() {
-    _pendingListeners.forEach((event, handler) {
-      socket?.off(event); // avoid duplicates
-      socket?.on(event, handler);
-      Get.log('🎧 [SocketService] Attached queued listener: $event');
-    });
+    for (final listener in _pendingListeners) {
+      socket?.off(listener.event, listener.handler); // avoid duplicates
+      socket?.on(listener.event, listener.handler);
+      Get.log('🎧 [SocketService] Attached queued listener: ${listener.event}');
+    }
   }
 
   void joinChat(String chatId) {

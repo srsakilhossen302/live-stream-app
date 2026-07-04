@@ -605,8 +605,21 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
     final String productId = product['_id'] ?? product['id'] ?? '';
 
     return GestureDetector(
-      onTap: () => Get.toNamed(AppRoute.tradeDetails,
-          arguments: {'productId': productId, ...product}),
+      onTap: () {
+        final Map<String, dynamic> argMap = Map<String, dynamic>.from(product);
+        argMap['productId'] = productId;
+        argMap['sellerId'] = {
+          '_id': controller.traderId.value,
+          'fullName': controller.traderName.value,
+          'name': controller.traderName.value,
+          'avatar': controller.traderAvatar.value,
+          'profile': controller.traderAvatar.value,
+          'image': controller.traderAvatar.value,
+          'bio': controller.traderBio.value,
+          'rating': controller.rating.value > 0 ? controller.rating.value.toString() : '4.8',
+        };
+        Get.toNamed(AppRoute.tradeDetails, arguments: argMap);
+      },
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF11111A),

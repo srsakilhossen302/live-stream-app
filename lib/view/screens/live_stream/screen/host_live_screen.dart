@@ -1,5 +1,6 @@
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../global/widgets/custom_background.dart';
@@ -103,13 +104,43 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                           ],
                         ),
                       ),
+                      SizedBox(width: 8.w),
+                      // TIMER badge
+                      Obx(() {
+                        if (!ctrl.auctionActive.value) return const SizedBox.shrink();
+                        final isLowTime = ctrl.bidTimer.value <= 10;
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                          decoration: BoxDecoration(
+                            color: isLowTime ? Colors.redAccent.withOpacity(0.8) : const Color(0xFF8B9BFF).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(
+                              color: isLowTime ? Colors.redAccent : const Color(0xFF8B9BFF).withOpacity(0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.timer_outlined, color: Colors.white, size: 12.sp),
+                              SizedBox(width: 4.w),
+                              Text(
+                                "00:${ctrl.bidTimer.value.toString().padLeft(2, '0')}",
+                                style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                       SizedBox(width: 10.w),
-                      Obx(() => Text(
-                        ctrl.streamTitle.value,
-                        style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      )),
+                      Expanded(
+                        child: Obx(() => Text(
+                          ctrl.streamTitle.value,
+                          style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                      ),
                       const Spacer(),
                       // End button
                       GestureDetector(
@@ -128,33 +159,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                 ),
               ),
             ),
-
-            // ── Right Side Controls
-            Positioned(
-              right: 16.w,
-              bottom: 200.h,
-              child: Obx(() => Column(
-                children: [
-                  _sideButton(
-                    ctrl.isCameraOn.value ? Icons.videocam_rounded : Icons.videocam_off_rounded,
-                    ctrl.isCameraOn.value ? Colors.white24 : Colors.red.withValues(alpha: 0.6),
-                    onTap: ctrl.toggleCamera,
-                  ),
-                  SizedBox(height: 16.h),
-                  _sideButton(
-                    ctrl.isMicOn.value ? Icons.mic_rounded : Icons.mic_off_rounded,
-                    ctrl.isMicOn.value ? Colors.white24 : Colors.red.withValues(alpha: 0.6),
-                    onTap: ctrl.toggleMic,
-                  ),
-                  SizedBox(height: 16.h),
-                  _sideButton(Icons.flip_camera_ios_rounded, Colors.white24, onTap: () {
-                    ctrl.engine?.switchCamera();
-                  }),
-                ],
-              )),
-            ),
-
-            // ── Auction Card (bottom)
+                     // ── Auction Card (bottom)
             Obx(() {
               if (!ctrl.auctionActive.value) return const SizedBox.shrink();
               return Positioned(
@@ -181,7 +186,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(color: Colors.white12),
+                          border: Border.all(color: Colors.white10),
                         ),
                         child: Row(
                           children: [
@@ -268,9 +273,431 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                 ),
               );
             }),
+
+            // ── Right Side Controls (Moved below bottom card overlay to make them clickable)
+            Positioned(
+              right: 16.w,
+              bottom: 200.h,
+              child: Obx(() => Column(
+                children: [
+                  _sideButton(
+                    ctrl.isCameraOn.value ? Icons.videocam_rounded : Icons.videocam_off_rounded,
+                    ctrl.isCameraOn.value ? Colors.white24 : Colors.red.withValues(alpha: 0.6),
+                    onTap: ctrl.toggleCamera,
+                  ),
+                  SizedBox(height: 16.h),
+                  _sideButton(
+                    ctrl.isMicOn.value ? Icons.mic_rounded : Icons.mic_off_rounded,
+                    ctrl.isMicOn.value ? Colors.white24 : Colors.red.withValues(alpha: 0.6),
+                    onTap: ctrl.toggleMic,
+                  ),
+                  SizedBox(height: 16.h),
+                  _sideButton(Icons.flip_camera_ios_rounded, Colors.white24, onTap: () {
+                    ctrl.engine?.switchCamera();
+                  }),
+                ],
+              )),
+            ),
+
+            // ── Floating Hearts Overlay
+            Positioned(
+              right: 16.w,
+              bottom: 100.h,
+              child: SizedBox(
+                width: 100.w,
+                height: 350.h,
+                child: Obx(() => Stack(
+                  clipBehavior: Clip.none,
+                  children: ctrl.floatingHearts.map((heart) {
+                    return _buildAnimatedHeart(heart);
+                  }).toList(),
+                )),
+              ),
+            ),
+
+            // ── Results Calculating Loader Overlay
+            Obx(() {
+              if (ctrl.isCalculatingResult.value) {
+                return _buildCalculatingLoader();
+              }
+              return const SizedBox.shrink();
+            }),
+
+            // ── Winner Overlay Popup
+            Obx(() {
+              if (ctrl.showWinnerOverlay.value) {
+                return _buildWinnerOverlay();
+              }
+              return const SizedBox.shrink();
+            }),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCalculatingLoader() {
+    return Container(
+      color: Colors.black.withOpacity(0.85),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+            SizedBox(height: 20.h),
+            Text(
+              "Calculating Result...",
+              style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              "Determining the winning bid",
+              style: TextStyle(color: Colors.white60, fontSize: 13.sp),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWinnerOverlay() {
+    final hasWinner = ctrl.lastBidderId.value.isNotEmpty;
+    final winnerName = ctrl.lastBidderName.value;
+    final finalPrice = ctrl.currentBidPrice.value;
+
+    return Container(
+      color: Colors.black.withOpacity(0.9),
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.all(28.r),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E2C),
+            borderRadius: BorderRadius.circular(32.r),
+            border: Border.all(color: Colors.white10),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF8B9BFF).withOpacity(0.1),
+                blurRadius: 30,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: hasWinner ? const Color(0xFF8B9BFF).withOpacity(0.1) : Colors.redAccent.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  hasWinner ? Icons.emoji_events_rounded : Icons.hourglass_disabled_rounded,
+                  color: hasWinner ? const Color(0xFF8B9BFF) : Colors.redAccent,
+                  size: 48.sp,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Text(
+                hasWinner ? "Auction Completed!" : "Auction Ended",
+                style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+              ),
+              SizedBox(height: 12.h),
+              if (hasWinner) ...[
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: TextStyle(color: Colors.white70, fontSize: 14.sp, height: 1.4),
+                    children: [
+                      const TextSpan(text: "Winner: "),
+                      TextSpan(
+                        text: "@$winnerName\n",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15.sp),
+                      ),
+                      const TextSpan(text: "Winning Amount: "),
+                      TextSpan(
+                        text: "\$$finalPrice",
+                        style: const TextStyle(color: Color(0xFF8B9BFF), fontWeight: FontWeight.w900),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    "STATUS: AWAITING PAYMENT",
+                    style: TextStyle(color: Colors.amber, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  "No bids were received for this item.",
+                  style: TextStyle(color: Colors.white60, fontSize: 14.sp),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              SizedBox(height: 32.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _showStartNewAuctionSheet(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B9BFF),
+                        foregroundColor: const Color(0xFF0F0B1E),
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                      ),
+                      child: Text(
+                        "Start New Auction",
+                        style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              TextButton(
+                onPressed: () => ctrl.showWinnerOverlay.value = false,
+                child: Text(
+                  "Continue Watching Stream",
+                  style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showStartNewAuctionSheet() {
+    final productsList = <Map<String, dynamic>>[].obs;
+    final loadingProducts = true.obs;
+    
+    // Fetch products
+    final sellerId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
+    Get.find<ApiClient>().getData("${ApiUrl.products}?sellerId=$sellerId").then((res) {
+      loadingProducts.value = false;
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        final list = body['data'] ?? [];
+        if (list is List) {
+          productsList.assignAll(list.map((e) => Map<String, dynamic>.from(e)).toList());
+        }
+      }
+    }).catchError((_) {
+      loadingProducts.value = false;
+    });
+
+    final startingBidCtrl = TextEditingController(text: "100");
+    final durationCtrl = TextEditingController(text: "60");
+
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF11111A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 20.h),
+                decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2.r)),
+              ),
+            ),
+            Text("Start New Auction", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
+            SizedBox(height: 16.h),
+            
+            // Starting Bid & Duration Row
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161622),
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: TextField(
+                      controller: startingBidCtrl,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800),
+                      decoration: InputDecoration(
+                        labelText: "Starting Bid (\$)",
+                        labelStyle: const TextStyle(color: Colors.white38),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161622),
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: TextField(
+                      controller: durationCtrl,
+                      keyboardType: TextInputType.number,
+                      style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800),
+                      decoration: InputDecoration(
+                        labelText: "Duration (sec)",
+                        labelStyle: const TextStyle(color: Colors.white38),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            Text("Select Product to Auction", style: TextStyle(color: Colors.white60, fontSize: 13.sp, fontWeight: FontWeight.w700)),
+            SizedBox(height: 12.h),
+            
+            SizedBox(
+              height: 250.h,
+              child: Obx(() {
+                if (loadingProducts.value) {
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFF8B9BFF)));
+                }
+                if (productsList.isEmpty) {
+                  return Center(
+                    child: Text("No products available to auction.", style: TextStyle(color: Colors.white38, fontSize: 13.sp)),
+                  );
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: productsList.length,
+                  itemBuilder: (context, index) {
+                    final prod = productsList[index];
+                    final String title = prod['title'] ?? 'Product';
+                    final String image = (prod['images'] is List && (prod['images'] as List).isNotEmpty)
+                        ? prod['images'][0].toString()
+                        : "";
+                    final String pid = prod['_id'] ?? prod['id'] ?? "";
+
+                    return GestureDetector(
+                      onTap: () async {
+                        final double startingBid = double.tryParse(startingBidCtrl.text) ?? 100.0;
+                        final int duration = int.tryParse(durationCtrl.text) ?? 60;
+                        
+                        Get.back(); // Close bottom sheet
+                        final ok = await ctrl.resetAndStartNewAuction(
+                          productId: pid,
+                          startingBid: startingBid,
+                          timerDuration: duration,
+                          productTitle: title,
+                          productImage: image,
+                        );
+                        if (ok) {
+                          Get.snackbar("Auction Started!", "New auction for $title is now live!", snackPosition: SnackPosition.BOTTOM);
+                        } else {
+                          Get.snackbar("Error", "Failed to start new auction.", snackPosition: SnackPosition.BOTTOM);
+                        }
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(bottom: 12.h),
+                        padding: EdgeInsets.all(12.r),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(16.r),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44.r,
+                              height: 44.r,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                color: Colors.black26,
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: image.isEmpty
+                                  ? Icon(Icons.image, color: Colors.white24, size: 20.sp)
+                                  : Image.network(
+                                      image.startsWith('http') ? image : "${ApiUrl.imageBaseUrl}$image",
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 20.sp),
+                                    ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios_rounded, color: Colors.white30, size: 14.sp),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildAnimatedHeart(FloatingHeart heart) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(heart.id),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1500),
+      builder: (context, value, child) {
+        final double opacity = value < 0.2
+            ? (value / 0.2)
+            : (value > 0.7 ? (1.0 - value) / 0.3 : 1.0);
+        final double translationY = -300.h * value;
+        final double translationX = 40.w * math.sin(value * math.pi) * heart.angle;
+        return Positioned(
+          bottom: 0,
+          right: 30.w + translationX,
+          child: Transform.translate(
+            offset: Offset(0, translationY),
+            child: Transform.scale(
+              scale: heart.scale * (value < 0.2 ? value / 0.2 : 1.0),
+              child: Transform.rotate(
+                angle: heart.angle,
+                child: Opacity(
+                  opacity: opacity.clamp(0.0, 1.0),
+                  child: Icon(
+                    Icons.favorite_rounded,
+                    color: heart.color,
+                    size: 32.sp,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -317,6 +744,40 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
     final msg = m['msg'] ?? '';
     final role = m['role'] ?? 'viewer';
     final isBid = m['isBid'] == 'true';
+    final userAvatar = m['userAvatar'] ?? '';
+    final isJoin = m['isJoin'] == 'true';
+
+    final ImageProvider avatarImg = userAvatar.isNotEmpty
+        ? NetworkImage(userAvatar)
+        : const NetworkImage("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200") as ImageProvider;
+
+    if (isJoin) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 10.r,
+              backgroundImage: avatarImg,
+            ),
+            SizedBox(width: 6.w),
+            Text(
+              "$user joined this stream",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     if (isBid) {
       return Container(
@@ -329,6 +790,11 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            CircleAvatar(
+              radius: 12.r,
+              backgroundImage: avatarImg,
+            ),
+            SizedBox(width: 8.w),
             Icon(Icons.gavel_rounded, color: const Color(0xFF8B9BFF), size: 14.sp),
             SizedBox(width: 6.w),
             RichText(
@@ -379,46 +845,59 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  user,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w900,
+            CircleAvatar(
+              radius: 12.r,
+              backgroundImage: avatarImg,
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        user,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          "HOST",
+                          style: TextStyle(
+                            color: const Color(0xFF8B9BFF),
+                            fontSize: 8.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(width: 6.w),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6.r),
-                  ),
-                  child: Text(
-                    "HOST",
+                  SizedBox(height: 2.h),
+                  Text(
+                    msg,
                     style: TextStyle(
-                      color: const Color(0xFF8B9BFF),
-                      fontSize: 8.sp,
-                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              msg,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
+                ],
               ),
             ),
           ],
@@ -433,25 +912,36 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.white10, width: 0.5),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            user,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-            ),
+          CircleAvatar(
+            radius: 12.r,
+            backgroundImage: avatarImg,
           ),
-          SizedBox(height: 2.h),
-          Text(
-            msg,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13.sp,
-            ),
+          SizedBox(width: 8.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                user,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                msg,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.sp,
+                ),
+              ),
+            ],
           ),
         ],
       ),

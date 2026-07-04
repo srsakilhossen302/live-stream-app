@@ -210,272 +210,304 @@ class HomeScreen extends GetView<HomeController> {
                 ),
               ),
 
-              SizedBox(height: 32.h),
-
-              // Featured Card
+              // Conditional Live Sections (Featured Card & Live Now Grid)
               Obx(() {
                 final hasLive = controller.liveItems.isNotEmpty;
-                final liveShow = hasLive ? controller.liveItems.first : null;
-                
-                final String image = liveShow != null ? liveShow.image : "assets/images/image.png";
-                final String title = liveShow != null ? liveShow.title : "Rare 1980s Tech Drop: Unopened Grail Consoles & Limited Prototypes";
-                final String curator = liveShow != null ? liveShow.curator : "VintageVault_Pro";
-                final String viewers = liveShow != null ? liveShow.viewers : "4.2K";
+                if (!hasLive) return const SizedBox.shrink();
 
-                return Container(
-                  height: 440.h,
-                  width: double.infinity,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.4),
-                        blurRadius: 20.r,
-                        offset: Offset(0, 10.h),
+                final liveShow = controller.liveItems.first;
+                final String image = liveShow.image;
+                final String title = liveShow.title;
+                final String curator = liveShow.curator;
+                final String viewers = liveShow.viewers;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 20.h),
+                    // Featured Card
+                    Container(
+                      height: 440.h,
+                      width: double.infinity,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(32.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.4),
+                            blurRadius: 20.r,
+                            offset: Offset(0, 10.h),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      // Background Image
-                      Positioned.fill(
-                        child: (() {
-                          if (image.isEmpty) {
-                            return Container(color: const Color(0xFF0F0B1E));
-                          }
-                          if (image.startsWith('data:image/') && image.contains('base64,')) {
-                            try {
-                              final base64Content = image.split('base64,').last;
-                              final bytes = base64Decode(base64Content);
-                              return Image.memory(bytes, fit: BoxFit.cover);
-                            } catch (_) {
-                              return Container(color: const Color(0xFF0F0B1E));
-                            }
-                          }
-                          if (image.startsWith('http')) {
-                            return Image.network(image, fit: BoxFit.cover);
-                          }
-                          return Image.asset(image, fit: BoxFit.cover);
-                        })(),
-                      ),
-                      // Gradient overlay
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.9),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: image.startsWith('http')
+                                ? Image.network(image, fit: BoxFit.cover)
+                                : Image.asset(image, fit: BoxFit.cover),
+                          ),
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.9),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(28.r),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    _buildSmallBadge("LIVE", const Color(0xFFFF5252)),
+                                    SizedBox(width: 10.w),
+                                    _buildSmallBadge(
+                                      viewers,
+                                      Colors.black.withOpacity(0.4),
+                                      icon: Icons.visibility_outlined,
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 44.w,
+                                      height: 44.w,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12.r),
+                                        border: Border.all(
+                                          color: Colors.white24,
+                                          width: 1.5.w,
+                                        ),
+                                        image: const DecorationImage(
+                                          image: NetworkImage("https://i.pravatar.cc/150?u=9"),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12.w),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "CURATED BY",
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 10.sp,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        Text(
+                                          curator,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 18.h),
+                                Text(
+                                  title,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28.sp,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.1,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: 24.h),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 60.h,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      if (liveShow.raw != null) {
+                                        Get.toNamed(AppRoute.viewerLive, arguments: liveShow.raw);
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF8B9BFF),
+                                      foregroundColor: const Color(0xFF0F0B1E),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30.r),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.play_circle_fill_rounded,
+                                          size: 28.sp,
+                                          color: const Color(0xFF0F0B1E),
+                                        ),
+                                        SizedBox(width: 10.w),
+                                        Text(
+                                          "Join Stream",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 18.sp,
+                                            color: const Color(0xFF0F0B1E),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      // Details Content
-                      Padding(
-                        padding: EdgeInsets.all(28.r),
-                        child: Column(
+                    ),
+                    SizedBox(height: 40.h),
+
+                    // Live Now Grid Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                _buildSmallBadge("LIVE", const Color(0xFFFF5252)),
-                                SizedBox(width: 10.w),
-                                _buildSmallBadge(
-                                  viewers,
-                                  Colors.black.withOpacity(0.4),
-                                  icon: Icons.visibility_outlined,
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 44.w,
-                                  height: 44.w,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12.r),
-                                    border: Border.all(
-                                      color: Colors.white24,
-                                      width: 1.5.w,
-                                    ),
-                                    image: const DecorationImage(
-                                      image: NetworkImage(
-                                        "https://i.pravatar.cc/150?u=9",
-                                      ),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 12.w),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "CURATED BY",
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    Text(
-                                      curator,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 18.h),
                             Text(
-                              title,
+                              "Live Now",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 28.sp,
+                                fontSize: 24.sp,
                                 fontWeight: FontWeight.w900,
-                                height: 1.1,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: 24.h),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 60.h,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  if (hasLive && liveShow?.raw != null) {
-                                    Get.toNamed(AppRoute.viewerLive, arguments: liveShow!.raw);
-                                  } else {
-                                    Get.snackbar("No Live Streams", "There are no active live streams right now.", snackPosition: SnackPosition.BOTTOM);
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF8B9BFF),
-                                  foregroundColor: const Color(0xFF0F0B1E),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30.r),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.play_circle_fill_rounded,
-                                      size: 28.sp,
-                                      color: const Color(0xFF0F0B1E),
-                                    ),
-                                    SizedBox(width: 10.w),
-                                    Text(
-                                      "Join Stream",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 18.sp,
-                                        color: const Color(0xFF0F0B1E),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            Text(
+                              "Bidding wars in progress",
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 13.sp,
                               ),
                             ),
                           ],
                         ),
+                        TextButton(
+                          onPressed: () => Get.to(() => PurchasesScreen()),
+                          child: Text(
+                            "SEE ALL",
+                            style: TextStyle(
+                              color: const Color(0xFF8B9BFF),
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20.h),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 18.w,
+                        mainAxisSpacing: 18.h,
+                        childAspectRatio: 0.85,
                       ),
-                    ],
-                  ),
+                      itemCount: controller.liveItems.length,
+                      itemBuilder: (context, index) {
+                        final item = controller.liveItems[index];
+                        return _buildLiveCard(item, index);
+                      },
+                    ),
+                    SizedBox(height: 40.h),
+                  ],
                 );
               }),
 
-              SizedBox(height: 40.h),
-
-              // Live Now Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Collectibles & Streetwear Products Section (Dynamic from Database)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Live Now",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        "Bidding wars in progress",
-                        style: TextStyle(
-                          color: Colors.white38,
-                          fontSize: 13.sp,
-                        ),
-                      ),
-                    ],
-                  ),
-                  TextButton(
-                    onPressed: () => Get.to(() => PurchasesScreen()),
-                    child: Text(
-                      "SEE ALL",
-                      style: TextStyle(
-                        color: const Color(0xFF8B9BFF),
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                      ),
+                  Text(
+                    "Featured Collectibles",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                ],
-              ),
+                  Text(
+                    "Explore items verified by experts",
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                  SizedBox(height: 20.h),
+                  Obx(() {
+                    if (controller.isProductsLoading.value) {
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16.h,
+                        crossAxisSpacing: 16.w,
+                        childAspectRatio: 0.75,
+                        children: List.generate(4, (_) => Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1E2C).withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(24.r),
+                          ),
+                        )),
+                      );
+                    }
 
-              SizedBox(height: 20.h),
-
-              // Live Now Grid
-              Obx(
-                () => controller.isLoading.value
-                    ? Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 40.h),
-                          child: const CircularProgressIndicator(
-                            color: Color(0xFF8B9BFF),
+                    if (controller.products.isEmpty) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(vertical: 40.h),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "No products found in this category.",
+                          style: TextStyle(
+                            color: Colors.white38,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      )
-                    : controller.liveItems.isEmpty
-                        ? Padding(
-                            padding: EdgeInsets.symmetric(vertical: 32.h),
-                            child: Center(
-                              child: Text(
-                                "No live shows currently broadcasting.",
-                                style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          )
-                        : GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 18.w,
-                              mainAxisSpacing: 18.h,
-                              childAspectRatio: 0.85,
-                            ),
-                            itemCount: controller.liveItems.length,
-                            itemBuilder: (context, index) {
-                              final item = controller.liveItems[index];
-                              return _buildLiveCard(item, index);
-                            },
-                          ),
+                      );
+                    }
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16.w,
+                        mainAxisSpacing: 16.h,
+                        childAspectRatio: 0.75,
+                      ),
+                      itemCount: controller.products.length,
+                      itemBuilder: (context, index) {
+                        final product = controller.products[index];
+                        return _buildProductCard(product);
+                      },
+                    );
+                  }),
+                ],
               ),
 
               SizedBox(height: 100.h), // Bottom padding for navigation bar
@@ -640,6 +672,113 @@ class HomeScreen extends GetView<HomeController> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductCard(Map<String, dynamic> product) {
+    final title = product['title'] ?? product['name'] ?? 'Item';
+    final double price = (product['buyNowPrice'] ?? product['price'] ?? 0).toDouble();
+    final List images = product['images'] ?? [];
+    final String img = images.isNotEmpty ? images[0].toString() : '';
+    final bool allowTrade = product['allowTrade'] == true;
+    final bool isSold = (product['status'] ?? '') == 'sold';
+    final String productId = product['_id'] ?? product['id'] ?? '';
+
+    // Safeguard seller data
+    final seller = product['sellerId'];
+    final String sellerId = seller is Map ? (seller['_id'] ?? seller['id'] ?? '') : (seller?.toString() ?? '');
+    final String sellerName = seller is Map ? (seller['fullName'] ?? seller['name'] ?? 'Seller') : 'Seller';
+    final String sellerAvatar = seller is Map ? (seller['avatar'] ?? seller['profile'] ?? '') : '';
+
+    return GestureDetector(
+      onTap: () {
+        final Map<String, dynamic> argMap = Map<String, dynamic>.from(product);
+        argMap['productId'] = productId;
+        argMap['sellerId'] = {
+          '_id': sellerId,
+          'fullName': sellerName,
+          'name': sellerName,
+          'avatar': sellerAvatar,
+          'profile': sellerAvatar,
+          'image': sellerAvatar,
+          'bio': seller is Map ? (seller['bio'] ?? seller['description'] ?? '') : '',
+          'rating': seller is Map ? (seller['rating'] ?? '4.8').toString() : '4.8',
+        };
+        Get.toNamed(AppRoute.tradeDetails, arguments: argMap);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF11111A),
+          borderRadius: BorderRadius.circular(24.r),
+          border: Border.all(color: Colors.white.withOpacity(0.04)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                      color: const Color(0xFF1E1E2C),
+                      image: img.isNotEmpty
+                          ? DecorationImage(image: NetworkImage(img), fit: BoxFit.cover)
+                          : null,
+                    ),
+                    child: img.isEmpty
+                        ? Center(child: Icon(Icons.image_not_supported_outlined, color: Colors.white24, size: 28.sp))
+                        : null,
+                  ),
+                  if (isSold)
+                    Center(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        child: Text('SOLD', style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                      ),
+                    ),
+                  if (allowTrade && !isSold)
+                    Positioned(
+                      top: 8.h,
+                      left: 8.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD677FF).withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text('TRADE', style: TextStyle(color: Colors.white, fontSize: 8.sp, fontWeight: FontWeight.w900)),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(12.r),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.bold),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    '\$${price.toStringAsFixed(0)}',
+                    style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 15.sp, fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

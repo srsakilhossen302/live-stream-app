@@ -1,9 +1,12 @@
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../data/services/api_url.dart';
 import '../controller/agora_live_controller.dart';
+import '../../../../core/app_route.dart';
+import '../../../../data/helpers/shared_prefe.dart';
 import 'dart:convert';
 
 class ViewerLiveScreen extends StatefulWidget {
@@ -47,37 +50,40 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         body: Stack(
           children: [
             // ── Remote Video (Host's camera)
-            Obx(() {
-              if (ctrl.engine != null && ctrl.remoteJoined.value && ctrl.remoteUid.value != -1) {
-                return AgoraVideoView(
-                  controller: VideoViewController.remote(
-                    rtcEngine: ctrl.engine!,
-                    canvas: VideoCanvas(uid: ctrl.remoteUid.value),
-                    connection: RtcConnection(channelId: ctrl.channelName.value),
-                    useFlutterTexture: false,
-                    useAndroidSurfaceView: true,
+            GestureDetector(
+              onDoubleTap: () => ctrl.sendLike(),
+              child: Obx(() {
+                if (ctrl.engine != null && ctrl.remoteJoined.value && ctrl.remoteUid.value != -1) {
+                  return AgoraVideoView(
+                    controller: VideoViewController.remote(
+                      rtcEngine: ctrl.engine!,
+                      canvas: VideoCanvas(uid: ctrl.remoteUid.value),
+                      connection: RtcConnection(channelId: ctrl.channelName.value),
+                      useFlutterTexture: false,
+                      useAndroidSurfaceView: true,
+                    ),
+                  );
+                }
+                return Container(
+                  color: const Color(0xFF0A0A14),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ctrl.isLoading.value
+                            ? const CircularProgressIndicator(color: Color(0xFF8B9BFF))
+                            : Icon(Icons.live_tv_rounded, color: Colors.white24, size: 64.sp),
+                        SizedBox(height: 16.h),
+                        Text(
+                          ctrl.isLoading.value ? "Connecting to stream..." : "Waiting for host...",
+                          style: TextStyle(color: Colors.white38, fontSize: 14.sp),
+                        ),
+                      ],
+                    ),
                   ),
                 );
-              }
-              return Container(
-                color: const Color(0xFF0A0A14),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ctrl.isLoading.value
-                          ? const CircularProgressIndicator(color: Color(0xFF8B9BFF))
-                          : Icon(Icons.live_tv_rounded, color: Colors.white24, size: 64.sp),
-                      SizedBox(height: 16.h),
-                      Text(
-                        ctrl.isLoading.value ? "Connecting to stream..." : "Waiting for host...",
-                        style: TextStyle(color: Colors.white38, fontSize: 14.sp),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
+              }),
+            ),
 
             // ── Gradient overlay
             Positioned.fill(
@@ -123,49 +129,82 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                               child: Icon(Icons.close_rounded, color: Colors.white, size: 22.sp),
                             ),
                           ),
-                          // LIVE pill
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(20.r),
-                              border: Border.all(color: Colors.white10, width: 0.5),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                           // LIVE pill & TIMER row
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                                decoration: BoxDecoration(
+                                  color: Colors.black45,
+                                  borderRadius: BorderRadius.circular(20.r),
+                                  border: Border.all(color: Colors.white10, width: 0.5),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(10.r),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.wifi_tethering_rounded, color: Colors.white, size: 10.sp),
+                                          SizedBox(width: 4.w),
+                                          Text(
+                                            "LIVE",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Obx(() => Text(
+                                      ctrl.remoteJoined.value ? "2" : "1",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    )),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              // TIMER badge
+                              Obx(() {
+                                if (!ctrl.auctionActive.value) return const SizedBox.shrink();
+                                final isLowTime = ctrl.bidTimer.value <= 10;
+                                return Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                                   decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(10.r),
+                                    color: isLowTime ? Colors.redAccent.withOpacity(0.8) : const Color(0xFF8B9BFF).withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(20.r),
+                                    border: Border.all(
+                                      color: isLowTime ? Colors.redAccent : const Color(0xFF8B9BFF).withOpacity(0.4),
+                                      width: 1,
+                                    ),
                                   ),
                                   child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.wifi_tethering_rounded, color: Colors.white, size: 10.sp),
+                                      Icon(Icons.timer_outlined, color: Colors.white, size: 12.sp),
                                       SizedBox(width: 4.w),
                                       Text(
-                                        "LIVE",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10.sp,
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                        "00:${ctrl.bidTimer.value.toString().padLeft(2, '0')}",
+                                        style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
                                       ),
                                     ],
                                   ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Obx(() => Text(
-                                  ctrl.remoteJoined.value ? "2" : "1",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                )),
-                              ],
-                            ),
+                                );
+                              }),
+                            ],
                           ),
                         ],
                       ),
@@ -219,9 +258,516 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                 ),
               ),
             ),
+
+            // ── Floating Hearts Overlay
+            Positioned(
+              right: 16.w,
+              bottom: 100.h,
+              child: SizedBox(
+                width: 100.w,
+                height: 350.h,
+                child: Obx(() => Stack(
+                  clipBehavior: Clip.none,
+                  children: ctrl.floatingHearts.map((heart) {
+                    return _buildAnimatedHeart(heart);
+                  }).toList(),
+                )),
+              ),
+            ),
+
+            // ── Results Calculating Loader Overlay
+            Obx(() {
+              if (ctrl.isCalculatingResult.value) {
+                return _buildCalculatingLoader();
+              }
+              return const SizedBox.shrink();
+            }),
+
+            // ── Winner Overlay Popup
+            Obx(() {
+              if (ctrl.showWinnerOverlay.value) {
+                return _buildWinnerOverlay();
+              }
+              return const SizedBox.shrink();
+            }),
+
+            // ── Anti-Sniping Timer Extended Notice
+            Obx(() {
+              if (ctrl.timerExtendedNotification.value) {
+                return _buildTimerExtendedOverlay();
+              }
+              return const SizedBox.shrink();
+            }),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCalculatingLoader() {
+    return Container(
+      color: Colors.black.withOpacity(0.85),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Color(0xFF8B9BFF)),
+            SizedBox(height: 20.h),
+            Text(
+              "Calculating Result...",
+              style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              "Determining the winning bid",
+              style: TextStyle(color: Colors.white60, fontSize: 13.sp),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimerExtendedOverlay() {
+    return Positioned(
+      top: 150.h,
+      left: 24.w,
+      right: 24.w,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            color: Colors.redAccent.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: Colors.white24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.redAccent.withOpacity(0.3),
+                blurRadius: 15,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.whatshot_rounded, color: Colors.white, size: 20.sp),
+              SizedBox(width: 8.w),
+              Text(
+                "🔥 New Bid! Extended by 10s!",
+                style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWinnerOverlay() {
+    final String currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
+    final hasWinner = ctrl.lastBidderId.value.isNotEmpty;
+    final isWinner = hasWinner && ctrl.lastBidderId.value == currentUserId;
+    final winnerName = ctrl.lastBidderName.value;
+    final finalPrice = ctrl.currentBidPrice.value;
+
+    return Container(
+      color: Colors.black.withOpacity(0.92),
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Center(
+        child: Container(
+          padding: EdgeInsets.all(28.r),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E2C),
+            borderRadius: BorderRadius.circular(32.r),
+            border: Border.all(color: Colors.white10),
+            boxShadow: [
+              BoxShadow(
+                color: isWinner ? Colors.amber.withOpacity(0.15) : const Color(0xFF8B9BFF).withOpacity(0.1),
+                blurRadius: 30,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header icon
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: isWinner
+                      ? Colors.amber.withOpacity(0.1)
+                      : (hasWinner ? const Color(0xFF8B9BFF).withOpacity(0.1) : Colors.redAccent.withOpacity(0.1)),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isWinner
+                      ? Icons.emoji_events_rounded
+                      : (hasWinner ? Icons.gavel_rounded : Icons.hourglass_disabled_rounded),
+                  color: isWinner
+                      ? Colors.amber
+                      : (hasWinner ? const Color(0xFF8B9BFF) : Colors.redAccent),
+                  size: 48.sp,
+                ),
+              ),
+              SizedBox(height: 24.h),
+              Text(
+                isWinner
+                    ? "🏆 Auction Won!"
+                    : (hasWinner ? "Auction Ended" : "Auction Ended"),
+                style: TextStyle(
+                  color: isWinner ? Colors.amber : Colors.white,
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              if (isWinner) ...[
+                Text(
+                  "Congratulations!\nYou won this item for \$${finalPrice.toStringAsFixed(0)}",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold, height: 1.4),
+                ),
+                SizedBox(height: 16.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14.r),
+                    border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.lock_clock_outlined, color: Colors.redAccent, size: 16.sp),
+                      SizedBox(width: 8.w),
+                      Text(
+                        "15:00 minutes left to pay",
+                        style: TextStyle(color: Colors.redAccent, fontSize: 12.sp, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 32.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _showCheckoutDialog(finalPrice),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          foregroundColor: const Color(0xFF0F0B1E),
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                        ),
+                        child: Text(
+                          "Proceed to Payment",
+                          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (hasWinner) ...[
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: TextStyle(color: Colors.white70, fontSize: 14.sp, height: 1.4),
+                    children: [
+                      const TextSpan(text: "Winner: "),
+                      TextSpan(
+                        text: "@$winnerName\n",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15.sp),
+                      ),
+                      const TextSpan(text: "Winning Bid: "),
+                      TextSpan(
+                        text: "\$$finalPrice",
+                        style: const TextStyle(color: Color(0xFF8B9BFF), fontWeight: FontWeight.w900),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  "Thank you for participating.",
+                  style: TextStyle(color: Colors.white38, fontSize: 12.sp),
+                ),
+                SizedBox(height: 32.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ctrl.showWinnerOverlay.value = false;
+                          Get.offAllNamed('/main'); // Browse Products
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B9BFF),
+                          foregroundColor: const Color(0xFF0F0B1E),
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                        ),
+                        child: Text(
+                          "Browse Products",
+                          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                Text(
+                  "No bids were received for this item.",
+                  style: TextStyle(color: Colors.white60, fontSize: 14.sp),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 32.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ctrl.showWinnerOverlay.value = false;
+                          Get.offAllNamed('/main');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white10,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                        ),
+                        child: Text(
+                          "Browse Products",
+                          style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              SizedBox(height: 12.h),
+              TextButton(
+                onPressed: () => ctrl.showWinnerOverlay.value = false,
+                child: Text(
+                  "Continue Watching Stream",
+                  style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCheckoutDialog(double winningAmount) {
+    final addressCtrl = TextEditingController(text: "123 Main St, New York");
+    final zipCtrl = TextEditingController(text: "10001");
+    final isPaying = false.obs;
+
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF11111A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 20.h),
+                decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2.r)),
+              ),
+            ),
+            Text("Secure Checkout", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
+            SizedBox(height: 4.h),
+            Text("Complete order for winning item", style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
+            SizedBox(height: 20.h),
+
+            // Product Details row
+            Container(
+              padding: EdgeInsets.all(12.r),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.02),
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50.r,
+                    height: 50.r,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: ctrl.currentProductImage.value.isEmpty
+                        ? Icon(Icons.image, color: Colors.white24, size: 22.sp)
+                        : Image.network(
+                            ctrl.currentProductImage.value.startsWith('http')
+                                ? ctrl.currentProductImage.value
+                                : "${ApiUrl.imageBaseUrl}${ctrl.currentProductImage.value}",
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
+                          ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ctrl.currentProductTitle.value,
+                          style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          "Total Amount: \$${winningAmount.toStringAsFixed(0)}",
+                          style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 12.sp, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20.h),
+
+            // Shipping fields
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF161622),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: TextField(
+                controller: addressCtrl,
+                style: TextStyle(color: Colors.white, fontSize: 13.sp),
+                decoration: InputDecoration(
+                  labelText: "Shipping Address",
+                  labelStyle: const TextStyle(color: Colors.white38),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF161622),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: TextField(
+                controller: zipCtrl,
+                style: TextStyle(color: Colors.white, fontSize: 13.sp),
+                decoration: InputDecoration(
+                  labelText: "ZIP / Postal Code",
+                  labelStyle: const TextStyle(color: Colors.white38),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                ),
+              ),
+            ),
+            SizedBox(height: 24.h),
+
+            // Action button
+            Obx(() => Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isPaying.value ? null : () async {
+                      isPaying.value = true;
+                      
+                      // Mock Payment processing
+                      await Future.delayed(const Duration(seconds: 2));
+                      
+                      isPaying.value = false;
+                      Get.back(); // Close checkout sheet
+                      ctrl.showWinnerOverlay.value = false; // Close Winner overlay
+                      
+                      Get.snackbar(
+                        "Payment Successful!",
+                        "Your order has been placed successfully!",
+                        backgroundColor: const Color(0xFF8B9BFF),
+                        colorText: const Color(0xFF0F0B1E),
+                        duration: const Duration(seconds: 4),
+                      );
+                      
+                      // Go to purchases screen
+                      Get.toNamed(AppRoute.purchases);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: const Color(0xFF0F0B1E),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                    ),
+                    child: isPaying.value
+                        ? SizedBox(
+                            width: 20.r,
+                            height: 20.r,
+                            child: const CircularProgressIndicator(color: Color(0xFF0F0B1E), strokeWidth: 2),
+                          )
+                        : Text(
+                            "Pay \$${winningAmount.toStringAsFixed(0)} Now",
+                            style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+                          ),
+                  ),
+                ),
+              ],
+            )),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildAnimatedHeart(FloatingHeart heart) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(heart.id),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1500),
+      builder: (context, value, child) {
+        final double opacity = value < 0.2
+            ? (value / 0.2)
+            : (value > 0.7 ? (1.0 - value) / 0.3 : 1.0);
+        final double translationY = -300.h * value;
+        final double translationX = 40.w * math.sin(value * math.pi) * heart.angle;
+        return Positioned(
+          bottom: 0,
+          right: 30.w + translationX,
+          child: Transform.translate(
+            offset: Offset(0, translationY),
+            child: Transform.scale(
+              scale: heart.scale * (value < 0.2 ? value / 0.2 : 1.0),
+              child: Transform.rotate(
+                angle: heart.angle,
+                child: Opacity(
+                  opacity: opacity.clamp(0.0, 1.0),
+                  child: Icon(
+                    Icons.favorite_rounded,
+                    color: heart.color,
+                    size: 32.sp,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -255,16 +801,16 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         }
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
           color: Colors.black38,
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(28.r),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             CircleAvatar(
-              radius: 16.r,
+              radius: 18.r,
               backgroundImage: NetworkImage(avatarUrl),
             ),
             SizedBox(width: 8.w),
@@ -274,8 +820,9 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
               children: [
                 Text(
                   username,
-                  style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
+                  style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900),
                 ),
+                SizedBox(height: 2.h),
                 Row(
                   children: [
                     Icon(Icons.star_rounded, color: const Color(0xFFFF41FF), size: 10.sp),
@@ -288,20 +835,20 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                 ),
               ],
             ),
-            SizedBox(width: 12.w),
+            SizedBox(width: 16.w),
             Obx(() => GestureDetector(
               onTap: () => isFollowing.toggle(),
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: isFollowing.value ? Colors.white12 : const Color(0xFF9EACFF),
-                  borderRadius: BorderRadius.circular(12.r),
+                  color: isFollowing.value ? Colors.white12 : const Color(0xFF8B9BFF),
+                  borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
                   isFollowing.value ? "FOLLOWED" : "FOLLOW",
                   style: TextStyle(
                     color: isFollowing.value ? Colors.white : Colors.black,
-                    fontSize: 9.sp,
+                    fontSize: 10.sp,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -344,6 +891,40 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
     final msg = m['msg'] ?? '';
     final role = m['role'] ?? 'viewer';
     final isBid = m['isBid'] == 'true';
+    final userAvatar = m['userAvatar'] ?? '';
+    final isJoin = m['isJoin'] == 'true';
+
+    final ImageProvider avatarImg = userAvatar.isNotEmpty
+        ? NetworkImage(userAvatar)
+        : const NetworkImage("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200") as ImageProvider;
+
+    if (isJoin) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 10.r,
+              backgroundImage: avatarImg,
+            ),
+            SizedBox(width: 6.w),
+            Text(
+              "$user joined this stream",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     if (isBid) {
       return Container(
@@ -356,6 +937,11 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            CircleAvatar(
+              radius: 12.r,
+              backgroundImage: avatarImg,
+            ),
+            SizedBox(width: 8.w),
             Icon(Icons.gavel_rounded, color: const Color(0xFF8B9BFF), size: 14.sp),
             SizedBox(width: 6.w),
             RichText(
@@ -406,46 +992,59 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  user,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w900,
+            CircleAvatar(
+              radius: 12.r,
+              backgroundImage: avatarImg,
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        user,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          "HOST",
+                          style: TextStyle(
+                            color: const Color(0xFF8B9BFF),
+                            fontSize: 8.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(width: 6.w),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6.r),
-                  ),
-                  child: Text(
-                    "HOST",
+                  SizedBox(height: 2.h),
+                  Text(
+                    msg,
                     style: TextStyle(
-                      color: const Color(0xFF8B9BFF),
-                      fontSize: 8.sp,
-                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              msg,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
+                ],
               ),
             ),
           ],
@@ -460,25 +1059,36 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.white10, width: 0.5),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            user,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-            ),
+          CircleAvatar(
+            radius: 12.r,
+            backgroundImage: avatarImg,
           ),
-          SizedBox(height: 2.h),
-          Text(
-            msg,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13.sp,
-            ),
+          SizedBox(width: 8.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                user,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                msg,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.sp,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -642,7 +1252,7 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                   ),
                   child: Icon(
                     Icons.favorite_rounded,
-                    color: const Color(0xFFFF528E),
+                    color: ctrl.isLiked.value ? const Color(0xFFFF528E) : Colors.white60,
                     size: 24.sp,
                   ),
                 ),
@@ -698,13 +1308,14 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
   Widget _buildBottomBar() {
     return Row(
       children: [
+        // Chat Input Box
         Expanded(
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(color: Colors.white10, width: 0.5),
+              border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
             ),
             child: Row(
               children: [
@@ -729,24 +1340,24 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                     ctrl.sendChatMessage(_chatController.text, role: 'viewer');
                     _chatController.clear();
                   },
-                  child: Icon(Icons.send_rounded, color: Colors.white, size: 18.sp),
+                  child: Icon(Icons.send_rounded, color: Colors.white54, size: 18.sp),
                 ),
               ],
             ),
           ),
         ),
         SizedBox(width: 8.w),
+
+        // Custom Bid Button
         GestureDetector(
-          onTap: () {
-            _showBidSheet();
-          },
+          onTap: () => _showBidSheet(),
           child: Container(
             height: 48.r,
             width: 48.r,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
+              color: const Color(0xFF1E1E2C).withOpacity(0.6),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white10, width: 0.5),
+              border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
             ),
             child: Center(
               child: Text(
@@ -757,34 +1368,62 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
           ),
         ),
         SizedBox(width: 8.w),
+
+        // Swipe-to-Bid / Bid Capsule Button
         Obx(() {
-          final nextBid = ctrl.currentBidPrice.value + 1;
+          final currentBid = ctrl.currentBidPrice.value;
+          final nextBid = currentBid + 1;
           return GestureDetector(
             onTap: () => ctrl.placeBid(nextBid),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              height: 48.h,
+              padding: EdgeInsets.fromLTRB(16.w, 4.h, 8.w, 4.h),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF8B9BFF), Color(0xFFBD8BFF)]),
+                color: const Color(0xFF8B9BFF),
                 borderRadius: BorderRadius.circular(24.r),
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         "BID",
-                        style: TextStyle(color: Colors.black45, fontSize: 8.sp, fontWeight: FontWeight.w900),
+                        style: TextStyle(
+                          color: Colors.black.withOpacity(0.5),
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                        ),
                       ),
+                      SizedBox(height: 2.h),
                       Text(
-                        "\$${nextBid.toStringAsFixed(0)}",
-                        style: TextStyle(color: Colors.black, fontSize: 13.sp, fontWeight: FontWeight.w900),
+                        "\$${currentBid.toStringAsFixed(0)}",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(width: 8.w),
-                  Icon(Icons.arrow_forward_rounded, color: Colors.black, size: 16.sp),
+                  SizedBox(width: 12.w),
+                  Container(
+                    width: 32.r,
+                    height: 32.r,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF6B7BFF), // darker blue circle accent
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.black,
+                      size: 16.sp,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -872,8 +1511,20 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
             SizedBox(height: 20.h),
             GestureDetector(
               onTap: () {
-                final amount = double.tryParse(bidAmountCtrl.text);
-                if (amount != null) ctrl.placeBid(amount);
+                final text = bidAmountCtrl.text.trim();
+                debugPrint("Confirm Bid tapped: input='$text'");
+                if (text.isEmpty) {
+                  Get.snackbar("Error", "Please enter a bid amount.", snackPosition: SnackPosition.BOTTOM);
+                  return;
+                }
+                final cleanText = text.replaceAll('\$', '').replaceAll(',', '');
+                final amount = double.tryParse(cleanText);
+                if (amount == null) {
+                  Get.snackbar("Error", "Invalid number format.", snackPosition: SnackPosition.BOTTOM);
+                  return;
+                }
+                debugPrint("Confirm Bid parsed amount: $amount. Placing bid...");
+                ctrl.placeBid(amount);
               },
               child: Container(
                 width: double.infinity,

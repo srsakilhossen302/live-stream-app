@@ -1,0 +1,249 @@
+টাইমার শেষ হয়ে যখন বিড বাটনটি নিষ্ক্রিয় (Disable) হয়ে যায়, তখন পুরো ফ্লোটি যেভাবে শেষ হবে তা ধাপে ধাপে নিচে বর্ণনা করা হলো:
+১. টাইম আউট স্ক্রিন লোড হওয়া (Screen Transitions)
+টাইমার 0 হওয়ার সাথে সাথে মোবাইল স্ক্রিনের ইন্টারফেস পরিবর্তন হয়ে যায়:
+বিডারের (Bidder) স্ক্রিন: বিডারদের স্ক্রিনে আর বিড করার কোনো সুযোগ থাকবে না। স্ক্রিনে নোটিফিকেশন দেখাবে: "Auction Ended" বা "নিলাম শেষ"।
+সেলার বা হোস্টের (Host) স্ক্রিন: হোস্টের স্ক্রিনেও বিড বাটন চলে যাবে এবং বিডের লাইভ রেজাল্ট স্ক্রিনে ভেসে উঠবে।
+২. উইনার ও নো-উইনার ফ্লো (Winner vs No-Winner Flow)
+টাইমার শেষ হওয়ার সময় ডাটাবেজে বিডের তথ্যের ওপর ভিত্তি করে দুটি আলাদা ফ্লো চলতে পারে:
+কেস A: যদি কেউ বিড করে থাকে (সফল নিলাম)
+ধরা যাক, একজন বিডার সর্বোচ্চ $500 বিড করেছিলেন।
+উইনার পপআপ (Winner Overlay):
+বিজয়ী ইউজারের স্ক্রিনে: একটি স্পেশাল ডায়ালগ বা পপআপ আসবে: "অভিনন্দন! আপনি $500 মূল্যে এই পণ্যটি জিতেছেন।" এর সাথে একটি "Proceed to Pay" বা "চেকআউট করুন" বাটন থাকবে।
+অন্যান্য দর্শকদের স্ক্রিনে: শো করবে: "নিলাম সমাপ্ত। বিজয়ী: [বিজয়ীর নাম] ($500)"।
+হোস্টের স্ক্রিনে: হোস্ট দেখতে পাবেন: "পণ্যটি [বিজয়ীর নাম] $500 মূল্যে জিতে নিয়েছেন। পেমেন্টের জন্য অপেক্ষা করা হচ্ছে।"
+পেমেন্ট ও অর্ডার সম্পন্ন করা:
+বিজয়ী ইউজার "Proceed to Pay" বাটনে চাপ দিয়ে পেমেন্ট সম্পন্ন করবেন।
+পেমেন্ট সফল হওয়ার সাথে সাথে ব্যাকএন্ডে একটি নতুন অর্ডার (Order) তৈরি হয়ে যাবে এবং পণ্যটি ডাটাবেজে চিরতরে sold (বিক্রি হয়ে গেছে) হিসেবে মার্কড হবে।
+ক্রেতা-বিক্রেতার ইনবক্সে একটি স্বয়ংক্রিয় অর্ডার কার্ড চলে যাবে।
+কেস B: যদি কেউ বিড না করে থাকে (ব্যর্থ নিলাম)
+যদি টাইম শেষ হওয়ার আগে কেউ একটিও বিড না করে থাকে:
+নো-বিড স্ক্রিন: হোস্ট ও দর্শকদের স্ক্রিনে নোটিফিকেশন আসবে: "নিলাম শেষ। কোনো বিড পাওয়া যায়নি।"
+পরবর্তী পদক্ষেপ: হোস্টের স্ক্রিনে আবার প্রোডাক্ট লিস্টে ফিরে যাওয়ার বাটন দেখাবে। হোস্ট তখন চাইলে অন্য আরেকটি প্রোডাক্টকে পিন করে নতুন করে লাইভ নিলাম শুরু করতে পারবেন।
+৩. টেকনিক্যাল ফ্লো অবসান (Technical End)
+পেমেন্ট সফল হওয়ার পর ব্যাকএন্ডের প্রোডাক্ট টেবিলের স্টক কমে যাবে। এর ফলে:
+ওই প্রোডাক্টটি অ্যাপের সাধারণ শপ (Store) বা অন্য কোনো জায়গা থেকে স্বয়ংক্রিয়ভাবে মুছে যাবে অথবা sold out দেখাবে।
+লাইভ চ্যাট রুমে হোস্ট নতুন আরেকটি প্রোডাক্ট পিন করে আবার নতুন করে ৬০ সেকেন্ডের টাইমার দিয়ে নিলাম শুরু করতে পারবেন।
+
+
+Follow this plan: 
+
+Live Auction End Flow (Improved Version)
+Phase 1: Auction Timer Ends
+
+যখন কাউন্টডাউন টাইমার 00:00 এ পৌঁছাবে:
+
+System Actions
+Bid Button সাথে সাথে Disable হবে।
+নতুন কোনো Bid গ্রহণ করা হবে না।
+Backend Auction Status কে ended হিসেবে Update করবে।
+Final Highest Bid Database থেকে Verify করা হবে।
+২-৩ সেকেন্ডের জন্য "Calculating Result..." Loader দেখানো হবে যাতে Result Synchronization Issue না হয়।
+Phase 2: Result Processing
+
+Backend Final Bid Data Check করবে।
+
+Scenario A: Successful Auction (At Least One Bid Exists)
+
+যদি অন্তত একটি Valid Bid থাকে:
+
+Winner Selection
+Highest Bidder Automatically Winner হবে।
+Winner Information Database এ Save হবে।
+Auction Status → completed
+Winner Screen
+
+স্ক্রিনে Full-Screen Celebration Overlay দেখাবে:
+
+🏆 Auction Won
+
+Congratulations!
+
+You won this item for $500
+
+Product: iPhone 15 Pro Max
+
+Button:
+
+Proceed to Payment
+View Order Details
+
+Payment Timer:
+
+15 Minutes Payment Countdown
+
+নির্দিষ্ট সময়ের মধ্যে Payment না করলে Order Cancel হতে পারে।
+
+Other Bidders Screen
+
+অন্যান্য Bidder দেখবে:
+
+Auction Ended
+
+Winner: John Doe
+
+Winning Bid: $500
+
+Thank you for participating.
+
+Button:
+
+Browse Products
+Watch Next Auction
+Host Screen
+
+হোস্ট দেখতে পাবেন:
+
+Auction Completed
+
+Winner: John Doe
+
+Winning Amount: $500
+
+Status: Awaiting Payment
+
+Button:
+
+Contact Buyer
+Start New Auction
+Phase 3: Payment Flow
+Winner Clicks "Proceed to Payment"
+
+Payment Page Open হবে।
+
+সেখানে দেখাবে:
+
+Product Details
+Winning Amount
+Shipping Address
+Payment Method
+
+Payment Success হলে:
+
+Backend Actions
+Order Create হবে
+Payment Transaction Save হবে
+Product Status → Sold
+Inventory Update হবে
+Auction Status → Paid
+Buyer & Seller Notification যাবে
+Phase 4: Auto Order Creation
+
+Payment Success হওয়ার পর:
+
+Buyer Side
+
+Order Card Generate হবে:
+
+Order Confirmed
+
+Product: iPhone 15 Pro Max
+
+Amount: $500
+
+Status: Processing
+
+Seller Side
+
+New Order Received
+
+Product: iPhone 15 Pro Max
+
+Amount: $500
+
+Buyer: John Doe
+
+Status: Prepare Shipment
+
+Scenario B: No Bid Received
+
+যদি Auction Period এর মধ্যে কোনো Bid না আসে:
+
+Backend
+Auction Status → Expired
+Product Status → Available
+Viewer Screen
+
+Auction Ended
+
+No bids were received for this item.
+
+Host Screen
+
+Auction Ended
+
+No bids received.
+
+Options:
+
+Relist Product
+Start New Auction
+Return to Product List
+Phase 5: Anti-Sniping Protection (Highly Recommended)
+
+Professional auction platforms এর মতো:
+
+যদি শেষ 10 সেকেন্ডে কেউ Bid করে:
+
+Timer Automatically +10 Seconds Extend হবে।
+সবাই Notification পাবে:
+
+🔥 New Bid Received
+
+Auction Extended by 10 Seconds
+
+এতে Last Second Sniping কমে যাবে।
+
+Phase 6: Payment Failure Handling
+
+যদি Winner Payment না করে:
+
+Option 1 (Recommended)
+
+১৫ মিনিটের মধ্যে Payment না করলে:
+
+Winner Disqualified
+Auction Cancelled
+Product Available Again
+Option 2 (Advanced)
+Second Highest Bidder কে Offer যাবে
+অথবা Host Manual Approval দিতে পারবেন
+Phase 7: Host Continues Live Session
+
+Auction শেষ হওয়ার পর Live Room বন্ধ হবে না।
+
+Host পারবেন:
+
+নতুন Product Pin করতে
+Starting Price Set করতে
+New 60s Timer Start করতে
+
+Flow:
+
+Product A Auction → End → Payment Pending → Product B Auction Start → Product C Auction Start
+
+এভাবে একটি Live Session-এর মধ্যেই একাধিক Product Auction করা যাবে।
+
+Recommended Database Status Flow
+draft
+   ↓
+live
+   ↓
+ended
+   ↓
+winner_selected
+   ↓
+payment_pending
+   ↓
+paid
+   ↓
+order_created
+   ↓
+shipped
+   ↓
+delivered
+
+No Bid হলে:
+
+live
+   ↓
+expired

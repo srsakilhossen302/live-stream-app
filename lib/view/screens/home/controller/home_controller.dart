@@ -14,11 +14,16 @@ class HomeController extends GetxController {
 
   final RxList<LiveItemModel> liveItems = <LiveItemModel>[].obs;
 
+  // Dynamic Products List
+  final RxList<Map<String, dynamic>> products = <Map<String, dynamic>>[].obs;
+  final RxBool isProductsLoading = false.obs;
+
   @override
   void onInit() {
     super.onInit();
     fetchProfileData();
     fetchLiveStreams();
+    fetchProducts();
   }
 
   Future<void> fetchProfileData() async {
@@ -85,6 +90,29 @@ class HomeController extends GetxController {
     }
   }
 
+  // Fetch Products based on selected category
+  Future<void> fetchProducts() async {
+    isProductsLoading.value = true;
+    try {
+      final category = categories[selectedCategoryIndex.value];
+      String url = ApiUrl.products;
+      if (category != "All") {
+        url = "${ApiUrl.products}?category=${Uri.encodeComponent(category)}";
+      }
+
+      final response = await _apiClient.getData(url);
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body)['data'] ?? [];
+        products.value = data.map((e) => Map<String, dynamic>.from(e)).toList();
+        Get.log("✅ [Home] Loaded ${products.length} products for category: $category");
+      }
+    } catch (e) {
+      Get.log("❌ [Home] Error fetching products: $e");
+    } finally {
+      isProductsLoading.value = false;
+    }
+  }
+
   final List<String> categories = [
     "All",
     "Collectibles",
@@ -96,6 +124,15 @@ class HomeController extends GetxController {
 
   void onCategorySelected(int index) {
     selectedCategoryIndex.value = index;
+    fetchProducts();
+  }
+
+  Future<void> refreshHome() async {
+    await Future.wait([
+      fetchProfileData(),
+      fetchLiveStreams(),
+      fetchProducts(),
+    ]);
   }
 }
 

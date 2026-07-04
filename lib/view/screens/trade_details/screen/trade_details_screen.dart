@@ -381,12 +381,13 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
 
   Widget _buildDynamicTraderCard(Map<String, dynamic> product) {
     final seller = product['sellerId'];
-    final name = seller?['fullName'] ?? "Julian_D";
-    final rating = seller?['rating'] ?? "4.8";
-    final address = seller?['address'] ?? "New York, NY";
+    final Map<String, dynamic>? sellerMap = seller is Map ? Map<String, dynamic>.from(seller) : null;
+    final name = sellerMap?['fullName'] ?? sellerMap?['name'] ?? "Julian_D";
+    final rating = (sellerMap?['rating'] ?? "4.8").toString();
+    final address = sellerMap?['address'] ?? "New York, NY";
     
     String avatarUrl = "";
-    final sellerImage = (seller?['profile'] ?? seller?['image'] ?? seller?['profileImageUrl'])?.toString();
+    final sellerImage = (sellerMap?['profile'] ?? sellerMap?['image'] ?? sellerMap?['profileImageUrl'] ?? sellerMap?['avatar'])?.toString();
     if (sellerImage != null && sellerImage.isNotEmpty) {
       avatarUrl = (sellerImage.startsWith('http') || sellerImage.startsWith('data:image/'))
           ? sellerImage
@@ -395,10 +396,10 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
 
     return GestureDetector(
       onTap: () => Get.toNamed('/trader_profile', arguments: {
-        "id": seller?['_id'] ?? seller?['id'] ?? '',
+        "id": sellerMap?['_id'] ?? sellerMap?['id'] ?? (seller is String ? seller : ''),
         "name": name,
         "avatar": avatarUrl.isNotEmpty ? avatarUrl : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
-        "bio": seller?['bio'] ?? seller?['description'] ?? '',
+        "bio": sellerMap?['bio'] ?? sellerMap?['description'] ?? '',
       }),
       child: Container(
         padding: EdgeInsets.all(20.r),
