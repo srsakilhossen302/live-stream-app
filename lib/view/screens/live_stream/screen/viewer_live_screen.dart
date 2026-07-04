@@ -232,60 +232,83 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
     
     final isFollowing = false.obs;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: Colors.black38,
-        borderRadius: BorderRadius.circular(24.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircleAvatar(
-            radius: 16.r,
-            backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"),
-          ),
-          SizedBox(width: 8.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                username,
-                style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
-              ),
-              Row(
-                children: [
-                  Icon(Icons.star_rounded, color: const Color(0xFFFF41FF), size: 10.sp),
-                  SizedBox(width: 2.w),
-                  Text(
-                    rating,
-                    style: TextStyle(color: Colors.white70, fontSize: 9.sp, fontWeight: FontWeight.w700),
+    String avatarUrl = "";
+    final sellerImage = (seller['profile'] ?? seller['image'] ?? seller['profileImageUrl'])?.toString();
+    if (sellerImage != null && sellerImage.isNotEmpty) {
+      avatarUrl = (sellerImage.startsWith('http') || sellerImage.startsWith('data:image/'))
+          ? sellerImage
+          : "${ApiUrl.imageBaseUrl}${sellerImage.startsWith('/') ? sellerImage : '/$sellerImage'}";
+    } else {
+      avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200";
+    }
+
+    return GestureDetector(
+      onTap: () {
+        final String sellerId = seller['_id'] ?? seller['id'] ?? '';
+        if (sellerId.isNotEmpty) {
+          Get.toNamed('/trader_profile', arguments: {
+            "id": sellerId,
+            "name": seller['fullName'] ?? seller['username'] ?? 'User',
+            "avatar": avatarUrl,
+            "bio": seller['bio'] ?? seller['description'] ?? '',
+          });
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: Colors.black38,
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 16.r,
+              backgroundImage: NetworkImage(avatarUrl),
+            ),
+            SizedBox(width: 8.w),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  username,
+                  style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.star_rounded, color: const Color(0xFFFF41FF), size: 10.sp),
+                    SizedBox(width: 2.w),
+                    Text(
+                      rating,
+                      style: TextStyle(color: Colors.white70, fontSize: 9.sp, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(width: 12.w),
+            Obx(() => GestureDetector(
+              onTap: () => isFollowing.toggle(),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: isFollowing.value ? Colors.white12 : const Color(0xFF9EACFF),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Text(
+                  isFollowing.value ? "FOLLOWED" : "FOLLOW",
+                  style: TextStyle(
+                    color: isFollowing.value ? Colors.white : Colors.black,
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w900,
                   ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(width: 12.w),
-          Obx(() => GestureDetector(
-            onTap: () => isFollowing.toggle(),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: isFollowing.value ? Colors.white12 : const Color(0xFF9EACFF),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Text(
-                isFollowing.value ? "FOLLOWED" : "FOLLOW",
-                style: TextStyle(
-                  color: isFollowing.value ? Colors.white : Colors.black,
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w900,
                 ),
               ),
-            ),
-          )),
-        ],
+            )),
+          ],
+        ),
       ),
     );
   }

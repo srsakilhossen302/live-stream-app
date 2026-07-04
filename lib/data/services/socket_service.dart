@@ -5,84 +5,146 @@ import 'api_url.dart';
 
 class SocketService extends GetxService {
   static SocketService get to => Get.find();
-  
+
   IO.Socket? socket;
   final RxBool isConnected = false.obs;
+  String? _activeChatId;
+
+  // Pending listeners registered before socket was ready
+  final Map<String, Function(dynamic)> _pendingListeners = {};
 
   void initSocket() {
     final token = SharePrefsHelper.getString(SharePrefsHelper.accessTokenKey);
     final userId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-    
+
     if (token.isEmpty || userId.isEmpty) {
-      Get.log("⚡ [SocketService] Connection skipped: Token or UserId is empty.");
+      Get.log('⚡ [SocketService] Skipped: token or userId empty.');
       return;
     }
 
-    if (socket != null && socket!.connected) {
-      Get.log("⚡ [SocketService] Already connected.");
-      return;
+    if (socket != null) {
+      if (socket!.connected) {
+        Get.log('⚡ [SocketService] Already connected.');
+        // Still attach any pending listeners in case controller registered before connect
+        _attachPendingListeners();
+        return;
+      } else {
+        Get.log('⚡ [SocketService] Reconnecting existing socket...');
+        socket!.connect();
+        return;
+      }
     }
 
     try {
       final socketUrl = ApiUrl.imageBaseUrl;
-      Get.log("⚡ [SocketService] Connecting to: $socketUrl");
+      Get.log('⚡ [SocketService] Connecting to: $socketUrl');
 
       socket = IO.io(
         socketUrl,
         IO.OptionBuilder()
-            .setTransports(['websocket'])
+            .setTransports(['websocket', 'polling'])
             .enableAutoConnect()
-            .setQuery({
-              'token': token,
-              'userId': userId,
-            })
+            .disableReconnection()
+            .setReconnectionAttempts(5)
+            .setReconnectionDelay(2000)
+            .setQuery({'token': token, 'userId': userId})
             .build(),
       );
 
       socket?.onConnect((_) {
         isConnected.value = true;
-        Get.log("⚡ [SocketService] Socket Connected: ${socket?.id}");
+        Get.log('✅ [SocketService] Connected: ${socket?.id}');
         socket?.emit('setup', userId);
+
+        // Rejoin active chat room
+        if (_activeChatId != null) {
+          Get.log('🎯 [SocketService] Auto-joining: $_activeChatId');
+          socket?.emit('join chat', _activeChatId);
+        }
+
+        // Attach all pending listeners now that socket is ready
+        _attachPendingListeners();
       });
 
       socket?.onDisconnect((_) {
         isConnected.value = false;
-        Get.log("🔌 [SocketService] Socket Disconnected");
+        Get.log('🔌 [SocketService] Disconnected');
       });
 
-      socket?.onConnectError((data) {
-        Get.log("❌ [SocketService] Connect Error: $data");
-      });
+      socket?.onConnectError((data) => Get.log('❌ [SocketService] Connect Error: $data'));
+      socket?.onError((data) => Get.log('❌ [SocketService] Error: $data'));
 
-      socket?.onError((data) {
-        Get.log("❌ [SocketService] Error: $data");
+      socket?.on('reconnect', (_) {
+        Get.log('♻️ [SocketService] Reconnected!');
+        if (_activeChatId != null) {
+          socket?.emit('join chat', _activeChatId);
+        }
       });
-
     } catch (e) {
-      Get.log("❌ [SocketService] Initialization Exception: $e");
+      Get.log('❌ [SocketService] Init Exception: $e');
     }
   }
 
+  /// Register a named listener. If socket is already connected, attach immediately.
+  /// Otherwise it will be attached once socket connects.
+  void on(String event, Function(dynamic) handler) {
+    _pendingListeners[event] = handler;
+    if (socket != null && isConnected.value) {
+      socket?.off(event); // remove old handler first
+      socket?.on(event, handler);
+      Get.log('🎧 [SocketService] Listener attached for: $event');
+    } else {
+      Get.log('⏳ [SocketService] Listener queued for: $event (will attach on connect)');
+    }
+  }
+
+  /// Remove a named listener
+  void off(String event) {
+    _pendingListeners.remove(event);
+    socket?.off(event);
+    Get.log('🚫 [SocketService] Listener removed: $event');
+  }
+
+  void _attachPendingListeners() {
+    _pendingListeners.forEach((event, handler) {
+      socket?.off(event); // avoid duplicates
+      socket?.on(event, handler);
+      Get.log('🎧 [SocketService] Attached queued listener: $event');
+    });
+  }
+
   void joinChat(String chatId) {
+    _activeChatId = chatId;
     if (socket == null || !isConnected.value) {
-      Get.log("⚠️ [SocketService] Cannot join room: socket not connected.");
+      Get.log('⚠️ [SocketService] Will join $chatId once connected.');
       return;
     }
-    Get.log("🎯 [SocketService] Joining chat room: $chatId");
+    Get.log('🎯 [SocketService] Joining: $chatId');
     socket?.emit('join chat', chatId);
   }
 
   void leaveChat(String chatId) {
+    if (_activeChatId == chatId) _activeChatId = null;
     if (socket == null || !isConnected.value) return;
-    Get.log("🚪 [SocketService] Leaving chat room: $chatId");
+    Get.log('🚪 [SocketService] Leaving: $chatId');
     socket?.emit('leave chat', chatId);
+  }
+
+  void emitEvent(String event, dynamic data) {
+    if (socket != null && isConnected.value) {
+      socket?.emit(event, data);
+      Get.log('📤 [SocketService] Emitted [$event]');
+    } else {
+      Get.log('⚠️ [SocketService] Cannot emit [$event]: not connected');
+    }
   }
 
   void disconnectSocket() {
     socket?.disconnect();
     socket = null;
     isConnected.value = false;
-    Get.log("🔌 [SocketService] Socket disconnected manually.");
+    _activeChatId = null;
+    Get.log('🔌 [SocketService] Disconnected manually.');
   }
 
   @override

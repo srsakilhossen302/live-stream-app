@@ -39,142 +39,123 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
         appBar: _buildAppBar(),
         body: Column(
           children: [
-            // Pinned Item
-            _buildPinnedItem(),
+            // Pinned Item — only when chat has an associated order
+            Obx(() => controller.hasOrder.value
+                ? _buildPinnedItem()
+                : const SizedBox.shrink()),
             
             Expanded(
-              child: Obx(() {
-                if (controller.messages.isEmpty) {
-                  return ListView(
-                    controller: controller.scrollController,
-                    padding: EdgeInsets.all(16.r),
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      SizedBox(height: 80.h),
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(20.r),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF161622),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.forum_outlined,
-                                color: const Color(0xFF8B9BFF),
-                                size: 40.sp,
-                              ),
-                            ),
-                            SizedBox(height: 20.h),
-                            Text(
-                              "No messages yet",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            Text(
-                              "Say hello to start the conversation!",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white38,
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 80.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildActionChip(
-                              Icons.location_on_outlined, 
-                              "TRACK ORDER",
-                              onTap: () => Get.toNamed(AppRoute.trackOrder, arguments: _getMockOrder()),
-                            ),
-                          ),
-                          SizedBox(width: 16.w),
-                          Expanded(child: _buildActionChip(Icons.check_circle_outline, "CONFIRM DELIVERY")),
-                        ],
-                      ),
-                      SizedBox(height: 100.h),
-                    ],
-                  );
-                }
-
-                return ListView.builder(
-                  controller: controller.scrollController,
-                  padding: EdgeInsets.all(16.r),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: controller.messages.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == controller.messages.length) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 24.h),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildActionChip(
-                                  Icons.location_on_outlined, 
-                                  "TRACK ORDER",
-                                  onTap: () => Get.toNamed(AppRoute.trackOrder, arguments: _getMockOrder()),
-                                ),
-                              ),
-                              SizedBox(width: 16.w),
-                              Expanded(child: _buildActionChip(Icons.check_circle_outline, "CONFIRM DELIVERY")),
-                            ],
-                          ),
-                          SizedBox(height: 100.h),
-                        ],
-                      );
-                    }
-
-                    final msg = controller.messages[index];
-                    final isDate = msg['isDate'] == true;
-                    if (isDate) {
-                      return _buildDateSeparator(msg['message'] ?? '');
-                    }
-
-                    final isMe = msg['isMe'] == true;
-                    final isRead = msg['isRead'] == true;
-
-                    return Column(
-                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              child: RefreshIndicator(
+                color: const Color(0xFF8B9BFF),
+                backgroundColor: const Color(0xFF161622),
+                onRefresh: () => controller.fetchMessages(),
+                child: Obx(() {
+                  // Loading shimmer
+                  if (controller.isLoading.value) {
+                    return ListView(
+                      padding: EdgeInsets.all(16.r),
+                      physics: const NeverScrollableScrollPhysics(),
                       children: [
-                        _buildMessageBubble(
-                          message: msg['message'] ?? '',
-                          time: msg['time'] ?? 'Now',
-                          isMe: isMe,
-                          isRead: isRead,
-                        ),
-                        if (index == 4) ...[
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 16.h),
-                              child: Text(
-                                "Your order has been shipped. You can now track its\nlive location below.",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.white38, fontSize: 12.sp, height: 1.5, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ),
-                          _buildTrackingCard(),
-                        ],
+                        _buildBubbleShimmer(isMe: false),
+                        _buildBubbleShimmer(isMe: true),
+                        _buildBubbleShimmer(isMe: false),
+                        _buildBubbleShimmer(isMe: true),
                       ],
                     );
-                  },
-                );
-              }),
+                  }
+
+                  // Empty state
+                  if (controller.messages.isEmpty) {
+                    return ListView(
+                      controller: controller.scrollController,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 40.h),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(24.r),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E1E2C),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.forum_outlined, color: const Color(0xFF8B9BFF), size: 40.sp),
+                              ),
+                              SizedBox(height: 20.h),
+                              Text("No messages yet", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
+                              SizedBox(height: 8.h),
+                              Text("Say hello to start the conversation!", textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  // Message list — oldest at top, newest at BOTTOM
+                  return ListView.builder(
+                    controller: controller.scrollController,
+                    padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    itemCount: controller.messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = controller.messages[index];
+
+                      // Date separator
+                      if (msg['isDate'] == true) {
+                        return _buildDateSeparator(msg['message'] ?? '');
+                      }
+
+                      // Order shipped card — special message type
+                      if (msg['isOrderCard'] == true) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(height: 8.h),
+                            _buildTrackingCard(),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildActionChip(
+                                    Icons.location_on_outlined,
+                                    "TRACK ORDER",
+                                    onTap: () => Get.toNamed(
+                                      AppRoute.trackOrder,
+                                      arguments: _getMockOrder(),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: _buildActionChip(
+                                    Icons.check_circle_outline,
+                                    "CONFIRM DELIVERY",
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 16.h),
+                          ],
+                        );
+                      }
+
+                      final bool isMe = msg['isMe'] == true;
+                      final bool isRead = msg['isRead'] == true;
+
+                      return _buildMessageBubble(
+                        message: msg['message'] ?? '',
+                        time: msg['time'] ?? 'Now',
+                        isMe: isMe,
+                        isRead: isRead,
+                      );
+                    },
+                  );
+                }),
+              ),
             ),
-            
+
             // Input Bar
             _buildInputBar(),
           ],
@@ -481,6 +462,26 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildBubbleShimmer({required bool isMe}) {
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        width: 200.w,
+        height: 44.h,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E2C),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24.r),
+            topRight: Radius.circular(24.r),
+            bottomLeft: Radius.circular(isMe ? 24.r : 4.r),
+            bottomRight: Radius.circular(isMe ? 4.r : 24.r),
+          ),
+        ),
+      ),
     );
   }
 

@@ -37,9 +37,16 @@ class MessagesScreen extends GetView<MessagesController> {
                 ),
                 
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    physics: const BouncingScrollPhysics(),
+                  child: RefreshIndicator(
+                    color: const Color(0xFF8B9BFF),
+                    backgroundColor: const Color(0xFF161622),
+                    onRefresh: () async {
+                      await controller.fetchChatRooms();
+                      await controller.fetchNotifications();
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -160,6 +167,7 @@ class MessagesScreen extends GetView<MessagesController> {
                     ),
                   ),
                 ),
+              ),
               ],
             ),
             

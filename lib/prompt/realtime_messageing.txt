@@ -1,0 +1,12 @@
+Create a real-time chat screen similar to Facebook Messenger.
+
+Requirements:
+- Sender messages must appear on the right side.
+- Receiver messages must appear on the left side.
+- Use different bubble colors for sender and receiver messages.
+- New messages must appear instantly without refresh.
+- Messages must always be displayed in chronological order (oldest → newest).
+- Every new message must be added at the bottom of the chat and never above older messages.
+- Auto-scroll to the latest message when a new message arrives.
+- Show timestamps and maintain clean spacing between message bubbles.
+- Ensure a modern, responsive, and smooth Messenger-like chat experience.

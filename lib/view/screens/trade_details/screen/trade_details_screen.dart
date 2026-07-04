@@ -394,7 +394,12 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     }
 
     return GestureDetector(
-      onTap: () => Get.toNamed('/trader_profile'),
+      onTap: () => Get.toNamed('/trader_profile', arguments: {
+        "id": seller?['_id'] ?? seller?['id'] ?? '',
+        "name": name,
+        "avatar": avatarUrl.isNotEmpty ? avatarUrl : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
+        "bio": seller?['bio'] ?? seller?['description'] ?? '',
+      }),
       child: Container(
         padding: EdgeInsets.all(20.r),
         decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
