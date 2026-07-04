@@ -13,6 +13,7 @@ class ApiUrl {
 
   // User
   static const String profile = "/users/profile";
+  static const String users = "/users";
 
   // Products
   static const String products = "/products";
@@ -39,4 +40,11 @@ class ApiUrl {
   // Chats & Messages
   static const String chat = "/chat";
   static const String message = "/message";
+
+  // Reviews
+  static const String review = "/review";
+
+  // Favourites
+  static const String favourite = "/favourite";
 }
+
