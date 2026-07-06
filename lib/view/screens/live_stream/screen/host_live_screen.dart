@@ -1,4 +1,4 @@
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+﻿import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -48,7 +48,8 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
           children: [
             // ── Local Camera Preview
             Obx(() {
-              if (ctrl.engine != null && ctrl.isLocalVideoReady.value) {
+              final isReady = ctrl.isLocalVideoReady.value;
+              if (ctrl.engine != null && isReady) {
                 return AgoraVideoView(
                   controller: VideoViewController(
                     rtcEngine: ctrl.engine!,

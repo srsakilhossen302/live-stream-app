@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -9,7 +9,7 @@ import '../../browse/screen/browse_screen.dart';
 import '../../main/controller/main_controller.dart';
 import '../../purchases/screen/purchases_screen.dart';
 import '../controller/home_controller.dart';
-
+import 'home_live_preview_widget.dart';
 class HomeScreen extends GetView<HomeController> {
   const HomeScreen({super.key});
 
@@ -243,9 +243,10 @@ class HomeScreen extends GetView<HomeController> {
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: image.startsWith('http')
-                                ? Image.network(image, fit: BoxFit.cover)
-                                : Image.asset(image, fit: BoxFit.cover),
+                            child: HomeLivePreviewWidget(
+                              channelName: liveShow.raw?['agoraChannelName'] ?? '',
+                              fallbackImageUrl: image,
+                            ),
                           ),
                           Positioned.fill(
                             child: Container(
@@ -289,10 +290,16 @@ class HomeScreen extends GetView<HomeController> {
                                           color: Colors.white24,
                                           width: 1.5.w,
                                         ),
-                                        image: const DecorationImage(
-                                          image: NetworkImage("https://i.pravatar.cc/150?u=9"),
-                                          fit: BoxFit.cover,
-                                        ),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(10.r),
+                                        child: liveShow.curatorAvatar.isNotEmpty
+                                            ? Image.network(
+                                                liveShow.curatorAvatar,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => _buildFallbackAvatar(curator),
+                                              )
+                                            : _buildFallbackAvatar(curator),
                                       ),
                                     ),
                                     SizedBox(width: 12.w),
@@ -779,6 +786,22 @@ class HomeScreen extends GetView<HomeController> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallbackAvatar(String name) {
+    final initials = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
+    return Container(
+      alignment: Alignment.center,
+      color: const Color(0xFF2E2A4F),
+      child: Text(
+        initials,
+        style: TextStyle(
+          color: const Color(0xFF8B9BFF),
+          fontSize: 16.sp,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:get/get.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
@@ -58,7 +58,7 @@ class HomeController extends GetxController {
       final response = await _apiClient.getData("${ApiUrl.liveStreams}?status=live");
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body)['data'] ?? [];
-        final parsedShows = data.map((item) {
+        final parsedShows = data.where((item) => item['status'] == 'live').map((item) {
           final title = item['title'] ?? "Live Show";
           final hostName = item['curator'] ?? item['sellerId']?['fullName'] ?? "Curator";
           
@@ -72,11 +72,23 @@ class HomeController extends GetxController {
             imageUrl = "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000";
           }
 
+          final seller = item['sellerId'];
+          String avatarUrl = "";
+          if (seller is Map) {
+            final avatarPath = seller['profileImage'] ?? seller['image'] ?? "";
+            if (avatarPath.isNotEmpty) {
+              avatarUrl = avatarPath.startsWith('http')
+                  ? avatarPath
+                  : "${ApiUrl.imageBaseUrl}${avatarPath.startsWith('/') ? avatarPath : '/$avatarPath'}";
+            }
+          }
+
           return LiveItemModel(
             title: title,
             curator: hostName,
             viewers: "${item['viewersCount'] ?? item['viewers'] ?? '0'}",
             image: imageUrl,
+            curatorAvatar: avatarUrl,
             raw: item,
           );
         }).toList();
@@ -141,6 +153,7 @@ class LiveItemModel {
   final String curator;
   final String viewers;
   final String image;
+  final String curatorAvatar;
   final Map<String, dynamic>? raw;
 
   LiveItemModel({
@@ -148,6 +161,7 @@ class LiveItemModel {
     required this.curator,
     required this.viewers,
     required this.image,
+    this.curatorAvatar = "",
     this.raw,
   });
 }

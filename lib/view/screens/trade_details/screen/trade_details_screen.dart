@@ -170,51 +170,31 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                       ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => Get.toNamed('/make_offer'),
-                          child: Container(
-                            height: 56.h,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E1E2C),
-                              borderRadius: BorderRadius.circular(28.r),
-                              border: Border.all(color: Colors.white10),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              "Inquire Trade",
-                              style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900),
-                            ),
+                  child: GestureDetector(
+                    onTap: () => Get.toNamed('/make_offer', arguments: product),
+                    child: Container(
+                      height: 56.h,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B9BFF),
+                        borderRadius: BorderRadius.circular(28.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF8B9BFF).withOpacity(0.3),
+                            blurRadius: 16.r,
+                            offset: const Offset(0, 4),
                           ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "Make Offer",
+                        style: TextStyle(
+                          color: const Color(0xFF0F172A),
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      SizedBox(width: 16.w),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _showPurchaseConfirmation(context, product),
-                          child: Container(
-                            height: 56.h,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF8B9BFF),
-                              borderRadius: BorderRadius.circular(28.r),
-                            ),
-                            alignment: Alignment.center,
-                            child: controller.isOrdering.value
-                                ? SizedBox(
-                                    height: 20.h,
-                                    width: 20.h,
-                                    child: const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
-                                  )
-                                : Text(
-                                    "Buy Now",
-                                    style: TextStyle(color: Colors.black, fontSize: 15.sp, fontWeight: FontWeight.w900),
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               );
@@ -222,101 +202,6 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showPurchaseConfirmation(BuildContext context, Map<String, dynamic> product) {
-    final title = product['title'] ?? "Product";
-    final priceVal = product['buyNowPrice'] ?? product['estValue'] ?? "250";
-    final price = "\$${priceVal.toString()}";
-
-    Get.bottomSheet(
-      Container(
-        padding: EdgeInsets.all(24.r),
-        decoration: BoxDecoration(
-          color: const Color(0xFF11111A),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 4.h,
-                margin: EdgeInsets.only(bottom: 24.h),
-                decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2.r)),
-              ),
-            ),
-            Text("Confirm Purchase", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
-            SizedBox(height: 16.h),
-            Text("Are you sure you want to buy this item instantly?", style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w500)),
-            SizedBox(height: 24.h),
-            
-            Container(
-              padding: EdgeInsets.all(20.r),
-              decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60.r,
-                    height: 60.r,
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12.r)),
-                    child: _buildDetailsProductImage(product['images']?.first?.toString() ?? ""),
-                  ),
-                  SizedBox(width: 16.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        SizedBox(height: 4.h),
-                        Text("Price: $price", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 13.sp, fontWeight: FontWeight.w800)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            SizedBox(height: 32.h),
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      height: 56.h,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(color: const Color(0xFF1E1E2C), borderRadius: BorderRadius.circular(28.r)),
-                      child: Text("Cancel", style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Get.back();
-                      controller.buyProduct();
-                    },
-                    child: Container(
-                      height: 56.h,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(28.r)),
-                      child: Text("Confirm Buy", style: TextStyle(color: Colors.black, fontSize: 15.sp, fontWeight: FontWeight.w900)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
     );
   }
 
@@ -550,34 +435,55 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   }
 
   Widget _buildStatsRow() {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 24.h),
-      decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildStatItem("12", "OFFERS"),
-          _buildDivider(),
-          _buildStatItem("3d", "ACTIVE"),
-          _buildDivider(),
-          _buildStatItem("~2h", "RESPONSE"),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String val, String label) {
-    return Column(
+    return Row(
       children: [
-        Text(val, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
-        SizedBox(height: 4.h),
-        Text(label, style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+        Expanded(
+          child: _buildStatCard("12", "OFFERS", const Color(0xFF8B9BFF)),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: _buildStatCard("3d", "ACTIVE", const Color(0xFF9155FF)),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: _buildStatCard("~2h", "RESPONSE", const Color(0xFFFF8BFF)),
+        ),
       ],
     );
   }
 
-  Widget _buildDivider() {
-    return Container(height: 30.h, width: 1, color: Colors.white10);
+  Widget _buildStatCard(String val, String label, Color valColor) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 12.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161622),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: Colors.white.withOpacity(0.02)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            val,
+            style: TextStyle(
+              color: valColor,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSimilarTrades(Map<String, dynamic> product) {

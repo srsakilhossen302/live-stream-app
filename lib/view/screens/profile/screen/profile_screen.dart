@@ -898,29 +898,32 @@ class ProfileScreen extends GetView<ProfileController> {
         SizedBox(height: 48.h),
 
         // Logout Button
-        // Padding(
-        //   padding: EdgeInsets.symmetric(horizontal: 24.w),
-        //   child: Container(
-        //     width: double.infinity,
-        //     height: 80.h,
-        //     decoration: BoxDecoration(
-        //       color: const Color(0xFF1A0A10),
-        //       borderRadius: BorderRadius.circular(32.r),
-        //       border: Border.all(color: Colors.white.withOpacity(0.05)),
-        //     ),
-        //     child: Row(
-        //       mainAxisAlignment: MainAxisAlignment.center,
-        //       children: [
-        //         Icon(Icons.logout_rounded, color: const Color(0xFFFF4B6E), size: 24.sp),
-        //         SizedBox(width: 12.w),
-        //         Text(
-        //           "Logout",
-        //           style: TextStyle(color: const Color(0xFFFF4B6E), fontSize: 16.sp, fontWeight: FontWeight.w900),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        // ),
+        GestureDetector(
+          onTap: () => _showLogoutConfirmation(),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Container(
+              width: double.infinity,
+              height: 56.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A0A10),
+                borderRadius: BorderRadius.circular(28.r),
+                border: Border.all(color: Colors.white.withOpacity(0.05)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.logout_rounded, color: const Color(0xFFFF4B6E), size: 20.sp),
+                  SizedBox(width: 10.w),
+                  Text(
+                    "Logout",
+                    style: TextStyle(color: const Color(0xFFFF4B6E), fontSize: 15.sp, fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -1312,6 +1315,40 @@ class ProfileScreen extends GetView<ProfileController> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation() {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xFF11111A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+        title: Text(
+          "Sign Out",
+          style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900),
+        ),
+        content: Text(
+          "Are you sure you want to sign out of your account?",
+          style: TextStyle(color: Colors.white54, fontSize: 14.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text("Cancel", style: TextStyle(color: Colors.white54, fontSize: 14.sp)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              controller.logout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF4B6E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+            ),
+            child: const Text("Sign Out", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

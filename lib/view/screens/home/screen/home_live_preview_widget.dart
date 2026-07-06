@@ -1,0 +1,184 @@
+﻿import 'dart:convert';
+import 'dart:async';
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../data/services/api_url.dart';
+import '../../../../data/services/api_client.dart';
+import '../../../../core/app_route.dart';
+
+class HomeLivePreviewWidget extends StatefulWidget {
+  final String channelName;
+  final String fallbackImageUrl;
+
+  const HomeLivePreviewWidget({
+    super.key,
+    required this.channelName,
+    required this.fallbackImageUrl,
+  });
+
+  @override
+  State<HomeLivePreviewWidget> createState() => _HomeLivePreviewWidgetState();
+}
+
+class _HomeLivePreviewWidgetState extends State<HomeLivePreviewWidget> {
+  RtcEngine? _engine;
+  bool _remoteJoined = false;
+  int _remoteUid = -1;
+  bool _isLoading = true;
+  StreamSubscription? _routeSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _initPreviewAgora();
+    
+    // Listen to custom route stream
+    _routeSubscription = AppRoute.routeStream.stream.listen((currentRoute) {
+      _handleRouteChange(currentRoute);
+    });
+  }
+
+  void _handleRouteChange(String currentRoute) {
+    if (!mounted) return;
+    if (currentRoute != '/main') {
+      if (_engine != null) {
+        debugPrint("📺 [HomePreview] Navigated away from home route ($currentRoute). Releasing engine.");
+        _cleanupPreview();
+      }
+    } else {
+      if (_engine == null) {
+        debugPrint("📺 [HomePreview] Returned to home route. Re-initializing engine.");
+        _initPreviewAgora();
+      }
+    }
+  }
+
+  Future<void> _initPreviewAgora() async {
+    try {
+      final apiClient = Get.find<ApiClient>();
+      final response = await apiClient.getData(
+        "${ApiUrl.agoraToken}?channelName=${widget.channelName}&uid=0&role=publisher"
+      );
+      
+      String token = "";
+      String appId = "040148b3e0a14154bc4eb74663dabf5f"; // fallback Agora App ID
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          final data = body['data'];
+          token = data['token'] ?? "";
+          appId = data['appId'] ?? appId;
+        }
+      }
+
+      _engine = createAgoraRtcEngine();
+      await _engine!.initialize(RtcEngineContext(appId: appId));
+      
+      _engine!.registerEventHandler(RtcEngineEventHandler(
+        onJoinChannelSuccess: (connection, elapsed) {
+          debugPrint("📺 [HomePreview] Joined channel: ${connection.channelId}");
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        },
+        onUserJoined: (connection, uid, elapsed) {
+          debugPrint("📺 [HomePreview] Host joined: $uid");
+          if (mounted) {
+            setState(() {
+              _remoteUid = uid;
+              _remoteJoined = true;
+            });
+          }
+        },
+        onUserOffline: (connection, uid, reason) {
+          if (mounted && uid == _remoteUid) {
+            setState(() {
+              _remoteUid = -1;
+              _remoteJoined = false;
+            });
+          }
+        },
+      ));
+
+      await _engine!.setChannelProfile(ChannelProfileType.channelProfileLiveBroadcasting);
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+      await _engine!.muteLocalAudioStream(true);
+      await _engine!.muteLocalVideoStream(true);
+      await _engine!.muteAllRemoteAudioStreams(true); // mute preview audio so it's a silent preview
+      await _engine!.enableVideo();
+
+      await _engine!.joinChannel(
+        token: token,
+        channelId: widget.channelName,
+        uid: 0,
+        options: const ChannelMediaOptions(
+          autoSubscribeAudio: false, // do not subscribe to audio
+          autoSubscribeVideo: true,
+        ),
+      );
+    } catch (e) {
+      debugPrint("❌ [HomePreview] Error: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _routeSubscription?.cancel();
+    _cleanupPreview();
+    super.dispose();
+  }
+
+  Future<void> _cleanupPreview() async {
+    try {
+      if (_engine != null) {
+        await _engine!.leaveChannel();
+        await _engine!.release();
+        _engine = null;
+        if (mounted) {
+          setState(() {
+            _remoteJoined = false;
+            _remoteUid = -1;
+            _isLoading = true;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("❌ [HomePreview] Cleanup error: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_remoteJoined && _remoteUid != -1 && _engine != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(32.r),
+        child: SizedBox.expand(
+          child: AgoraVideoView(
+            controller: VideoViewController.remote(
+              rtcEngine: _engine!,
+              canvas: VideoCanvas(uid: _remoteUid),
+              connection: RtcConnection(channelId: widget.channelName),
+              useFlutterTexture: false,
+              useAndroidSurfaceView: true,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Default static card image
+    return widget.fallbackImageUrl.startsWith('http')
+        ? Image.network(widget.fallbackImageUrl, fit: BoxFit.cover)
+        : Image.asset(widget.fallbackImageUrl, fit: BoxFit.cover);
+  }
+}

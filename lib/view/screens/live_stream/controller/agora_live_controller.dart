@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
@@ -9,6 +9,7 @@ import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
 import '../../../../data/services/socket_service.dart';
+import '../../../../data/services/live_stream_service_bridge.dart';
 import '../../profile/controller/profile_controller.dart';
 
 class FloatingHeart {
@@ -24,10 +25,9 @@ class FloatingHeart {
   });
 }
 
-/// IMPORTANT: Replace with your Agora App ID from https://console.agora.io
 const String agoraAppId = "040148b3e0a14154bc4eb74663dabf5f";
 
-class AgoraLiveController extends GetxController {
+class AgoraLiveController extends GetxController with WidgetsBindingObserver {
   final ApiClient _apiClient = Get.find<ApiClient>();
 
   RtcEngine? engine;
@@ -37,12 +37,17 @@ class AgoraLiveController extends GetxController {
   final RxString channelName = "".obs;
   final RxString streamTitle = "".obs;
   final RxString streamDescription = "".obs;
+  final RxString sellerId = "".obs;
+  final RxBool isFollowingHost = false.obs;
+  final RxString viewersCount = "64".obs;
 
   // Auction / product
   final RxString auctionItemId = "".obs;
+  final RxString currentProductId = "".obs;
   final RxString currentProductTitle = "".obs;
   final RxString currentProductImage = "".obs;
   final RxDouble currentBidPrice = 0.0.obs;
+  final RxDouble bidIncrement = 100.0.obs;
   final RxInt bidTimer = 60.obs;
   final RxBool auctionActive = false.obs;
   
@@ -59,7 +64,8 @@ class AgoraLiveController extends GetxController {
   final RxBool isCameraOn = true.obs;
   final RxBool isMicOn = true.obs;
   final RxBool isLocalVideoReady = false.obs;
-
+  final RxBool isHost = false.obs;
+  final RxBool isInPiP = false.obs;
   // Viewer state
   final RxInt remoteUid = (-1).obs;
   final RxBool remoteJoined = false.obs;
@@ -77,7 +83,7 @@ class AgoraLiveController extends GetxController {
 
   // Dynamic data stream parameters
   int? _dataStreamId;
-  final RxInt likeCount = 1200.obs;
+  final RxInt likeCount = 0.obs;
   final RxList<FloatingHeart> floatingHearts = <FloatingHeart>[].obs;
 
   void triggerFloatingHeart() {
@@ -112,8 +118,12 @@ class AgoraLiveController extends GetxController {
   void onInit() {
     super.onInit();
     fetchLiveStreams();
+    WidgetsBinding.instance.addObserver(this);
+    LiveStreamServiceBridge.initialize((pipState) {
+      isInPiP.value = pipState;
+      debugPrint("📱 [AgoraLiveController] PiP state changed: $pipState");
+    });
   }
-
   // ─────────────────────────────────────────────
   //  FETCH LIVE STREAMS (Discover page)
   // ─────────────────────────────────────────────
@@ -125,7 +135,7 @@ class AgoraLiveController extends GetxController {
         final body = jsonDecode(res.body);
         final data = body['data'] ?? body['streams'] ?? body['result'] ?? [];
         if (data is List) {
-          liveStreamsList.assignAll(data.map((e) => Map<String, dynamic>.from(e)).toList());
+          liveStreamsList.assignAll(data.where((e) => e['status'] == 'live').map((e) => Map<String, dynamic>.from(e)).toList());
         }
       }
     } catch (e) {
@@ -146,6 +156,8 @@ class AgoraLiveController extends GetxController {
       socketService.on('newMessage', _handleSocketMessage);
       socketService.on('new message', _handleSocketMessage);
       socketService.on('message received', _handleSocketMessage);
+      socketService.on('stream-ended', _handleStreamEndedEvent);
+      socketService.on('stream_ended', _handleStreamEndedEvent);
       
       debugPrint("🔌 [AgoraLiveSocket] Joined stream room: ${streamId.value}");
     } catch (e) {
@@ -210,9 +222,26 @@ class AgoraLiveController extends GetxController {
       socketService.off('newMessage', _handleSocketMessage);
       socketService.off('new message', _handleSocketMessage);
       socketService.off('message received', _handleSocketMessage);
+      socketService.off('stream-ended', _handleStreamEndedEvent);
+      socketService.off('stream_ended', _handleStreamEndedEvent);
       debugPrint("🔌 [AgoraLiveSocket] Left stream room: ${streamId.value}");
     } catch (e) {
       debugPrint("❌ [AgoraLiveSocket] Cleanup error: $e");
+    }
+  }
+
+  void _handleStreamEndedEvent(dynamic data) {
+    debugPrint("🚨 [AgoraLiveController] Stream ended event received: $data");
+    Get.snackbar(
+      "Stream Ended",
+      "The host has ended this live stream.",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.black87,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 4),
+    );
+    if (!isHost.value) {
+      endStream();
     }
   }
 
@@ -228,31 +257,24 @@ class AgoraLiveController extends GetxController {
         return;
       }
 
-      // Verify the chat ID maps to our active stream ID
+      final content = msgMap['content'] ?? msgMap['text'] ?? msgMap['message'] ?? "";
+      final senderObj = msgMap['sender'];
+      final senderName = (senderObj is Map) ? (senderObj['name'] ?? senderObj['fullName'] ?? "User") : "User";
+      final senderAvatar = (senderObj is Map) ? (senderObj['avatar'] ?? "") : "";
+      final senderId = (senderObj is Map) ? (senderObj['_id'] ?? "") : "";
+
+      // Filter: only process messages for our active stream room
       final String incomingChat = (msgMap['chat'] is Map)
-          ? (msgMap['chat']['_id'] ?? msgMap['chat']['id'] ?? '')
-          : (msgMap['chat'] ?? msgMap['chatId'] ?? '');
-      if (incomingChat.isEmpty || incomingChat != streamId.value) return;
+          ? (msgMap['chat']['_id'] ?? msgMap['chat']['id'] ?? '').toString()
+          : (msgMap['chat'] ?? msgMap['chatId'] ?? '').toString();
+      if (incomingChat.isNotEmpty && streamId.value.isNotEmpty && incomingChat != streamId.value) return;
 
-      final content = msgMap['content'] ?? msgMap['message'] ?? msgMap['text'] ?? '';
-      if (content.isEmpty) return;
+      // Skip empty messages
+      if (content.toString().trim().isEmpty) return;
 
-      final sender = msgMap['sender'];
-      final senderName = sender is Map
-          ? (sender['fullName'] ?? sender['name'] ?? 'User')
-          : 'User';
-      final senderId = sender is Map
-          ? (sender['_id'] ?? sender['id'] ?? '')
-          : (msgMap['senderId'] ?? '');
-      final senderAvatar = sender is Map
-          ? (sender['avatar'] ?? sender['profile'] ?? sender['image'] ?? '')
-          : (msgMap['userAvatar'] ?? '');
-
-      final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-      if (senderId == currentUserId) {
-        // Skip duplicate of self-added local message
-        return;
-      }
+      // Skip own message echo (already added locally)
+      final String currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? '';
+      if (senderId.toString().isNotEmpty && senderId.toString() == currentUserId) return;
 
       // Handle Extend Timer event
       if (msgMap['isExtendTimer'] == true) {
@@ -379,17 +401,20 @@ class AgoraLiveController extends GetxController {
   }) async {
     isLoading.value = true;
     try {
-      final sellerId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
-      final channel = "stream_${sellerId}_${DateTime.now().millisecondsSinceEpoch}";
+      final sellerIdVal = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
+      final channel = "stream_${sellerIdVal}_${DateTime.now().millisecondsSinceEpoch}";
 
       currentProductTitle.value = productTitle;
       currentProductImage.value = productImage;
+      this.sellerId.value = sellerIdVal;
+      this.currentProductId.value = productId;
+      this.bidIncrement.value = 100.0; // default increment
 
       // 1) Create stream on backend
       final streamRes = await _apiClient.postData(ApiUrl.startStream, {
         "title": title,
         "description": description,
-        "sellerId": sellerId,
+        "sellerId": sellerIdVal,
         "agoraChannelName": channel,
         "status": "live",
       });
@@ -405,7 +430,17 @@ class AgoraLiveController extends GetxController {
       }
 
       final streamBody = jsonDecode(streamRes.body);
-      final sid = streamBody['data']?['_id'] ?? streamBody['_id'] ?? "";
+      debugPrint('📦 [AgoraLiveController] startStream response: ' + streamRes.body);
+      final sid = streamBody['data']?['_id'] ?? 
+                  streamBody['data']?['id'] ?? 
+                  streamBody['result']?['_id'] ?? 
+                  streamBody['result']?['id'] ?? 
+                  streamBody['stream']?['_id'] ?? 
+                  streamBody['stream']?['id'] ?? 
+                  streamBody['_id'] ?? 
+                  streamBody['id'] ?? 
+                  '';
+      debugPrint('🔑 [AgoraLiveController] Parsed streamId: ' + sid);
       streamId.value = sid;
       channelName.value = channel;
       streamTitle.value = title;
@@ -434,11 +469,10 @@ class AgoraLiveController extends GetxController {
           startCountdown(timerDuration);
         }
       }
-
-      // 3) Initialize Agora as HOST
+      isHost.value = true;
       final agoraOk = await _initAgora(isHost: true, channel: channel);
       debugPrint(agoraOk ? "✅ Agora ready" : "⚠️ Agora failed — stream will run in backend-only mode");
-      isLive.value = true;  // Always go live — camera may not be available
+      isLive.value = true;
       return true;
     } catch (e) {
       Get.snackbar("Error", "Stream error: $e", snackPosition: SnackPosition.BOTTOM);
@@ -455,73 +489,94 @@ class AgoraLiveController extends GetxController {
     isLoading.value = true;
     try {
       final sid = streamData['_id']?.toString() ?? "";
+      isHost.value = false;
       streamId.value = sid;
       streamTitle.value = streamData['title']?.toString() ?? "Live Stream";
 
-      // 1) Fetch fresh stream list to get latest populated auction items!
+      // Fetch fresh stream to get fully-populated auctionItems
       Map<String, dynamic> activeStream = streamData;
       try {
-        final res = await _apiClient.getData("${ApiUrl.liveStreams}?status=live");
-        if (res.statusCode == 200) {
-          final body = jsonDecode(res.body);
-          final data = body['data'] ?? body['streams'] ?? body['result'] ?? [];
-          if (data is List) {
-            final freshStream = data.firstWhere(
-              (element) => element['_id']?.toString() == sid,
-              orElse: () => null,
-            );
-            if (freshStream != null) {
-              activeStream = Map<String, dynamic>.from(freshStream);
-              debugPrint("✅ Fetched fresh stream data: $activeStream");
+        final sRes = await _apiClient.getData("${ApiUrl.liveStreams}/$sid");
+        if (sRes.statusCode == 200) {
+          final b = jsonDecode(sRes.body);
+          final d = b['data'] ?? b['stream'] ?? b;
+          if (d is Map && (d as Map).isNotEmpty) {
+            activeStream = Map<String, dynamic>.from(d as Map<String, dynamic>);
+          }
+        } else {
+          final lRes = await _apiClient.getData("${ApiUrl.liveStreams}?status=live");
+          if (lRes.statusCode == 200) {
+            final b = jsonDecode(lRes.body);
+            final list = b['data'] ?? b['streams'] ?? b['result'] ?? [];
+            if (list is List) {
+              final found = list.firstWhere((e) => e['_id']?.toString() == sid, orElse: () => null);
+              if (found != null) activeStream = Map<String, dynamic>.from(found);
             }
           }
         }
       } catch (e) {
-        debugPrint("⚠️ Failed to fetch fresh stream list: $e");
+        debugPrint("Stream fetch error: $e");
       }
 
-      final channel = activeStream['agoraChannelName']?.toString() ?? "";
+      final channel = activeStream['agoraChannelName']?.toString() ?? streamData['agoraChannelName']?.toString() ?? "";
       channelName.value = channel;
 
-      // Initialize Socket for Viewer
+      final seller = activeStream['sellerId'];
+      sellerId.value = seller is Map ? (seller['_id'] ?? seller['id'] ?? '').toString() : (seller?.toString() ?? '');
+      isFollowingHost.value = false;
+      viewersCount.value = activeStream['viewers']?.toString() ?? "64";
+
+      final incomingLikes = activeStream['likes'];
+      if (incomingLikes is List) {
+        likeCount.value = incomingLikes.length;
+      } else if (incomingLikes is num) {
+        likeCount.value = incomingLikes.toInt();
+      } else {
+        final lc = activeStream['likeCount'] ?? activeStream['likesCount'];
+        likeCount.value = (lc is num) ? lc.toInt() : (int.tryParse(lc?.toString() ?? '0') ?? 0);
+      }
+
       _setupSocket();
 
-      // 2) Parse product info if available
+      // Parse auction item info
       final items = activeStream['auctionItems'];
       if (items is List && items.isNotEmpty) {
-        final item = items[0];
-        
-        // Populate product title and image safely
-        final prod = item['productId'];
-        if (prod is Map) {
-          currentProductTitle.value = prod['title']?.toString() ?? "Product";
-          final images = prod['images'];
-          if (images is List && images.isNotEmpty) {
-            currentProductImage.value = images[0]?.toString() ?? "";
+        final rawItem = items[0];
+        if (rawItem is Map) {
+          final item = Map<String, dynamic>.from(rawItem);
+          final prod = item['productId'];
+          if (prod is Map) {
+            currentProductId.value = prod['_id']?.toString() ?? prod['id']?.toString() ?? "";
+            currentProductTitle.value = prod['title']?.toString() ?? "Product";
+            final images = prod['images'];
+            if (images is List && images.isNotEmpty) currentProductImage.value = images[0]?.toString() ?? "";
+          } else {
+            currentProductId.value = prod?.toString() ?? "";
+            currentProductTitle.value = "Product";
           }
+          currentBidPrice.value = double.tryParse(item['currentBid']?.toString() ?? item['startingBid']?.toString() ?? "0") ?? 0;
+          bidIncrement.value = double.tryParse(item['bidIncrement']?.toString() ?? "100") ?? 100.0;
+          final rawId = item['_id'] ?? item['id'];
+          auctionItemId.value = (rawId is Map) ? (rawId[r'$oid'] ?? rawId['_id'] ?? '').toString() : rawId?.toString() ?? '';
+          lastBidderId.value = item['highestBidder']?.toString() ?? "";
+          lastBidderName.value = "";
+          showWinnerOverlay.value = false;
+          auctionActive.value = true;
+          final duration = int.tryParse(item['timerDuration']?.toString() ?? "60") ?? 60;
+          startCountdown(duration);
+          debugPrint("Auction Item: ${auctionItemId.value} price=${currentBidPrice.value}");
         } else {
-          currentProductTitle.value = "Product";
+          // rawItem is a plain string ObjectId
+          auctionItemId.value = rawItem.toString();
+          auctionActive.value = true;
+          debugPrint("auctionItemId from string: ${auctionItemId.value}");
         }
-        
-        currentBidPrice.value = double.tryParse(item['currentBid']?.toString() ?? item['startingBid']?.toString() ?? "0") ?? 0;
-        auctionItemId.value = item['_id']?.toString() ?? "";
-        lastBidderId.value = item['highestBidder']?.toString() ?? "";
-        lastBidderName.value = ""; // unknown initially
-        showWinnerOverlay.value = false;
-        auctionActive.value = true;
-        
-        final duration = int.tryParse(item['timerDuration']?.toString() ?? "60") ?? 60;
-        startCountdown(duration);
-        debugPrint("✅ Parsed Auction Item: ${auctionItemId.value} | Price: ${currentBidPrice.value} | Duration: $duration");
       } else {
-        debugPrint("⚠️ No auction items found in stream!");
+        debugPrint("No auction items found. keys=${activeStream.keys.toList()}");
       }
 
       final agoraOk = await _initAgora(isHost: false, channel: channel);
-      debugPrint(agoraOk ? "✅ Agora viewer ready" : "⚠️ Agora failed — viewing in backend-only mode");
       isLive.value = true;
-
-      // Trigger join notification broadcast
       broadcastJoin();
     } catch (e) {
       Get.snackbar("Error", "Failed to join stream: $e", snackPosition: SnackPosition.BOTTOM);
@@ -530,243 +585,88 @@ class AgoraLiveController extends GetxController {
     }
   }
 
-  // ─────────────────────────────────────────────
-  //  PLACE BID
-  // ─────────────────────────────────────────────
+  // PLACE BID
   Future<void> placeBid(double amount) async {
-    debugPrint("placeBid called: amount=$amount, auctionItemId='${auctionItemId.value}', currentBidPrice='${currentBidPrice.value}'");
+    // If auctionItemId not yet loaded, try fetching from list endpoint
+    if (auctionItemId.value.isEmpty && streamId.value.isNotEmpty) {
+      try {
+        // Try individual stream endpoint first
+        var res = await _apiClient.getData("${ApiUrl.liveStreams}/${streamId.value}");
+        Map<String, dynamic>? streamMap;
+        if (res.statusCode == 200) {
+          final b = jsonDecode(res.body);
+          final d = b["data"] ?? b["stream"] ?? b;
+          if (d is Map) streamMap = Map<String, dynamic>.from(d);
+        }
+        // Fallback: search list endpoint
+        if (streamMap == null) {
+          res = await _apiClient.getData("${ApiUrl.liveStreams}?status=live");
+          if (res.statusCode == 200) {
+            final b = jsonDecode(res.body);
+            final list = b["data"] ?? b["streams"] ?? b["result"] ?? [];
+            if (list is List) {
+              final found = list.firstWhere((e) => e["_id"]?.toString() == streamId.value, orElse: () => null);
+              if (found != null) streamMap = Map<String, dynamic>.from(found);
+            }
+          }
+        }
+        if (streamMap != null) {
+          final itms = streamMap["auctionItems"];
+          if (itms is List && itms.isNotEmpty) {
+            final itm = itms[0];
+            // itm can be a Map (populated) or a String (just ID)
+            if (itm is Map) {
+              final rawId = itm["_id"] ?? itm["id"];
+              auctionItemId.value = rawId?.toString() ?? "";
+              currentBidPrice.value = double.tryParse(itm["currentBid"]?.toString() ?? itm["startingBid"]?.toString() ?? "0") ?? currentBidPrice.value;
+              bidIncrement.value = double.tryParse(itm["bidIncrement"]?.toString() ?? "100") ?? bidIncrement.value;
+            } else {
+              // itm is a plain string ID
+              auctionItemId.value = itm.toString();
+            }
+            auctionActive.value = true;
+            debugPrint("Re-fetched auctionItemId: ${auctionItemId.value}");
+          }
+        }
+      } catch (e) {
+        debugPrint("auctionItemId re-fetch failed: $e");
+      }
+    }
+
     if (auctionItemId.value.isEmpty) {
-      Get.snackbar(
-        "Bid Failed", 
-        "No active auction item found for this stream. Please wait for the host to list an item.", 
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.redAccent.withOpacity(0.85),
-        colorText: Colors.white,
-      );
+      Get.snackbar("Bid Failed", "No active auction item. Please wait for the host to start the auction.", snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.redAccent.withValues(alpha: 0.85), colorText: Colors.white);
       return;
     }
-    if (amount <= currentBidPrice.value) {
-      Get.snackbar("Invalid Bid", "Bid must be higher than \$${currentBidPrice.value.toStringAsFixed(0)}", snackPosition: SnackPosition.BOTTOM);
+    final minBid = currentBidPrice.value + bidIncrement.value;
+    if (amount < minBid) {
+      Get.snackbar("Invalid Bid", "Bid must be at least \$${minBid.toStringAsFixed(0)}", snackPosition: SnackPosition.BOTTOM);
       return;
     }
     try {
       final bidderId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
-      final res = await _apiClient.postData(ApiUrl.placeBid, {
-        "auctionItemId": auctionItemId.value,
-        "bidderId": bidderId,
-        "bidAmount": amount,
-      });
+      final res = await _apiClient.postData(ApiUrl.placeBid, {"auctionItemId": auctionItemId.value, "bidderId": bidderId, "bidAmount": amount});
       if (res.statusCode == 200 || res.statusCode == 201) {
         currentBidPrice.value = amount;
-        
-        String usernameStr = "@username";
-        String avatarUrl = "";
-        try {
-          final profileCtrl = Get.find<ProfileController>();
-          usernameStr = profileCtrl.username.value;
-          avatarUrl = profileCtrl.profileImageUrl.value;
-        } catch (_) {}
-
+        String usernameStr = "@user"; String avatarUrl = "";
+        try { final p = Get.find<ProfileController>(); usernameStr = p.username.value; avatarUrl = p.profileImageUrl.value; } catch (_) {}
         lastBidderId.value = bidderId;
-        lastBidderName.value = usernameStr.replaceAll('@', '');
-
+        lastBidderName.value = usernameStr.replaceAll("@", "");
         final msgText = "🔨 Placed bid: \$${amount.toStringAsFixed(0)}";
-
-        // Add message locally
-        chatMessages.add({
-          "user": usernameStr.startsWith('@') ? usernameStr : '@$usernameStr',
-          "msg": msgText,
-          "isBid": "true",
-          "userAvatar": avatarUrl,
-        });
-        Get.back(); // close bid sheet
+        chatMessages.add({"user": usernameStr.startsWith("@") ? usernameStr : "@$usernameStr", "msg": msgText, "isBid": "true", "userAvatar": avatarUrl});
+        if (Get.isBottomSheetOpen == true) Get.back();
         Get.snackbar("Bid Placed!", "Your bid of \$${amount.toStringAsFixed(0)} is live!", snackPosition: SnackPosition.BOTTOM);
-
-        // Check Anti-Sniping
         bool extended = false;
-        if (bidTimer.value <= 10) {
-          extended = true;
-          extendTimerLocal();
-        }
-
-        // Broadcast bid via Socket.io
-        try {
-          final socketService = Get.find<SocketService>();
-          socketService.emitEvent('new message', {
-            "chat": streamId.value,
-            "chatId": streamId.value,
-            "content": msgText,
-            "text": msgText,
-            "message": msgText,
-            "sender": {
-              "_id": bidderId,
-              "fullName": usernameStr,
-              "name": usernameStr,
-              "avatar": avatarUrl,
-            },
-            "senderId": bidderId,
-            "userAvatar": avatarUrl,
-            "role": "viewer",
-            "isBid": true,
-            "bidAmount": amount,
-            "isExtendTimer": extended,
-            "isLiveStream": true,
-          });
-        } catch (e) {
-          debugPrint("❌ Failed to broadcast bid via socket: $e");
-        }
-
-        // Broadcast bid via Data Stream (agora fallback)
+        if (bidTimer.value <= 10) { extended = true; extendTimerLocal(); }
+        try { final s = Get.find<SocketService>(); s.emitEvent("new message", {"chat": streamId.value, "chatId": streamId.value, "content": msgText, "sender": {"_id": bidderId, "fullName": usernameStr, "avatar": avatarUrl}, "senderId": bidderId, "role": "viewer", "isBid": true, "bidAmount": amount, "isExtendTimer": extended, "isLiveStream": true}); } catch (e) { debugPrint("Socket bid failed: $e"); }
         if (engine != null && _dataStreamId != null) {
-          try {
-            final payload = jsonEncode({
-              "type": "bid",
-              "username": usernameStr,
-              "amount": amount,
-              "avatar": avatarUrl,
-              "senderId": bidderId,
-              "extendTimer": extended,
-            });
-            final bytes = utf8.encode(payload);
-            await engine!.sendStreamMessage(
-              streamId: _dataStreamId!,
-              data: Uint8List.fromList(bytes),
-              length: bytes.length,
-            );
-            debugPrint("✅ Broadcasted bid via Agora");
-          } catch (e) {
-            debugPrint("❌ Failed to broadcast bid via Agora: $e");
-          }
+          try { final payload = jsonEncode({"type": "bid", "username": usernameStr, "avatar": avatarUrl, "amount": amount, "senderId": bidderId, "extendTimer": extended}); await engine!.sendStreamMessage(streamId: _dataStreamId!, data: Uint8List.fromList(utf8.encode(payload)), length: payload.length); } catch (e) { debugPrint("Stream bid failed: $e"); }
         }
-      } else {
-        final body = jsonDecode(res.body);
-        Get.snackbar("Error", body['message'] ?? "Bid failed", snackPosition: SnackPosition.BOTTOM);
-      }
-    } catch (e) {
-      Get.snackbar("Error", "Bid error: $e", snackPosition: SnackPosition.BOTTOM);
-    }
+      } else { Get.snackbar("Bid Failed", "Server error (${res.statusCode})", snackPosition: SnackPosition.BOTTOM); }
+    } catch (e) { debugPrint("Bid error: $e"); Get.snackbar("Error", "Could not place bid: $e", snackPosition: SnackPosition.BOTTOM); }
   }
-
-  Future<void> sendChatMessage(String msg, {required String role}) async {
-    if (msg.trim().isEmpty) return;
-    final cleanMsg = msg.trim();
-    
-    // Get sender username from ProfileController
-    String usernameStr = "@username";
-    String avatarUrl = "";
-    try {
-      final profileCtrl = Get.find<ProfileController>();
-      usernameStr = profileCtrl.username.value;
-      avatarUrl = profileCtrl.profileImageUrl.value;
-    } catch (_) {}
-
-    // Add message locally
-    chatMessages.add({
-      "user": usernameStr.startsWith('@') ? usernameStr : '@$usernameStr',
-      "msg": cleanMsg,
-      "role": role,
-      "userAvatar": avatarUrl,
-    });
-
-    // Broadcast message via Socket.io
-    try {
-      final socketService = Get.find<SocketService>();
-      final myUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-      socketService.emitEvent('new message', {
-        "chat": streamId.value,
-        "chatId": streamId.value,
-        "content": cleanMsg,
-        "text": cleanMsg,
-        "message": cleanMsg,
-        "sender": {
-          "_id": myUserId,
-          "fullName": usernameStr,
-          "name": usernameStr,
-          "avatar": avatarUrl,
-        },
-        "senderId": myUserId,
-        "userAvatar": avatarUrl,
-        "role": role,
-        "isLiveStream": true,
-      });
-    } catch (e) {
-      debugPrint("❌ Failed to broadcast comment via socket: $e");
-    }
-
-    // Broadcast message via Data Stream (Agora fallback)
-    if (engine != null && _dataStreamId != null) {
-      try {
-        final payload = jsonEncode({
-          "type": "comment",
-          "username": usernameStr,
-          "message": cleanMsg,
-          "role": role,
-          "avatar": avatarUrl,
-        });
-        final bytes = utf8.encode(payload);
-        await engine!.sendStreamMessage(
-          streamId: _dataStreamId!,
-          data: Uint8List.fromList(bytes),
-          length: bytes.length,
-        );
-        debugPrint("✅ Broadcasted comment via Agora: $payload");
-      } catch (e) {
-        debugPrint("❌ Failed to broadcast comment via Agora: $e");
-      }
-    }
-  }
-
-  void sendLike() {
-    isLiked.toggle();
-    if (isLiked.value) {
-      likeCount.value++;
-    } else {
-      if (likeCount.value > 0) likeCount.value--;
-    }
-
-    // Broadcast via Socket.io
-    try {
-      final socketService = Get.find<SocketService>();
-      final myUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-      socketService.emitEvent('new message', {
-        "chat": streamId.value,
-        "chatId": streamId.value,
-        "content": isLiked.value ? "❤️ Liked the stream" : "💔 Unliked the stream",
-        "text": isLiked.value ? "❤️ Liked the stream" : "💔 Unliked the stream",
-        "message": isLiked.value ? "❤️ Liked the stream" : "💔 Unliked the stream",
-        "sender": {
-          "_id": myUserId,
-          "fullName": "Viewer",
-          "name": "Viewer",
-        },
-        "senderId": myUserId,
-        "role": "viewer",
-        "isLike": true,
-        "isLiveStream": true,
-      });
-    } catch (_) {}
-
-    if (engine != null && _dataStreamId != null) {
-      try {
-        final payload = jsonEncode({
-          "type": "like",
-        });
-        final bytes = utf8.encode(payload);
-        engine!.sendStreamMessage(
-          streamId: _dataStreamId!,
-          data: Uint8List.fromList(bytes),
-          length: bytes.length,
-        );
-        debugPrint("✅ Broadcasted like");
-      } catch (e) {
-        debugPrint("❌ Failed to broadcast like: $e");
-      }
-    }
-  }
-
   void _handleIncomingStreamMessage(Map<String, dynamic> payload) {
     final type = payload['type'];
-    final avatar = payload['avatar']?.toString() ?? '';
+    final avatar = payload['avatar'] ?? '';
     
     if (type == 'comment') {
       final username = payload['username'] ?? '';
@@ -909,6 +809,18 @@ class AgoraLiveController extends GetxController {
 
       // 3) Event handlers
       engine!.registerEventHandler(RtcEngineEventHandler(
+        onConnectionStateChanged: (connection, state, reason) {
+          debugPrint("🌐 [AgoraLiveController] Connection state: $state, reason: $reason");
+          if (state == ConnectionStateType.connectionStateFailed) {
+            debugPrint("❌ [AgoraLiveController] Connection failed. Retrying...");
+            engine?.joinChannel(
+              token: token,
+              channelId: channel,
+              uid: userUid,
+              options: const ChannelMediaOptions(),
+            );
+          }
+        },
         onJoinChannelSuccess: (connection, elapsed) async {
           debugPrint("✅ Joined channel: ${connection.channelId}");
           isLocalVideoReady.value = true;
@@ -1098,7 +1010,38 @@ class AgoraLiveController extends GetxController {
   //  END STREAM
   // ─────────────────────────────────────────────
   Future<void> endStream() async {
+    final wasHost = isHost.value;
+    isHost.value = false;
+    LiveStreamServiceBridge.stopLiveService();
     _countdownTimer?.cancel();
+    
+    if (wasHost && streamId.value.isNotEmpty) {
+      // 1. Update stream status to ended in backend
+      try {
+        final res = await _apiClient.patchData("${ApiUrl.startStream}/${streamId.value}/status", {
+          'status': 'ended'
+        });
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          debugPrint('✅ Stream status updated to ended in backend: ' + res.body);
+        } else {
+          debugPrint('❌ Failed to update stream status to ended (status ' + res.statusCode.toString() + '): ' + res.body);
+        }
+      } catch (e) {
+        debugPrint('❌ Exception updating stream status to ended: ' + e.toString());
+      }
+      // 2. Emit end-stream socket event to viewers
+      try {
+        final socketService = Get.find<SocketService>();
+        socketService.emitEvent('end-stream', {
+          "streamId": streamId.value,
+          "sellerId": sellerId.value,
+        });
+        debugPrint("⚡ Emitted 'end-stream' socket event");
+      } catch (e) {
+        debugPrint("❌ Failed to emit end-stream socket event: $e");
+      }
+    }
+    
     _cleanupSocket();
     await engine?.leaveChannel();
     await engine?.stopPreview();
@@ -1115,12 +1058,210 @@ class AgoraLiveController extends GetxController {
     Get.offAllNamed('/main');
   }
 
+  Future<bool> checkoutAuctionOrder({
+    required double subtotal,
+    required String street,
+    required String postalCode,
+  }) async {
+    try {
+      final buyerId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+      if (buyerId.isEmpty || currentProductId.value.isEmpty || sellerId.value.isEmpty) {
+        debugPrint("❌ checkoutAuctionOrder failed: buyerId='$buyerId', currentProductId='${currentProductId.value}', sellerId='${sellerId.value}'");
+        return false;
+      }
+
+      final payload = {
+        "buyerId": buyerId,
+        "sellerId": sellerId.value,
+        "productId": currentProductId.value,
+        "purchaseType": "buy_now", // fallback buy_now so order module accepts it
+        "amountDetails": {
+          "itemSubtotal": subtotal,
+          "shipping": 15.0,
+          "taxes": 12.0,
+          "processingFee": 8.0,
+          "charityContribution": 0.0,
+          "totalPaid": subtotal + 35.0
+        },
+        "shippingAddress": {
+          "street": street,
+          "city": "Metropolis",
+          "state": "NY",
+          "postalCode": postalCode,
+          "country": "US"
+        }
+      };
+
+      final response = await _apiClient.postData("/orders", payload);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resBody = jsonDecode(response.body);
+        return resBody['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint("❌ checkoutAuctionOrder exception: $e");
+      return false;
+    }
+  }
+
+  Future<void> sendChatMessage(String msg, {required String role}) async {
+    if (msg.trim().isEmpty) return;
+    final cleanMsg = msg.trim();
+
+    // Get sender username from ProfileController
+    String usernameStr = "@username";
+    String avatarUrl = "";
+    try {
+      final profileCtrl = Get.find<ProfileController>();
+      final uName = profileCtrl.username.value;
+      if (uName.isNotEmpty && uName != "@username") {
+        usernameStr = uName;
+      } else {
+        final fName = profileCtrl.name.value;
+        if (fName.isNotEmpty && fName != "User Name") {
+          usernameStr = "@${fName.replaceAll(' ', '').toLowerCase()}";
+        } else {
+          usernameStr = uName;
+        }
+      }
+      avatarUrl = profileCtrl.profileImageUrl.value;
+    } catch (_) {}
+
+    // Add message locally
+    chatMessages.add({
+      "user": usernameStr.startsWith('@') ? usernameStr : '@$usernameStr',
+      "msg": cleanMsg,
+      "role": role,
+      "userAvatar": avatarUrl,
+    });
+
+    // Broadcast message via Socket.io
+    try {
+      final socketService = Get.find<SocketService>();
+      final myUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+      socketService.emitEvent('new message', {
+        "chat": streamId.value,
+        "chatId": streamId.value,
+        "content": cleanMsg,
+        "text": cleanMsg,
+        "message": cleanMsg,
+        "sender": {
+          "_id": myUserId,
+          "fullName": usernameStr,
+          "name": usernameStr,
+          "avatar": avatarUrl,
+        },
+        "senderId": myUserId,
+        "userAvatar": avatarUrl,
+        "role": role,
+        "isLiveStream": true,
+      });
+    } catch (e) {
+      debugPrint("❌ Failed to broadcast comment via socket: $e");
+    }
+
+    // Broadcast message via Data Stream (Agora fallback)
+    if (engine != null && _dataStreamId != null) {
+      try {
+        final payload = jsonEncode({
+          "type": "comment",
+          "username": usernameStr,
+          "message": cleanMsg,
+          "role": role,
+          "avatar": avatarUrl,
+        });
+        final bytes = utf8.encode(payload);
+        await engine!.sendStreamMessage(
+          streamId: _dataStreamId!,
+          data: Uint8List.fromList(bytes),
+          length: bytes.length,
+        );
+        debugPrint("✅ Broadcasted comment via Agora: $payload");
+      } catch (e) {
+        debugPrint("❌ Failed to broadcast comment via Agora: $e");
+      }
+    }
+  }
+
+  void sendLike() {
+    isLiked.toggle();
+    if (isLiked.value) {
+      likeCount.value++;
+    } else {
+      if (likeCount.value > 0) likeCount.value--;
+    }
+
+    try {
+      final socketService = Get.find<SocketService>();
+      final myUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+      socketService.emitEvent('new message', {
+        "chat": streamId.value,
+        "chatId": streamId.value,
+        "content": isLiked.value ? "❤️ Liked the stream" : "💔 Unliked the stream",
+        "text": isLiked.value ? "❤️ Liked the stream" : "💔 Unliked the stream",
+        "message": isLiked.value ? "❤️ Liked the stream" : "💔 Unliked the stream",
+        "sender": {
+          "_id": myUserId,
+          "fullName": "Viewer",
+          "name": "Viewer",
+        },
+        "senderId": myUserId,
+        "role": "viewer",
+        "isLike": true,
+        "isLiveStream": true,
+      });
+    } catch (_) {}
+
+    if (engine != null && _dataStreamId != null) {
+      try {
+        final payload = jsonEncode({
+          "type": "like",
+        });
+        final bytes = utf8.encode(payload);
+        engine!.sendStreamMessage(
+          streamId: _dataStreamId!,
+          data: Uint8List.fromList(bytes),
+          length: bytes.length,
+        );
+        debugPrint("✅ Broadcasted like");
+      } catch (e) {
+        debugPrint("❌ Failed to broadcast like: $e");
+      }
+    }
+  }
+
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    LiveStreamServiceBridge.stopLiveService();
     _countdownTimer?.cancel();
     _cleanupSocket();
     engine?.leaveChannel();
     engine?.release();
     super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // Only care if active host stream
+    if (!isLive.value || !isHost.value) return;
+
+    if (state == AppLifecycleState.paused) {
+      debugPrint("📱 Host app paused - starting foreground service...");
+      LiveStreamServiceBridge.startLiveService();
+      // Mute local video preview during backgrounding if not in PiP
+      if (!isInPiP.value) {
+        engine?.muteLocalVideoStream(true);
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      debugPrint("📱 Host app resumed - stopping foreground service...");
+      LiveStreamServiceBridge.stopLiveService();
+      // Restore video preview if camera is on
+      if (isCameraOn.value) {
+        engine?.muteLocalVideoStream(false);
+      }
+    }
   }
 }

@@ -29,8 +29,8 @@ class ApiUrl {
 
   // Category
   static const String category = "/category";
- 
-  // Auctions / Live Streams / and streaming get
+
+  // Auctions / Live Streams
   static const String liveStreams = "/auctions/streams";
   static const String startStream = "/auctions/stream";
   static const String addAuctionItem = "/auctions/item";
@@ -47,4 +47,3 @@ class ApiUrl {
   // Favourites
   static const String favourite = "/favourite";
 }
-

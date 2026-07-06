@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/services/api_client.dart';
@@ -60,10 +60,10 @@ class DiscoverController extends GetxController {
 
   Future<void> fetchLiveShows() async {
     try {
-      final response = await _apiClient.getData(ApiUrl.liveStreams);
+      final response = await _apiClient.getData("${ApiUrl.liveStreams}?status=live");
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body)['data'] ?? [];
-        final parsedShows = data.map((item) {
+        final parsedShows = data.where((item) => item['status'] == 'live').map((item) {
           final title = item['title'] ?? "Live Show";
           final hostName = item['curator'] ?? item['sellerId']?['fullName'] ?? "Curator";
           

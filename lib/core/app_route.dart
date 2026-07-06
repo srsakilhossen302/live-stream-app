@@ -1,3 +1,4 @@
+﻿import 'dart:async';
 import 'package:get/get.dart';
 import '../view/screens/onboarding/screen/onboarding_screen.dart';
 import '../view/screens/auth/screen/login_screen.dart';
@@ -28,6 +29,7 @@ import '../view/screens/my_trades/screen/my_trades_screen.dart';
 import '../view/screens/trade_details/screen/make_offer_screen.dart';
 
 class AppRoute {
+  static final routeStream = StreamController<String>.broadcast();
   static const String forgotPassword = "/forgotPassword";
   static const String onboarding = "/onboarding";
   static const String login = "/login";

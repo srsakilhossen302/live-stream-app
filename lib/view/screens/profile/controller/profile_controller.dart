@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/app_route.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
@@ -50,8 +51,11 @@ class ProfileController extends GetxController {
       final response = await _apiClient.getData(ApiUrl.profile);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body)['data'];
-        name.value = data['fullName'] ?? "User Name";
-        username.value = "@${data['username'] ?? "username"}";
+
+        final String fn = data['fullName'] ?? "User Name";
+        name.value = fn;
+        final String un = data['username'] ?? fn.replaceAll(' ', '').toLowerCase();
+        username.value = "@$un";
         description.value = data['description'] ?? "No bio added yet.";
 
         // Handle profile image
@@ -191,5 +195,10 @@ class ProfileController extends GetxController {
 
   void changeActivityFilter(int index) {
     selectedActivityFilter.value = index;
+  }
+
+  Future<void> logout() async {
+    await SharePrefsHelper.clear();
+    Get.offAllNamed(AppRoute.login);
   }
 }

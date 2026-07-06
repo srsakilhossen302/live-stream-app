@@ -1,4 +1,4 @@
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+﻿import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -53,11 +53,13 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
             GestureDetector(
               onDoubleTap: () => ctrl.sendLike(),
               child: Obx(() {
-                if (ctrl.engine != null && ctrl.remoteJoined.value && ctrl.remoteUid.value != -1) {
+                final isJoined = ctrl.remoteJoined.value;
+                final rUid = ctrl.remoteUid.value;
+                if (ctrl.engine != null && isJoined && rUid != -1) {
                   return AgoraVideoView(
                     controller: VideoViewController.remote(
                       rtcEngine: ctrl.engine!,
-                      canvas: VideoCanvas(uid: ctrl.remoteUid.value),
+                      canvas: VideoCanvas(uid: rUid),
                       connection: RtcConnection(channelId: ctrl.channelName.value),
                       useFlutterTexture: false,
                       useAndroidSurfaceView: true,
@@ -134,43 +136,42 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                                 decoration: BoxDecoration(
-                                  color: Colors.black45,
+                                  color: Colors.black.withOpacity(0.35),
                                   borderRadius: BorderRadius.circular(20.r),
-                                  border: Border.all(color: Colors.white10, width: 0.5),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(10.r),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.wifi_tethering_rounded, color: Colors.white, size: 10.sp),
-                                          SizedBox(width: 4.w),
-                                          Text(
-                                            "LIVE",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10.sp,
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                        ],
+                                    Icon(
+                                      Icons.wifi_tethering_rounded,
+                                      color: const Color(0xFFFF52C5),
+                                      size: 13.sp,
+                                    ),
+                                    SizedBox(width: 6.w),
+                                    Text(
+                                      "LIVE",
+                                      style: TextStyle(
+                                        color: const Color(0xFFFF52C5),
+                                        fontSize: 10.sp,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
-                                    SizedBox(width: 8.w),
+                                    Text(
+                                      "   |   ",
+                                      style: TextStyle(
+                                        color: Colors.white24,
+                                        fontSize: 10.sp,
+                                      ),
+                                    ),
                                     Obx(() => Text(
-                                      ctrl.remoteJoined.value ? "2" : "1",
+                                      ctrl.viewersCount.value,
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 12.sp,
-                                        fontWeight: FontWeight.w800,
+                                        fontWeight: FontWeight.w900,
                                       ),
                                     )),
                                   ],
@@ -690,23 +691,36 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                     onPressed: isPaying.value ? null : () async {
                       isPaying.value = true;
                       
-                      // Mock Payment processing
-                      await Future.delayed(const Duration(seconds: 2));
-                      
-                      isPaying.value = false;
-                      Get.back(); // Close checkout sheet
-                      ctrl.showWinnerOverlay.value = false; // Close Winner overlay
-                      
-                      Get.snackbar(
-                        "Payment Successful!",
-                        "Your order has been placed successfully!",
-                        backgroundColor: const Color(0xFF8B9BFF),
-                        colorText: const Color(0xFF0F0B1E),
-                        duration: const Duration(seconds: 4),
+                      final success = await ctrl.checkoutAuctionOrder(
+                        subtotal: winningAmount,
+                        street: addressCtrl.text.trim(),
+                        postalCode: zipCtrl.text.trim(),
                       );
                       
-                      // Go to purchases screen
-                      Get.toNamed(AppRoute.purchases);
+                      isPaying.value = false;
+                      if (success) {
+                        Get.back(); // Close checkout sheet
+                        ctrl.showWinnerOverlay.value = false; // Close Winner overlay
+                        
+                        Get.snackbar(
+                          "Payment Successful!",
+                          "Your order has been placed successfully!",
+                          backgroundColor: const Color(0xFF8B9BFF),
+                          colorText: const Color(0xFF0F0B1E),
+                          duration: const Duration(seconds: 4),
+                        );
+                        
+                        // Go to purchases screen
+                        Get.toNamed(AppRoute.purchases);
+                      } else {
+                        Get.snackbar(
+                          "Payment Failed",
+                          "Could not process your auction checkout. Please try again.",
+                          backgroundColor: Colors.redAccent,
+                          colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM,
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber,
@@ -772,20 +786,17 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
   }
 
   Widget _buildHostProfileCard() {
-    final seller = widget.streamData['sellerId'] ?? {};
-    final username = "@${seller['username'] ?? 'jrehsales'}";
+    final rawSeller = widget.streamData['sellerId'];
+    final seller = rawSeller is Map ? rawSeller : {};
+    final username = "@${seller['username'] ?? seller['fullName'] ?? seller['name'] ?? 'Host'}";
     final rating = seller['rating']?.toString() ?? "4.9";
-    
-    final isFollowing = false.obs;
 
     String avatarUrl = "";
-    final sellerImage = (seller['profile'] ?? seller['image'] ?? seller['profileImageUrl'])?.toString();
+    final sellerImage = (seller['profile'] ?? seller['image'] ?? seller['profileImageUrl'] ?? seller['avatar'])?.toString();
     if (sellerImage != null && sellerImage.isNotEmpty) {
       avatarUrl = (sellerImage.startsWith('http') || sellerImage.startsWith('data:image/'))
           ? sellerImage
           : "${ApiUrl.imageBaseUrl}${sellerImage.startsWith('/') ? sellerImage : '/$sellerImage'}";
-    } else {
-      avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200";
     }
 
     return GestureDetector(
@@ -809,9 +820,22 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
-              radius: 18.r,
-              backgroundImage: NetworkImage(avatarUrl),
+            Container(
+              width: 36.r,
+              height: 36.r,
+              decoration: const BoxDecoration(
+                color: Colors.white12,
+                shape: BoxShape.circle,
+              ),
+              child: avatarUrl.isNotEmpty
+                  ? ClipOval(
+                      child: Image.network(
+                        avatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.person, color: Colors.white54, size: 20.sp),
+                      ),
+                    )
+                  : Icon(Icons.person, color: Colors.white54, size: 20.sp),
             ),
             SizedBox(width: 8.w),
             Column(
@@ -837,17 +861,17 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
             ),
             SizedBox(width: 16.w),
             Obx(() => GestureDetector(
-              onTap: () => isFollowing.toggle(),
+              onTap: () => ctrl.isFollowingHost.toggle(),
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: isFollowing.value ? Colors.white12 : const Color(0xFF8B9BFF),
+                  color: ctrl.isFollowingHost.value ? Colors.white12 : const Color(0xFF8B9BFF),
                   borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
-                  isFollowing.value ? "FOLLOWED" : "FOLLOW",
+                  ctrl.isFollowingHost.value ? "FOLLOWED" : "FOLLOW",
                   style: TextStyle(
-                    color: isFollowing.value ? Colors.white : Colors.black,
+                    color: ctrl.isFollowingHost.value ? Colors.white : Colors.black,
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1001,51 +1025,48 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
               backgroundImage: avatarImg,
             ),
             SizedBox(width: 8.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        user,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      user,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        "HOST",
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
+                          color: const Color(0xFF8B9BFF),
+                          fontSize: 8.sp,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      SizedBox(width: 6.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Text(
-                          "HOST",
-                          style: TextStyle(
-                            color: const Color(0xFF8B9BFF),
-                            fontSize: 8.sp,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    msg,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w500,
                     ),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  msg,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1059,36 +1080,25 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.white10, width: 0.5),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 12.r,
-            backgroundImage: avatarImg,
+          Text(
+            user.startsWith('@') ? user : '@$user',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          SizedBox(width: 8.w),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                user,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                msg,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13.sp,
-                ),
-              ),
-            ],
+          SizedBox(height: 2.h),
+          Text(
+            msg,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13.sp,
+            ),
           ),
         ],
       ),
@@ -1369,10 +1379,10 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         ),
         SizedBox(width: 8.w),
 
-        // Swipe-to-Bid / Bid Capsule Button
+
         Obx(() {
           final currentBid = ctrl.currentBidPrice.value;
-          final nextBid = currentBid + 1;
+          final nextBid = currentBid + ctrl.bidIncrement.value;
           return GestureDetector(
             onTap: () => ctrl.placeBid(nextBid),
             child: Container(
@@ -1400,7 +1410,7 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                       ),
                       SizedBox(height: 2.h),
                       Text(
-                        "\$${currentBid.toStringAsFixed(0)}",
+                        "\$${nextBid.toStringAsFixed(0)}",
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 15.sp,

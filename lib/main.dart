@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
@@ -56,6 +56,11 @@ class MyApp extends StatelessWidget {
           ),
           initialRoute: initialRoute,
           getPages: AppRoute.routes,
+          routingCallback: (routing) {
+            if (routing != null) {
+              AppRoute.routeStream.add(routing.current);
+            }
+          },
         );
       },
     );
