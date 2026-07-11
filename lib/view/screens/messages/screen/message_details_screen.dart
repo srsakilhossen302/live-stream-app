@@ -5,6 +5,7 @@ import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../../purchases/model/purchase_model.dart';
 import '../controller/message_details_controller.dart';
+import '../../../../data/services/api_url.dart';
 
 class MessageDetailsScreen extends GetView<MessageDetailsController> {
   const MessageDetailsScreen({super.key});
@@ -17,7 +18,7 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
       date: "Oct 21, 2023",
       price: "\$1,250",
       carrier: "USPS",
-      image: "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop",
+      image: "",
       trackingId: "9400 1112 3456 7890 1234 56",
       status: OrderStatus.inTransit,
       estimatedDelivery: "October 24",
@@ -34,6 +35,7 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
   Widget build(BuildContext context) {
     Get.put(MessageDetailsController());
     return CustomBackground(
+      safeAreaBottom: false,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: _buildAppBar(),
@@ -157,7 +159,7 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
             ),
 
             // Input Bar
-            _buildInputBar(),
+            _buildInputBar(context),
           ],
         ),
       ),
@@ -168,6 +170,7 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
+      scrolledUnderElevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.close, color: Colors.white),
         onPressed: () => Get.back(),
@@ -175,48 +178,78 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
       title: Obx(() {
         final avatar = controller.partnerAvatar.value;
         final name = controller.partnerName.value;
-        return Row(
-          children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 18.r,
-                  backgroundImage: NetworkImage(
-                    avatar.isNotEmpty 
-                        ? avatar 
-                        : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
+        final avatarUrl = (avatar.isNotEmpty && !avatar.startsWith('http') && !avatar.startsWith('data:image/'))
+            ? "${ApiUrl.imageBaseUrl}${avatar.startsWith('/') ? avatar : '/$avatar'}"
+            : avatar.isNotEmpty ? avatar : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop";
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            final String pid = controller.partnerId.value;
+            if (pid.isNotEmpty) {
+              Get.toNamed(AppRoute.traderProfile, arguments: {
+                "id": pid,
+                "name": name,
+                "avatar": avatarUrl,
+              });
+            }
+          },
+          child: Row(
+            children: [
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 18.r,
+                    backgroundImage: NetworkImage(avatarUrl),
                   ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 10.r,
-                    height: 10.r,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF8BFF),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 2),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 10.r,
+                      height: 10.r,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF8BFF),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 2),
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(width: 12.w),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
-                Text("ACTIVE NOW", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-              ],
-            ),
-          ],
+                ],
+              ),
+              SizedBox(width: 12.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                  Text("ACTIVE NOW", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                ],
+              ),
+            ],
+          ),
         );
       }),
     );
   }
 
   Widget _buildPinnedItem() {
+    final order = controller.orderData;
+    final String title = order['title'] ?? (order['productId'] is Map ? order['productId']['title'] : null) ?? "Vintage Pokémon Card Pack";
+    final String orderId = order['id'] ?? order['_id'] ?? "ORD-24891";
+    
+    // Extract image path
+    String imgPath = "";
+    final List? prodImages = (order['productId'] is Map) ? (order['productId']['images'] as List?) : null;
+    if (prodImages != null && prodImages.isNotEmpty) {
+      imgPath = prodImages[0].toString();
+    } else {
+      imgPath = order['image'] ?? (order['productId'] is Map ? order['productId']['image'] : null) ?? "";
+    }
+    
+    final String imgUrl = (imgPath.isNotEmpty)
+        ? (imgPath.startsWith('http') ? imgPath : "${ApiUrl.imageBaseUrl}${imgPath.startsWith('/') ? imgPath : '/$imgPath'}")
+        : "";
+
     return Container(
       margin: EdgeInsets.all(16.r),
       padding: EdgeInsets.all(12.r),
@@ -231,21 +264,27 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
             width: 48.w,
             height: 48.w,
             decoration: BoxDecoration(
+              color: Colors.black26,
               borderRadius: BorderRadius.circular(10.r),
-              image: const DecorationImage(
-                image: NetworkImage("https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=1000&auto=format&fit=crop"),
-                fit: BoxFit.cover,
-              ),
+              image: imgUrl.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(imgUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
+            child: imgUrl.isEmpty
+                ? const Center(child: Icon(Icons.image, color: Colors.white24))
+                : null,
           ),
           SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("ORDER #ORD-24891", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                Text("ORDER #$orderId", style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                 SizedBox(height: 2.h),
-                Text("Vintage Pokémon Card Pack", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                Text(title, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
               ],
             ),
           ),
@@ -507,9 +546,10 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
+      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, (bottomPadding > 0 ? bottomPadding : 16.h) + 16.h),
       decoration: BoxDecoration(
         color: const Color(0xFF0D0D15),
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.04))),

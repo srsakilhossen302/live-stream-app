@@ -1,44 +1,18 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../data/services/api_client.dart';
+import '../../../../data/services/api_url.dart';
 import '../model/notification_model.dart';
 
 class NotificationController extends GetxController {
+  final ApiClient _apiClient = Get.find<ApiClient>();
+  
   // Filter: 'all', 'trades', 'live'
   final selectedFilter = 'all'.obs;
+  final isLoading = false.obs;
 
-  final notifications = <NotificationModel>[
-    const NotificationModel(
-      id: '1',
-      type: NotificationType.tradeOffer,
-      title: 'TRADE OFFER',
-      message: 'New Trade Offer from @Alex_Vault for your Chrono-Master V2.',
-      timeAgo: '2m ago',
-      imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000&auto=format&fit=crop',
-    ),
-    const NotificationModel(
-      id: '2',
-      type: NotificationType.liveAlert,
-      title: 'LIVE ALERT',
-      message: "Julian Voss is LIVE now with 'Chrome Abstract #04'.",
-      timeAgo: '15m ago',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop',
-    ),
-    const NotificationModel(
-      id: '3',
-      type: NotificationType.outbid,
-      title: 'OUTBID ALERT',
-      message: "You've been outbid on 'Crystalline Form #042'.",
-      timeAgo: '1h ago',
-      currentBid: '\$14,500',
-    ),
-    const NotificationModel(
-      id: '4',
-      type: NotificationType.security,
-      title: 'SECURITY',
-      message: 'Security Update: Your 2FA is active.',
-      timeAgo: '4h ago',
-      isRead: true,
-    ),
-  ].obs;
+  final notifications = <NotificationModel>[].obs;
 
   final recommended = <RecommendedItemModel>[
     const RecommendedItemModel(
@@ -50,6 +24,33 @@ class NotificationController extends GetxController {
       actionLabel: 'Explore Collection',
     ),
   ].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchNotifications();
+  }
+
+  Future<void> fetchNotifications() async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.getData(ApiUrl.myNotifications);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = jsonDecode(response.body);
+        final list = body['data'] ?? body['notifications'] ?? body['result'] ?? (body is List ? body : []);
+        if (list is List) {
+          final parsed = list.map((e) => NotificationModel.fromJson(Map<String, dynamic>.from(e))).toList();
+          notifications.assignAll(parsed);
+        }
+      } else {
+        Get.log("Failed to fetch notifications: ${response.statusCode}");
+      }
+    } catch (e) {
+      Get.log("Error fetching notifications: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   List<NotificationModel> get filteredNotifications {
     switch (selectedFilter.value) {
@@ -66,13 +67,73 @@ class NotificationController extends GetxController {
 
   void setFilter(String filter) => selectedFilter.value = filter;
 
-  void dismissNotification(String id) {
-    notifications.removeWhere((n) => n.id == id);
+  Future<void> markAsRead(String id) async {
+    try {
+      final response = await _apiClient.patchData("/notifications/$id/read", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final idx = notifications.indexWhere((n) => n.id == id);
+        if (idx != -1) {
+          final old = notifications[idx];
+          notifications[idx] = NotificationModel(
+            id: old.id,
+            type: old.type,
+            title: old.title,
+            message: old.message,
+            timeAgo: old.timeAgo,
+            imageUrl: old.imageUrl,
+            avatarUrl: old.avatarUrl,
+            currentBid: old.currentBid,
+            isRead: true,
+          );
+        }
+      }
+    } catch (e) {
+      Get.log("Error marking notification as read: $e");
+    }
   }
 
-  void markAllAsRead() {
-    // In a real app this would call an API
-    Get.snackbar('Done', 'All notifications marked as read',
-        snackPosition: SnackPosition.BOTTOM);
+  Future<void> dismissNotification(String id) async {
+    try {
+      // Postman: PATCH /notifications/{{notificationId}}/archive
+      final response = await _apiClient.patchData("/notifications/$id/archive", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        notifications.removeWhere((n) => n.id == id);
+      } else {
+        notifications.removeWhere((n) => n.id == id);
+      }
+    } catch (e) {
+      Get.log("Error dismissing notification: $e");
+      notifications.removeWhere((n) => n.id == id);
+    }
+  }
+
+  Future<void> markAllAsRead() async {
+    try {
+      final response = await _apiClient.patchData("/notifications/read-all", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        for (int i = 0; i < notifications.length; i++) {
+          final old = notifications[i];
+          if (!old.isRead) {
+            notifications[i] = NotificationModel(
+              id: old.id,
+              type: old.type,
+              title: old.title,
+              message: old.message,
+              timeAgo: old.timeAgo,
+              imageUrl: old.imageUrl,
+              avatarUrl: old.avatarUrl,
+              currentBid: old.currentBid,
+              isRead: true,
+            );
+          }
+        }
+        Get.snackbar('Done', 'All notifications marked as read',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xFF8B9BFF),
+            colorText: Colors.black);
+      }
+    } catch (e) {
+      Get.log("Error marking all notifications as read: $e");
+    }
   }
 }

@@ -24,10 +24,6 @@ class MessagesScreen extends GetView<MessagesController> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Icon(Icons.close, color: Colors.white, size: 24.sp),
-                      ),
                       Text(
                         "Messages",
                         style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
@@ -81,8 +77,8 @@ class MessagesScreen extends GetView<MessagesController> {
                             );
                           }
 
-                          final updates = controller.updateLogs;
-                          final chats = controller.chatRooms;
+                          final updates = controller.filteredUpdates;
+                          final chats = controller.filteredChats;
 
                           if (updates.isEmpty && chats.isEmpty) {
                             return Padding(
@@ -156,6 +152,7 @@ class MessagesScreen extends GetView<MessagesController> {
                                   time: ch['time'] ?? '',
                                   isSpecial: ch['isSpecial'] == true,
                                   avatar: ch['avatar'] ?? '',
+                                  participantId: ch['participantId'] ?? '',
                                 )),
                               ],
                             ],
@@ -334,12 +331,21 @@ class MessagesScreen extends GetView<MessagesController> {
     );
   }
 
-  Widget _buildMessageRow({required String id, required String name, required String message, required String time, required String avatar, bool isSpecial = false}) {
+  Widget _buildMessageRow({
+    required String id,
+    required String name,
+    required String message,
+    required String time,
+    required String avatar,
+    required String participantId,
+    bool isSpecial = false,
+  }) {
     return InkWell(
       onTap: () => Get.toNamed(AppRoute.messageDetails, arguments: {
         "chatId": id,
         "name": name,
         "avatar": avatar,
+        "participantId": participantId,
       }),
       borderRadius: BorderRadius.circular(16.r),
       child: Padding(

@@ -53,7 +53,7 @@ class MessagesController extends GetxController {
                 ? (room['lastMessage']['text'] ?? "Sent a message") 
                 : "No messages yet";
             final time = room['updatedAt'] ?? "";
-            final avatar = otherParticipant['image'] ?? "";
+            final avatar = otherParticipant['profile'] ?? otherParticipant['image'] ?? "";
             
             String imageUrl = "";
             if (avatar.isNotEmpty) {
@@ -64,12 +64,19 @@ class MessagesController extends GetxController {
               imageUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200";
             }
 
+            final isOrder = room['orderId'] != null || room['order'] != null;
+            final isTrade = room['tradeId'] != null || room['trade'] != null || room['swap'] != null;
+
             parsedRooms.add({
               "id": room['_id'],
-              "name": name.startsWith('@') ? name : "@$name",
+              "name": name.startsWith('@') ? name.substring(1) : name,
               "message": lastMsg,
               "time": _formatTime(time),
               "avatar": imageUrl,
+              "isSpecial": room['unreadCount'] != null && (room['unreadCount'] as num) > 0 || room['isUnread'] == true,
+              "isOrder": isOrder,
+              "isTrade": isTrade,
+              "participantId": otherParticipant['_id'] ?? otherParticipant['id'] ?? "",
             });
           }
           chatRooms.assignAll(parsedRooms);
@@ -92,31 +99,34 @@ class MessagesController extends GetxController {
     chatRooms.assignAll([
       {
         "id": "mock_room_1",
-        "name": "@Retro_Rick",
+        "name": "Retro_Rick",
         "message": "can do \$450 if we close tonight. Let me know.",
         "time": "Oct 24",
         "avatar": "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=1974&auto=format&fit=crop",
+        "isTrade": true,
       },
       {
         "id": "mock_room_2",
-        "name": "@AuctionQueen",
+        "name": "AuctionQueen",
         "message": "Congratulations! You won the Crimson Blade auction.",
         "time": "Oct 20",
         "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop",
         "isSpecial": true,
+        "isOrder": true,
       },
       {
         "id": "mock_room_3",
-        "name": "@Silent_Bidder",
+        "name": "Silent_Bidder",
         "message": "Thanks for the smooth transaction. Left 5 stars.",
         "time": "Oct 15",
         "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=1974&auto=format&fit=crop",
+        "isOrder": true,
       },
     ]);
 
     updateLogs.assignAll([
       {
-        "name": "@CardMaster",
+        "name": "CardMaster",
         "message": "Your order has been shipped",
         "time": "14:22",
         "hasNew": true,
@@ -124,7 +134,7 @@ class MessagesController extends GetxController {
         "tags": ["#ORD-24891", "Shipped 🚚"],
       },
       {
-        "name": "@LuxeVault",
+        "name": "LuxeVault",
         "message": "Trade request accepted",
         "time": "Yesterday",
         "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop",
@@ -170,7 +180,7 @@ class MessagesController extends GetxController {
             final isRead = item['isRead'] == true;
 
             parsedUpdates.add({
-              "name": title.startsWith('@') ? title : "@$title",
+              "name": title.startsWith('@') ? title.substring(1) : title,
               "message": msg,
               "time": _formatTime(time),
               "hasNew": !isRead,
@@ -203,5 +213,58 @@ class MessagesController extends GetxController {
 
   void changeFilter(int index) {
     selectedFilter.value = index;
+  }
+
+  // --- FILTERED GETTERS ---
+  List<Map<String, dynamic>> get filteredUpdates {
+    final idx = selectedFilter.value;
+    if (idx == 0) return updateLogs;
+    if (idx == 1) return updateLogs.where((u) => u['hasNew'] == true).toList();
+    if (idx == 2) {
+      // Orders
+      return updateLogs.where((u) {
+        final List tags = u['tags'] ?? [];
+        final msg = (u['message'] ?? '').toString().toLowerCase();
+        final name = (u['name'] ?? '').toString().toLowerCase();
+        return tags.any((t) => t.toString().toLowerCase().contains('ord') || t.toString().toLowerCase().contains('ship')) ||
+               msg.contains('order') || msg.contains('ship') || msg.contains('purchase') || msg.contains('buy') || msg.contains('sold') ||
+               name.contains('order');
+      }).toList();
+    }
+    if (idx == 3) {
+      // Trades
+      return updateLogs.where((u) {
+        final List tags = u['tags'] ?? [];
+        final msg = (u['message'] ?? '').toString().toLowerCase();
+        return tags.any((t) => t.toString().toLowerCase().contains('trade') || t.toString().toLowerCase().contains('offer')) ||
+               msg.contains('trade') || msg.contains('offer') || msg.contains('swap') || msg.contains('exchange');
+      }).toList();
+    }
+    return updateLogs;
+  }
+
+  List<Map<String, dynamic>> get filteredChats {
+    final idx = selectedFilter.value;
+    if (idx == 0) return chatRooms;
+    if (idx == 1) return chatRooms.where((c) => c['isSpecial'] == true).toList();
+    if (idx == 2) {
+      // Orders
+      return chatRooms.where((c) {
+        final msg = (c['message'] ?? '').toString().toLowerCase();
+        final name = (c['name'] ?? '').toString().toLowerCase();
+        return msg.contains('order') || msg.contains('ship') || msg.contains('purchase') || msg.contains('buy') || msg.contains('sold') || msg.contains('won') ||
+               name.contains('order') || name.contains('store') || name.contains('shop') || c['isOrder'] == true;
+      }).toList();
+    }
+    if (idx == 3) {
+      // Trades
+      return chatRooms.where((c) {
+        final msg = (c['message'] ?? '').toString().toLowerCase();
+        final name = (c['name'] ?? '').toString().toLowerCase();
+        return msg.contains('trade') || msg.contains('offer') || msg.contains('swap') || msg.contains('exchange') || msg.contains('bid') || msg.contains('gavel') ||
+               name.contains('trade') || name.contains('bid') || c['isTrade'] == true;
+      }).toList();
+    }
+    return chatRooms;
   }
 }

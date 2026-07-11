@@ -5,6 +5,7 @@ import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../../messages/controller/messages_controller.dart';
 import '../controller/trader_profile_controller.dart';
+import '../../../../data/services/api_url.dart';
 
 class TraderProfileScreen extends GetView<TraderProfileController> {
   const TraderProfileScreen({super.key});
@@ -599,7 +600,10 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
     final double price =
         (product['buyNowPrice'] ?? product['price'] ?? 0).toDouble();
     final List images = product['images'] ?? [];
-    final String img = images.isNotEmpty ? images[0].toString() : '';
+    final String rawImg = images.isNotEmpty ? images[0].toString() : '';
+    final String img = (rawImg.isNotEmpty && !rawImg.startsWith('http') && !rawImg.startsWith('data:image/'))
+        ? "${ApiUrl.imageBaseUrl}${rawImg.startsWith('/') ? rawImg : '/$rawImg'}"
+        : rawImg;
     final bool allowTrade = product['allowTrade'] == true;
     final bool isSold = (product['status'] ?? '') == 'sold';
     final String productId = product['_id'] ?? product['id'] ?? '';

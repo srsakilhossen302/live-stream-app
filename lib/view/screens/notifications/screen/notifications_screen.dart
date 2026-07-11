@@ -41,78 +41,95 @@ class NotificationsScreen extends GetView<NotificationController> {
             child: Divider(color: Colors.white.withOpacity(0.05), height: 1),
           ),
         ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 24.h),
+        body: RefreshIndicator(
+          onRefresh: () => controller.fetchNotifications(),
+          color: const Color(0xFF8B9BFF),
+          backgroundColor: const Color(0xFF161622),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 24.h),
 
-              // Filter Tabs — each tab manages its own Obx internally
-              Row(
-                children: [
-                  _buildFilterTab("All", Icons.notifications_none_rounded, filter: 'all'),
-                  SizedBox(width: 12.w),
-                  _buildFilterTab("Trades", Icons.sync_alt_rounded, filter: 'trades'),
-                  SizedBox(width: 12.w),
-                  _buildFilterTab("Live", Icons.podcasts_rounded, filter: 'live'),
-                ],
-              ),
+                // Filter Tabs — each tab manages its own Obx internally
+                Row(
+                  children: [
+                    _buildFilterTab("All", Icons.notifications_none_rounded, filter: 'all'),
+                    SizedBox(width: 12.w),
+                    _buildFilterTab("Trades", Icons.sync_alt_rounded, filter: 'trades'),
+                    SizedBox(width: 12.w),
+                    _buildFilterTab("Live", Icons.podcasts_rounded, filter: 'live'),
+                  ],
+                ),
 
-              SizedBox(height: 32.h),
+                SizedBox(height: 32.h),
 
-              // Notification Cards — directly access observables so GetX can track
-              Obx(() {
-                final filter = controller.selectedFilter.value;
-                final all = controller.notifications;
-                final items = filter == 'trades'
-                    ? all.where((n) => n.type == NotificationType.tradeOffer).toList()
-                    : filter == 'live'
-                        ? all.where((n) => n.type == NotificationType.liveAlert).toList()
-                        : all.toList();
-
-                if (items.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 60.h),
-                      child: Column(
-                        children: [
-                          Icon(Icons.notifications_off_outlined, color: Colors.white12, size: 48.sp),
-                          SizedBox(height: 16.h),
-                          Text("No notifications", style: TextStyle(color: Colors.white24, fontSize: 15.sp, fontWeight: FontWeight.w700)),
-                        ],
+                // Notification Cards — directly access observables so GetX can track
+                Obx(() {
+                  if (controller.isLoading.value && controller.notifications.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 60.h),
+                        child: const CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B9BFF)),
+                        ),
                       ),
-                    ),
+                    );
+                  }
+
+                  final filter = controller.selectedFilter.value;
+                  final all = controller.notifications;
+                  final items = filter == 'trades'
+                      ? all.where((n) => n.type == NotificationType.tradeOffer).toList()
+                      : filter == 'live'
+                          ? all.where((n) => n.type == NotificationType.liveAlert).toList()
+                          : all.toList();
+
+                  if (items.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 60.h),
+                        child: Column(
+                          children: [
+                            Icon(Icons.notifications_off_outlined, color: Colors.white12, size: 48.sp),
+                            SizedBox(height: 16.h),
+                            Text("No notifications", style: TextStyle(color: Colors.white24, fontSize: 15.sp, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => SizedBox(height: 16.h),
+                    itemBuilder: (_, index) => _buildNotificationCard(items[index]),
                   );
-                }
-                return ListView.separated(
+                }),
+
+                SizedBox(height: 48.h),
+
+                // Recommended Section
+                Text(
+                  "RECOMMENDED FOR YOU",
+                  style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w900, letterSpacing: 1),
+                ),
+                SizedBox(height: 24.h),
+
+                Obx(() => ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: items.length,
+                  itemCount: controller.recommended.length,
                   separatorBuilder: (_, __) => SizedBox(height: 16.h),
-                  itemBuilder: (_, index) => _buildNotificationCard(items[index]),
-                );
-              }),
+                  itemBuilder: (_, index) => _buildRecommendedCard(controller.recommended[index]),
+                )),
 
-              SizedBox(height: 48.h),
-
-              // Recommended Section
-              Text(
-                "RECOMMENDED FOR YOU",
-                style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w900, letterSpacing: 1),
-              ),
-              SizedBox(height: 24.h),
-
-              Obx(() => ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.recommended.length,
-                separatorBuilder: (_, __) => SizedBox(height: 16.h),
-                itemBuilder: (_, index) => _buildRecommendedCard(controller.recommended[index]),
-              )),
-
-              SizedBox(height: 48.h),
-            ],
+                SizedBox(height: 48.h),
+              ],
+            ),
           ),
         ),
       ),
@@ -189,7 +206,19 @@ class NotificationsScreen extends GetView<NotificationController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(item.title, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                        Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
+                        Row(
+                          children: [
+                            if (!item.isRead) ...[
+                              Container(
+                                width: 6.r,
+                                height: 6.r,
+                                decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
+                              ),
+                              SizedBox(width: 6.w),
+                            ],
+                            Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
                       ],
                     ),
                     SizedBox(height: 6.h),
@@ -202,7 +231,16 @@ class NotificationsScreen extends GetView<NotificationController> {
           SizedBox(height: 20.h),
           Row(
             children: [
-              Expanded(child: _buildButton("View Offer", isPrimary: true, onTap: () => Get.toNamed(AppRoute.newOffer))),
+              Expanded(
+                child: _buildButton(
+                  "View Offer",
+                  isPrimary: true,
+                  onTap: () {
+                    controller.markAsRead(item.id);
+                    Get.toNamed(AppRoute.newOffer);
+                  },
+                ),
+              ),
               SizedBox(width: 12.w),
               Expanded(child: _buildButton("Decline", onTap: () => controller.dismissNotification(item.id))),
             ],
@@ -243,7 +281,19 @@ class NotificationsScreen extends GetView<NotificationController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(item.title, style: TextStyle(color: Colors.purpleAccent, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                        Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
+                        Row(
+                          children: [
+                            if (!item.isRead) ...[
+                              Container(
+                                width: 6.r,
+                                height: 6.r,
+                                decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
+                              ),
+                              SizedBox(width: 6.w),
+                            ],
+                            Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
                       ],
                     ),
                     SizedBox(height: 6.h),
@@ -258,7 +308,10 @@ class NotificationsScreen extends GetView<NotificationController> {
             "Join Stream",
             isPurple: true,
             icon: Icons.play_circle_fill_rounded,
-            onTap: () => Get.toNamed(AppRoute.liveStream),
+            onTap: () {
+              controller.markAsRead(item.id);
+              Get.toNamed(AppRoute.liveStream);
+            },
           ),
         ],
       ),
@@ -287,7 +340,19 @@ class NotificationsScreen extends GetView<NotificationController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(item.title, style: TextStyle(color: Colors.redAccent, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                        Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
+                        Row(
+                          children: [
+                            if (!item.isRead) ...[
+                              Container(
+                                width: 6.r,
+                                height: 6.r,
+                                decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
+                              ),
+                              SizedBox(width: 6.w),
+                            ],
+                            Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
                       ],
                     ),
                     SizedBox(height: 6.h),
@@ -308,40 +373,61 @@ class NotificationsScreen extends GetView<NotificationController> {
             ],
           ),
           SizedBox(height: 20.h),
-          _buildButton("Bid Now", onTap: () => Get.toNamed(AppRoute.liveStream)),
+          _buildButton(
+            "Bid Now",
+            onTap: () {
+              controller.markAsRead(item.id);
+              Get.toNamed(AppRoute.liveStream);
+            },
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSecurityCard(NotificationModel item) {
-    return _buildBaseCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.all(10.r),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(10.r)),
-            child: Icon(Icons.shield_outlined, color: Colors.white38, size: 20.sp),
-          ),
-          SizedBox(width: 16.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(item.title, style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                    Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
-                  ],
-                ),
-                SizedBox(height: 4.h),
-                Text(item.message, style: TextStyle(color: Colors.white70, fontSize: 12.sp, fontWeight: FontWeight.w600)),
-              ],
+    return GestureDetector(
+      onTap: () => controller.markAsRead(item.id),
+      child: _buildBaseCard(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.r),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(10.r)),
+              child: Icon(Icons.shield_outlined, color: Colors.white38, size: 20.sp),
             ),
-          ),
-        ],
+            SizedBox(width: 16.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(item.title, style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                      Row(
+                        children: [
+                          if (!item.isRead) ...[
+                            Container(
+                              width: 6.r,
+                              height: 6.r,
+                              decoration: const BoxDecoration(color: Color(0xFF8B9BFF), shape: BoxShape.circle),
+                            ),
+                            SizedBox(width: 6.w),
+                          ],
+                          Text(item.timeAgo, style: TextStyle(color: Colors.white24, fontSize: 10.sp, fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(item.message, style: TextStyle(color: Colors.white70, fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

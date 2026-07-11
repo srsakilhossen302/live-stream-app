@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/services/api_client.dart';
@@ -68,13 +68,34 @@ class DiscoverController extends GetxController {
           final hostName = item['curator'] ?? item['sellerId']?['fullName'] ?? "Curator";
           
           String imageUrl = "";
-          final imagePath = item['image'] ?? "";
+          String imagePath = item['image'] ?? "";
+          if (imagePath.isEmpty && item['productId'] is Map) {
+            final prod = item['productId'];
+            final List prodImages = prod['images'] ?? [];
+            if (prodImages.isNotEmpty) {
+              imagePath = prodImages[0].toString();
+            } else {
+              imagePath = prod['image'] ?? prod['coverImage'] ?? "";
+            }
+          }
+
           if (imagePath.isNotEmpty) {
             imageUrl = imagePath.startsWith('http')
                 ? imagePath
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           } else {
-            imageUrl = "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000";
+            imageUrl = "";
+          }
+
+          final seller = item['sellerId'];
+          String hostAvatarUrl = "";
+          if (seller is Map) {
+            final avatarPath = seller['profile'] ?? seller['profileImage'] ?? seller['image'] ?? seller['profileImageUrl'] ?? seller['avatar'] ?? "";
+            if (avatarPath.isNotEmpty) {
+              hostAvatarUrl = avatarPath.startsWith('http')
+                  ? avatarPath
+                  : "${ApiUrl.imageBaseUrl}${avatarPath.startsWith('/') ? avatarPath : '/$avatarPath'}";
+            }
           }
 
           return <String, dynamic>{
@@ -82,23 +103,37 @@ class DiscoverController extends GetxController {
             "host": "Hosted by $hostName",
             "viewers": "${item['viewers'] ?? '0'}",
             "image": imageUrl,
+            "hostAvatar": hostAvatarUrl,
             "raw": item,
           };
         }).toList();
         liveShows.assignAll(parsedShows);
 
         final parsedFeatured = data.take(2).map((item) {
-          final title = item['title'] ?? "Live Item";
-          final priceVal = item['startingBid'] ?? 0;
+          final prod = item['productId'];
+          final title = item['title'] ?? ((prod is Map) ? (prod['title'] ?? prod['name']) : null) ?? "Live Item";
+          final priceVal = (prod is Map) 
+              ? (prod['startingBid'] ?? prod['buyNowPrice'] ?? prod['price'] ?? 0) 
+              : (item['startingBid'] ?? 0);
           
           String imageUrl = "";
-          final imagePath = item['image'] ?? "";
+          String imagePath = item['image'] ?? "";
+          if (imagePath.isEmpty && item['productId'] is Map) {
+            final prod = item['productId'];
+            final List prodImages = prod['images'] ?? [];
+            if (prodImages.isNotEmpty) {
+              imagePath = prodImages[0].toString();
+            } else {
+              imagePath = prod['image'] ?? prod['coverImage'] ?? "";
+            }
+          }
+
           if (imagePath.isNotEmpty) {
             imageUrl = imagePath.startsWith('http')
                 ? imagePath
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           } else {
-            imageUrl = "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=400";
+            imageUrl = "";
           }
 
           return <String, dynamic>{

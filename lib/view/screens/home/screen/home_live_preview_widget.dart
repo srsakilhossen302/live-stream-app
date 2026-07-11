@@ -159,6 +159,28 @@ class _HomeLivePreviewWidgetState extends State<HomeLivePreviewWidget> {
 
   @override
   Widget build(BuildContext context) {
+    Widget background;
+    final String fallback = widget.fallbackImageUrl;
+    if (fallback.isNotEmpty && fallback.startsWith('http')) {
+      background = Image.network(
+        fallback, 
+        fit: BoxFit.cover,          
+        errorBuilder: (_, __, ___) => Container(
+          color: const Color(0xFF161622),
+          child: const Center(
+            child: Icon(Icons.videocam_off_outlined, color: Colors.white24, size: 48),
+          ),
+        ),
+      );
+    } else {
+      background = Container(
+        color: const Color(0xFF161622),
+        child: const Center(
+          child: Icon(Icons.videocam_off_outlined, color: Colors.white24, size: 48),
+        ),
+      );
+    }
+
     if (_remoteJoined && _remoteUid != -1 && _engine != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(32.r),
@@ -176,9 +198,49 @@ class _HomeLivePreviewWidgetState extends State<HomeLivePreviewWidget> {
       );
     }
 
-    // Default static card image
-    return widget.fallbackImageUrl.startsWith('http')
-        ? Image.network(widget.fallbackImageUrl, fit: BoxFit.cover)
-        : Image.asset(widget.fallbackImageUrl, fit: BoxFit.cover);
+    return Stack(
+      children: [
+        Positioned.fill(child: background),
+        if (!_isLoading && !_remoteJoined)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black54,
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8.r,
+                        height: 8.r,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        "STREAM ENDED",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

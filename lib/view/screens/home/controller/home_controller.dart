@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:get/get.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
@@ -63,19 +63,29 @@ class HomeController extends GetxController {
           final hostName = item['curator'] ?? item['sellerId']?['fullName'] ?? "Curator";
           
           String imageUrl = "";
-          final imagePath = item['image'] ?? "";
+          String imagePath = item['image'] ?? "";
+          if (imagePath.isEmpty && item['productId'] is Map) {
+            final prod = item['productId'];
+            final List prodImages = prod['images'] ?? [];
+            if (prodImages.isNotEmpty) {
+              imagePath = prodImages[0].toString();
+            } else {
+              imagePath = prod['image'] ?? prod['coverImage'] ?? "";
+            }
+          }
+
           if (imagePath.isNotEmpty) {
             imageUrl = imagePath.startsWith('http')
                 ? imagePath
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           } else {
-            imageUrl = "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000";
+            imageUrl = "";
           }
 
           final seller = item['sellerId'];
           String avatarUrl = "";
           if (seller is Map) {
-            final avatarPath = seller['profileImage'] ?? seller['image'] ?? "";
+            final avatarPath = seller['profile'] ?? seller['profileImage'] ?? seller['image'] ?? seller['profileImageUrl'] ?? seller['avatar'] ?? "";
             if (avatarPath.isNotEmpty) {
               avatarUrl = avatarPath.startsWith('http')
                   ? avatarPath

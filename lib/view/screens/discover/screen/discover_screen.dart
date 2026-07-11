@@ -103,12 +103,19 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 return Expanded(
                   child: Padding(
                     padding: EdgeInsets.only(right: item == controller.featuredLiveItems.last ? 0 : 16.w),
-                    child: _buildSmallFeaturedCard(
-                      item['category']!,
-                      item['title']!,
-                      item['price']!,
-                      item['image']!,
-                      item['badge']!,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (item['raw'] != null) {
+                          Get.toNamed(AppRoute.viewerLive, arguments: item['raw']);
+                        }
+                      },
+                      child: _buildSmallFeaturedCard(
+                        item['category']!,
+                        item['title']!,
+                        item['price']!,
+                        item['image']!,
+                        item['badge']!,
+                      ),
                     ),
                   ),
                 );
@@ -134,7 +141,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                 padding: EdgeInsets.only(bottom: 20.h),
                 child: GestureDetector(
                   onTap: () => Get.toNamed(AppRoute.viewerLive, arguments: show['raw']),
-                  child: _buildLiveCard(show['title']!, show['host']!, show['viewers']!, show['image']!),
+                  child: _buildLiveCard(show['title']!, show['host']!, show['viewers']!, show['image']!, show['hostAvatar'] ?? ''),
                 ),
               );
             }).toList(),
@@ -219,12 +226,8 @@ class DiscoverScreen extends GetView<DiscoverController> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () => Get.back(),
-            child: Icon(Icons.arrow_back, color: Colors.white, size: 22.sp),
-          ),
           Text("Discover", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-          SizedBox(width: 22.sp),
+          SizedBox(width: 24.sp),
         ],
       ),
     );
@@ -307,7 +310,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
     ));
   }
 
-  Widget _buildLiveCard(String title, String host, String viewers, String imgUrl) {
+  Widget _buildLiveCard(String title, String host, String viewers, String imgUrl, String hostAvatar) {
     return Container(
       height: 320.h,
       width: double.infinity,
@@ -350,7 +353,12 @@ class DiscoverScreen extends GetView<DiscoverController> {
             padding: EdgeInsets.all(20.r),
             child: Row(
               children: [
-                CircleAvatar(radius: 20.r, backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200")),
+                CircleAvatar(
+                  radius: 20.r,
+                  backgroundImage: hostAvatar.isNotEmpty
+                      ? NetworkImage(hostAvatar)
+                      : const NetworkImage("https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200") as ImageProvider,
+                ),
                 SizedBox(width: 14.w),
                 Expanded(
                   child: Column(
@@ -388,15 +396,38 @@ class DiscoverScreen extends GetView<DiscoverController> {
           Container(
             height: 120.h,
             width: double.infinity,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16.r), image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Container(
-                margin: EdgeInsets.all(8.r),
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(6.r)),
-                child: Text(badge, style: TextStyle(color: Colors.black, fontSize: 8.sp, fontWeight: FontWeight.w900)),
-              ),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.black26,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: (imageUrl.isNotEmpty && imageUrl.startsWith('http'))
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: const Color(0xFF1E1E2C),
+                            child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 32.sp),
+                          ),
+                        )
+                      : Container(
+                          color: const Color(0xFF1E1E2C),
+                          child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 32.sp),
+                        ),
+                ),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    margin: EdgeInsets.all(8.r),
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(color: const Color(0xFF8B9BFF), borderRadius: BorderRadius.circular(6.r)),
+                    child: Text(badge, style: TextStyle(color: Colors.black, fontSize: 8.sp, fontWeight: FontWeight.w900)),
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: 12.h),
@@ -512,11 +543,15 @@ class DiscoverScreen extends GetView<DiscoverController> {
   }
 
   Widget _buildDiscoverProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
+    final placeholder = Container(
+      color: const Color(0xFF1E1E2C),
+      child: Center(
+        child: Icon(Icons.image_not_supported_outlined, color: Colors.white24, size: 28.sp),
+      ),
+    );
+
     if (imgStr.isEmpty) {
-      return Image.network(
-        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-        fit: fit,
-      );
+      return placeholder;
     }
     
     if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
@@ -526,16 +561,10 @@ class DiscoverScreen extends GetView<DiscoverController> {
         return Image.memory(
           bytes,
           fit: fit,
-          errorBuilder: (context, error, stackTrace) => Image.network(
-            "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-            fit: fit,
-          ),
+          errorBuilder: (context, error, stackTrace) => placeholder,
         );
       } catch (_) {
-        return Image.network(
-          "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-          fit: fit,
-        );
+        return placeholder;
       }
     }
     
@@ -546,10 +575,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
     return Image.network(
       cleanUrl,
       fit: fit,
-      errorBuilder: (context, error, stackTrace) => Image.network(
-        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-        fit: fit,
-      ),
+      errorBuilder: (context, error, stackTrace) => placeholder,
     );
   }
 

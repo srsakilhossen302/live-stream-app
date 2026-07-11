@@ -4,8 +4,16 @@ import 'package:flutter/material.dart';
 class CustomBackground extends StatelessWidget {
   final Widget? child;
   final Widget? bottomNavigationBar;
+  final bool safeAreaTop;
+  final bool safeAreaBottom;
 
-  const CustomBackground({super.key, this.child, this.bottomNavigationBar});
+  const CustomBackground({
+    super.key,
+    this.child,
+    this.bottomNavigationBar,
+    this.safeAreaTop = true,
+    this.safeAreaBottom = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +106,12 @@ class CustomBackground extends StatelessWidget {
           ),
 
           // Content
-          if (child != null) SafeArea(child: child!),
+          if (child != null)
+            SafeArea(
+              top: safeAreaTop,
+              bottom: safeAreaBottom,
+              child: child!,
+            ),
         ],
       ),
     );

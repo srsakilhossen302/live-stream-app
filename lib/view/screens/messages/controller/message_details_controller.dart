@@ -13,6 +13,7 @@ class MessageDetailsController extends GetxController {
   final chatId = ''.obs;
   final partnerName = 'User'.obs;
   final partnerAvatar = ''.obs;
+  final partnerId = ''.obs;
   final isLoading = true.obs;
 
   final messages = <Map<String, dynamic>>[].obs;
@@ -38,6 +39,7 @@ class MessageDetailsController extends GetxController {
     chatId.value = args['chatId'] ?? '';
     partnerName.value = args['name'] ?? 'User';
     partnerAvatar.value = args['avatar'] ?? '';
+    partnerId.value = args['participantId'] ?? '';
 
     // Populate order info if passed from a purchase flow
     final order = args['order'];

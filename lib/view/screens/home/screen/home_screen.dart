@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -10,6 +10,7 @@ import '../../main/controller/main_controller.dart';
 import '../../purchases/screen/purchases_screen.dart';
 import '../controller/home_controller.dart';
 import 'home_live_preview_widget.dart';
+import '../../../../data/services/api_url.dart';
 class HomeScreen extends GetView<HomeController> {
   const HomeScreen({super.key});
 
@@ -585,7 +586,19 @@ class HomeScreen extends GetView<HomeController> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: Image.network(item.image, fit: BoxFit.cover),
+                child: (item.image.isNotEmpty && item.image.startsWith('http'))
+                    ? Image.network(
+                        item.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: const Color(0xFF1E1E2C),
+                          child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 40.sp),
+                        ),
+                      )
+                    : Container(
+                        color: const Color(0xFF1E1E2C),
+                        child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 40.sp),
+                      ),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -688,7 +701,10 @@ class HomeScreen extends GetView<HomeController> {
     final title = product['title'] ?? product['name'] ?? 'Item';
     final double price = (product['buyNowPrice'] ?? product['price'] ?? 0).toDouble();
     final List images = product['images'] ?? [];
-    final String img = images.isNotEmpty ? images[0].toString() : '';
+    final String rawImg = images.isNotEmpty ? images[0].toString() : '';
+    final String img = (rawImg.isNotEmpty && !rawImg.startsWith('http') && !rawImg.startsWith('data:image/'))
+        ? "${ApiUrl.imageBaseUrl}${rawImg.startsWith('/') ? rawImg : '/$rawImg'}"
+        : rawImg;
     final bool allowTrade = product['allowTrade'] == true;
     final bool isSold = (product['status'] ?? '') == 'sold';
     final String productId = product['_id'] ?? product['id'] ?? '';

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../../../global/widgets/custom_background.dart';
 import '../../../../../../global/widgets/custom_bottom_navbar.dart';
 import '../../../model/purchase_model.dart';
+import '../../../../../../data/services/api_url.dart';
 
 class TrackOrderScreen extends StatelessWidget {
   const TrackOrderScreen({super.key});
@@ -332,17 +333,30 @@ class TrackOrderScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 70.w,
-                height: 70.w,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16.r),
-                  image: DecorationImage(image: NetworkImage(order.image), fit: BoxFit.cover),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10.r),
-                  ],
-                ),
-              ),
+              Builder(builder: (context) {
+                final String rawImg = order.image;
+                final String imgUrl = (rawImg.isNotEmpty && !rawImg.startsWith('http') && !rawImg.startsWith('data:image/'))
+                    ? "${ApiUrl.imageBaseUrl}${rawImg.startsWith('/') ? rawImg : '/$rawImg'}"
+                    : rawImg;
+
+                return Container(
+                  width: 70.w,
+                  height: 70.w,
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(16.r),
+                    image: imgUrl.isNotEmpty
+                        ? DecorationImage(image: NetworkImage(imgUrl), fit: BoxFit.cover)
+                        : null,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10.r),
+                    ],
+                  ),
+                  child: imgUrl.isEmpty
+                      ? const Center(child: Icon(Icons.image, color: Colors.white24))
+                      : null,
+                );
+              }),
               SizedBox(width: 20.w),
               Expanded(
                 child: Column(
