@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../profile/controller/profile_controller.dart';
 import '../controller/bidshwap_controller.dart';
 import '../model/trade_model.dart';
 
@@ -13,6 +14,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
   @override
   Widget build(BuildContext context) {
     Get.put(BidShwapController());
+    final profileController = Get.isRegistered<ProfileController>() ? Get.find<ProfileController>() : null;
     return CustomBackground(
       child: SafeArea(
         child: Column(
@@ -23,10 +25,20 @@ class BidShwapScreen extends GetView<BidShwapController> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  CircleAvatar(
-                    radius: 20.r,
-                    backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
-                  ),
+                  profileController != null
+                      ? Obx(() {
+                          final imageUrl = profileController.profileImageUrl.value;
+                          return CircleAvatar(
+                            radius: 20.r,
+                            backgroundImage: imageUrl.isNotEmpty
+                                ? NetworkImage(imageUrl)
+                                : const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop") as ImageProvider,
+                          );
+                        })
+                      : CircleAvatar(
+                          radius: 20.r,
+                          backgroundImage: const NetworkImage("https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"),
+                        ),
                   Text(
                     "Auction Live",
                     style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
@@ -60,9 +72,49 @@ class BidShwapScreen extends GetView<BidShwapController> {
                     SizedBox(height: 32.h),
                     
                     // Trade List
-                    Obx(() => Column(
-                      children: controller.trades.map((trade) => _buildTradeCard(trade)).toList(),
-                    )),
+                    Obx(() {
+                      if (controller.isLoading.value) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40.h),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF8B9BFF),
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (controller.trades.isEmpty) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 60.h),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  color: Colors.white38,
+                                  size: 48.sp,
+                                ),
+                                SizedBox(height: 16.h),
+                                Text(
+                                  "No trades found",
+                                  style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: controller.trades.map((trade) => _buildTradeCard(trade)).toList(),
+                      );
+                    }),
                     
                     SizedBox(height: 120.h),
                   ],
@@ -90,6 +142,8 @@ class BidShwapScreen extends GetView<BidShwapController> {
           SizedBox(width: 14.w),
           Expanded(
             child: TextField(
+              controller: controller.searchController,
+              onChanged: (value) => controller.searchQuery.value = value,
               style: TextStyle(color: Colors.white, fontSize: 16.sp),
               decoration: InputDecoration(
                 hintText: "Search deals & more",
@@ -154,7 +208,21 @@ class BidShwapScreen extends GetView<BidShwapController> {
             children: [
               CircleAvatar(
                 radius: 18.r,
-                backgroundImage: NetworkImage(trade.userAvatar),
+                backgroundColor: Colors.white10,
+                child: ClipOval(
+                  child: Image.network(
+                    trade.userAvatar,
+                    width: 36.r,
+                    height: 36.r,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Image.network(
+                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
+                      width: 36.r,
+                      height: 36.r,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -195,15 +263,22 @@ class BidShwapScreen extends GetView<BidShwapController> {
                   Container(
                     height: 260.h,
                     width: double.infinity,
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(28.r),
-                      image: DecorationImage(
-                        image: NetworkImage(trade.offeredItemImage),
-                        fit: BoxFit.cover,
-                      ),
                     ),
                     child: Stack(
                       children: [
+                        Positioned.fill(
+                          child: Image.network(
+                            trade.offeredItemImage,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Image.network(
+                              "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=2069&auto=format&fit=crop",
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
                         Positioned(
                           left: 16.w,
                           bottom: 16.h,
@@ -314,11 +389,18 @@ class BidShwapScreen extends GetView<BidShwapController> {
                   "View Details",
                   Colors.white.withOpacity(0.06),
                   Colors.white,
-                  onTap: () => Get.toNamed(AppRoute.tradeDetails),
+                  onTap: () => Get.toNamed(AppRoute.tradeDetails, arguments: trade.rawProduct),
                 ),
               ),
               SizedBox(width: 16.w),
-              Expanded(child: _buildActionButton("Make Offer", const Color(0xFF8B9BFF), Colors.black, onTap: () => Get.toNamed('/make_offer'))),
+              Expanded(
+                child: _buildActionButton(
+                  "Make Offer",
+                  const Color(0xFF8B9BFF),
+                  Colors.black,
+                  onTap: () => Get.toNamed('/make_offer', arguments: trade.rawProduct),
+                ),
+              ),
             ],
           ),
         ],

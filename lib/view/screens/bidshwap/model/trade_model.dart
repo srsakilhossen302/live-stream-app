@@ -8,6 +8,7 @@ class TradeModel {
   final String offeredItemImage;
   final String lookingForItemName;
   final String lookingForItemValue;
+  final Map<String, dynamic>? rawProduct;
 
   TradeModel({
     required this.userName,
@@ -19,5 +20,6 @@ class TradeModel {
     required this.offeredItemImage,
     required this.lookingForItemName,
     required this.lookingForItemValue,
+    this.rawProduct,
   });
 }
