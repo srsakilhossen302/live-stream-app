@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
@@ -460,7 +460,8 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
         });
         if (itemRes.statusCode == 200 || itemRes.statusCode == 201) {
           final itemBody = jsonDecode(itemRes.body);
-          auctionItemId.value = itemBody['data']?['_id'] ?? "";
+          final rawId = itemBody['data']?['_id'] ?? itemBody['data']?['id'] ?? itemBody['_id'] ?? itemBody['id'];
+          auctionItemId.value = (rawId is Map) ? (rawId[r'$oid'] ?? rawId['_id'] ?? '').toString() : rawId?.toString() ?? '';
           currentBidPrice.value = startingBid;
           lastBidderId.value = "";
           lastBidderName.value = "";
@@ -496,7 +497,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       // Fetch fresh stream to get fully-populated auctionItems
       Map<String, dynamic> activeStream = streamData;
       try {
-        final sRes = await _apiClient.getData("${ApiUrl.liveStreams}/$sid");
+        final sRes = await _apiClient.getData("${ApiUrl.startStream}/$sid");
         if (sRes.statusCode == 200) {
           final b = jsonDecode(sRes.body);
           final d = b['data'] ?? b['stream'] ?? b;
@@ -591,7 +592,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     if (auctionItemId.value.isEmpty && streamId.value.isNotEmpty) {
       try {
         // Try individual stream endpoint first
-        var res = await _apiClient.getData("${ApiUrl.liveStreams}/${streamId.value}");
+        var res = await _apiClient.getData("${ApiUrl.startStream}/${streamId.value}");
         Map<String, dynamic>? streamMap;
         if (res.statusCode == 200) {
           final b = jsonDecode(res.body);
