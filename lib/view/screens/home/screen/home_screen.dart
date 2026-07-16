@@ -164,8 +164,8 @@ class HomeScreen extends GetView<HomeController> {
                   ),
                 ),
               ),
-              */
               SizedBox(height: 28.h),
+              */
 
               // Category Chips
               SizedBox(
