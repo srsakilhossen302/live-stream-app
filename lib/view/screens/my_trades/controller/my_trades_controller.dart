@@ -1,5 +1,6 @@
-import 'dart:convert';
 import 'package:get/get.dart';
+import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
@@ -66,8 +67,10 @@ class MyTradesController extends GetxController {
 
         final rawStatus = item['status']?.toString().toLowerCase() ?? "pending";
         MyTradeStatus status = MyTradeStatus.pending;
-        if (rawStatus.contains('accept') || rawStatus.contains('completed') || rawStatus.contains('ship')) {
+        if (rawStatus.contains('completed')) {
           status = MyTradeStatus.completed;
+        } else if (rawStatus.contains('accept') || rawStatus.contains('ship')) {
+          status = MyTradeStatus.shipped;
         } else if (rawStatus.contains('pending')) {
           status = MyTradeStatus.pending;
         } else if (rawStatus.contains('decline') || rawStatus.contains('cancel')) {
@@ -91,6 +94,8 @@ class MyTradesController extends GetxController {
           traderAvatar: avatarUrl.isNotEmpty ? avatarUrl : null,
           date: item['createdAt'] != null ? _formatDate(item['createdAt'].toString()) : "Recently",
           status: status,
+          rawObjectId: item['_id']?.toString(),
+          isUserSender: isUserSender,
         );
       }).toList();
 
@@ -125,5 +130,75 @@ class MyTradesController extends GetxController {
       return myTrades.where((t) => t.status == MyTradeStatus.completed).toList();
     }
     return myTrades;
+  }
+
+  Future<void> acceptTradeOffer(String rawId) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.postData("${ApiUrl.acceptTrade}/$rawId", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar("Success", "Trade offer accepted successfully!", snackPosition: SnackPosition.BOTTOM);
+        await fetchTrades();
+      } else {
+        Get.snackbar("Error", "Failed to accept trade offer: Status code ${response.statusCode}", snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An unexpected error occurred: $e", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> declineTradeOffer(String rawId) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.postData("${ApiUrl.declineTrade}/$rawId", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar("Success", "Trade offer declined successfully!", snackPosition: SnackPosition.BOTTOM);
+        await fetchTrades();
+      } else {
+        Get.snackbar("Error", "Failed to decline trade offer: Status code ${response.statusCode}", snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An unexpected error occurred: $e", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> completeTradeOffer(String rawId) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.postData("/trades/complete/$rawId", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = jsonDecode(response.body);
+        final success = body['success'] ?? false;
+        final data = body['data'];
+        
+        if (success) {
+          if (data is Map && data.containsKey('checkoutUrl')) {
+            final checkoutUrl = data['checkoutUrl'].toString();
+            final uri = Uri.parse(checkoutUrl);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+              Get.snackbar("Success", "Redirecting to Stripe checkout...", snackPosition: SnackPosition.BOTTOM);
+            } else {
+              Get.snackbar("Error", "Could not launch Stripe payment.", snackPosition: SnackPosition.BOTTOM);
+            }
+          } else {
+            Get.snackbar("Success", "Trade completed successfully!", snackPosition: SnackPosition.BOTTOM);
+          }
+          await fetchTrades();
+        } else {
+          Get.snackbar("Error", body['message'] ?? "Failed to complete trade", snackPosition: SnackPosition.BOTTOM);
+        }
+      } else {
+        Get.snackbar("Error", "Failed to complete trade offer. Status: ${response.statusCode}", snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An unexpected error occurred: $e", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

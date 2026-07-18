@@ -105,8 +105,8 @@ class DiscoverScreen extends GetView<DiscoverController> {
                     padding: EdgeInsets.only(right: item == controller.featuredLiveItems.last ? 0 : 16.w),
                     child: GestureDetector(
                       onTap: () {
-                        if (item['raw'] != null) {
-                          Get.toNamed(AppRoute.viewerLive, arguments: item['raw']);
+                        if (item['productRaw'] != null) {
+                          Get.toNamed(AppRoute.tradeDetails, arguments: item['productRaw']);
                         }
                       },
                       child: _buildSmallFeaturedCard(
@@ -123,7 +123,11 @@ class DiscoverScreen extends GetView<DiscoverController> {
             ),
             SizedBox(height: 40.h),
           ],
-          Text("Live Now", style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+          _buildSectionHeader(
+            "Live Now",
+            onSeeAll: () => Get.toNamed(AppRoute.allLiveShows),
+            seeAllText: "VIEW ALL →",
+          ),
           SizedBox(height: 18.h),
           if (controller.liveShows.isEmpty)
             Padding(
@@ -136,7 +140,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
               ),
             )
           else
-            ...controller.liveShows.map((show) {
+            ...controller.liveShows.take(2).map((show) {
               return Padding(
                 padding: EdgeInsets.only(bottom: 20.h),
                 child: GestureDetector(
@@ -404,19 +408,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: (imageUrl.isNotEmpty && imageUrl.startsWith('http'))
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: const Color(0xFF1E1E2C),
-                            child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 32.sp),
-                          ),
-                        )
-                      : Container(
-                          color: const Color(0xFF1E1E2C),
-                          child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 32.sp),
-                        ),
+                  child: _buildDiscoverProductImage(imageUrl),
                 ),
                 Align(
                   alignment: Alignment.topLeft,
@@ -440,7 +432,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
             padding: EdgeInsets.symmetric(vertical: 8.h),
             alignment: Alignment.center,
             decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(12.r)),
-            child: Text("BID NOW", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900)),
+            child: Text(badge == "BUY NOW" ? "BUY NOW" : "BID NOW", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900)),
           ),
         ],
       ),
@@ -452,7 +444,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
     final price = item['price'].toString();
     final imgUrl = item['image'].toString();
     return GestureDetector(
-      onTap: () => Get.to(() => const TradeDetailsScreen(), arguments: item['raw']),
+      onTap: () => Get.toNamed(AppRoute.tradeDetails, arguments: item['raw']),
       child: Container(
         height: 400.h,
         width: 0.85.sw,
@@ -487,7 +479,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                     width: double.infinity,
                     height: 52.h,
                     child: ElevatedButton(
-                      onPressed: () => Get.to(() => const TradeDetailsScreen(), arguments: item['raw']),
+                      onPressed: () => Get.toNamed(AppRoute.tradeDetails, arguments: item['raw']),
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B9BFF), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26.r))),
                       child: Text("Inquire Trade", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900)),
                     ),
@@ -507,7 +499,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
     final lookingFor = item['lookingFor'].toString();
     final img = item['image'].toString();
     return GestureDetector(
-      onTap: () => Get.to(() => const TradeDetailsScreen(), arguments: item['raw']),
+      onTap: () => Get.toNamed(AppRoute.tradeDetails, arguments: item['raw']),
       child: Container(
         padding: EdgeInsets.all(20.r),
         decoration: BoxDecoration(color: const Color(0xFF11111A), borderRadius: BorderRadius.circular(24.r)),

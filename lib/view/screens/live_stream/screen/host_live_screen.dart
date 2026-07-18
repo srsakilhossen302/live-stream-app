@@ -1,4 +1,4 @@
-﻿import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -362,7 +362,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
   }
 
   Widget _buildWinnerOverlay() {
-    final hasWinner = ctrl.lastBidderId.value.isNotEmpty;
+    final hasWinner = ctrl.lastBidderId.value.isNotEmpty && !ctrl.isUnsold.value;
     final winnerName = ctrl.lastBidderName.value;
     final finalPrice = ctrl.currentBidPrice.value;
 
@@ -401,8 +401,8 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
               ),
               SizedBox(height: 24.h),
               Text(
-                hasWinner ? "Auction Completed!" : "Auction Ended",
-                style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
+                hasWinner ? "Auction Completed!" : (ctrl.isUnsold.value ? "Reserve Not Met" : "Auction Ended"),
+                style: TextStyle(color: ctrl.isUnsold.value ? Colors.redAccent : Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900),
               ),
               SizedBox(height: 12.h),
               if (hasWinner) ...[
@@ -439,8 +439,10 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                 ),
               ] else ...[
                 Text(
-                  "No bids were received for this item.",
-                  style: TextStyle(color: Colors.white60, fontSize: 14.sp),
+                  ctrl.isUnsold.value
+                      ? "Reserve price of \$${ctrl.reservePrice.value.toStringAsFixed(0)} was not met.\nThe highest bid was \$${finalPrice.toStringAsFixed(0)}."
+                      : "No bids were received for this item.",
+                  style: TextStyle(color: Colors.white60, fontSize: 14.sp, height: 1.4),
                   textAlign: TextAlign.center,
                 ),
               ],

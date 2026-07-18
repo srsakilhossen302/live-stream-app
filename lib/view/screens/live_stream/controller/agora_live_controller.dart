@@ -56,6 +56,8 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
   final RxBool isCalculatingResult = false.obs;
   final RxBool showWinnerOverlay = false.obs;
   final RxBool timerExtendedNotification = false.obs;
+  final RxDouble reservePrice = 0.0.obs;
+  final RxBool isUnsold = false.obs;
   Timer? _countdownTimer;
 
   // Stream state
@@ -112,6 +114,23 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     Future.delayed(const Duration(milliseconds: 1500), () {
       floatingHearts.removeWhere((h) => h.id == id);
     });
+  }
+
+  Future<void> fetchProductReservePrice(String productId) async {
+    if (productId.isEmpty) return;
+    try {
+      final res = await _apiClient.getData("${ApiUrl.products}/$productId");
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        final data = body['data'] ?? body['product'] ?? body;
+        if (data is Map) {
+          reservePrice.value = double.tryParse(data['reservePrice']?.toString() ?? '0') ?? 0.0;
+          debugPrint("💰 [AgoraLive] Fetched reservePrice for product $productId: ${reservePrice.value}");
+        }
+      }
+    } catch (e) {
+      debugPrint("❌ [AgoraLive] Error fetching product reserve price: $e");
+    }
   }
 
   @override
@@ -284,6 +303,8 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       // Handle New Auction starting event
       if (msgMap['isNewAuction'] == true) {
         auctionItemId.value = msgMap['auctionItemId']?.toString() ?? '';
+        final pId = msgMap['productId']?.toString() ?? '';
+        currentProductId.value = pId;
         currentProductTitle.value = msgMap['productTitle']?.toString() ?? 'Product';
         currentProductImage.value = msgMap['productImage']?.toString() ?? '';
         currentBidPrice.value = double.tryParse(msgMap['startingBid']?.toString() ?? '0') ?? 0.0;
@@ -291,6 +312,10 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
         lastBidderName.value = "";
         showWinnerOverlay.value = false;
         auctionActive.value = true;
+        
+        if (pId.isNotEmpty) {
+          fetchProductReservePrice(pId);
+        }
         
         final duration = int.tryParse(msgMap['timerDuration']?.toString() ?? '60') ?? 60;
         startCountdown(duration);
@@ -346,6 +371,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     bidTimer.value = duration;
     showWinnerOverlay.value = false;
     isCalculatingResult.value = false;
+    isUnsold.value = false;
     
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!auctionActive.value) {
@@ -383,8 +409,29 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     await Future.delayed(const Duration(milliseconds: 2500));
     
     isCalculatingResult.value = false;
+    
+    final finalPrice = currentBidPrice.value;
+    final hasBidder = lastBidderId.value.isNotEmpty;
+    
+    if (hasBidder && reservePrice.value > 0 && finalPrice < reservePrice.value) {
+      isUnsold.value = true;
+    } else {
+      isUnsold.value = false;
+    }
+    
     showWinnerOverlay.value = true;
-    debugPrint("🏆 Auction Ended. Winner: ${lastBidderName.value} ($currentBidPrice)");
+    debugPrint("🏆 Auction Ended. Winner: ${lastBidderName.value} ($currentBidPrice) | Unsold: ${isUnsold.value} (Reserve: ${reservePrice.value})");
+
+    if (isHost.value && auctionItemId.value.isNotEmpty) {
+      try {
+        final res = await _apiClient.postData("/auctions/item/${auctionItemId.value}/complete", {});
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          debugPrint("✅ Auction item completed automatically via timeout");
+        }
+      } catch (e) {
+        debugPrint("❌ Error completing auction item on timeout: $e");
+      }
+    }
   }
 
   // ─────────────────────────────────────────────
@@ -408,13 +455,13 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       currentProductImage.value = productImage;
       this.sellerId.value = sellerIdVal;
       this.currentProductId.value = productId;
+      await fetchProductReservePrice(productId);
       this.bidIncrement.value = 100.0; // default increment
 
       // 1) Create stream on backend
       final streamRes = await _apiClient.postData(ApiUrl.startStream, {
         "title": title,
         "description": description,
-        "sellerId": sellerIdVal,
         "agoraChannelName": channel,
         "status": "live",
       });
@@ -551,9 +598,11 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
             currentProductTitle.value = prod['title']?.toString() ?? "Product";
             final images = prod['images'];
             if (images is List && images.isNotEmpty) currentProductImage.value = images[0]?.toString() ?? "";
+            await fetchProductReservePrice(currentProductId.value);
           } else {
             currentProductId.value = prod?.toString() ?? "";
             currentProductTitle.value = "Product";
+            await fetchProductReservePrice(currentProductId.value);
           }
           currentBidPrice.value = double.tryParse(item['currentBid']?.toString() ?? item['startingBid']?.toString() ?? "0") ?? 0;
           bidIncrement.value = double.tryParse(item['bidIncrement']?.toString() ?? "100") ?? 100.0;
@@ -645,7 +694,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     }
     try {
       final bidderId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
-      final res = await _apiClient.postData(ApiUrl.placeBid, {"auctionItemId": auctionItemId.value, "bidderId": bidderId, "bidAmount": amount});
+      final res = await _apiClient.postData(ApiUrl.placeBid, {"auctionItemId": auctionItemId.value, "bidAmount": amount});
       if (res.statusCode == 200 || res.statusCode == 201) {
         currentBidPrice.value = amount;
         String usernameStr = "@user"; String avatarUrl = "";
@@ -726,6 +775,8 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       extendTimerLocal();
     } else if (type == 'new_auction') {
       auctionItemId.value = payload['auctionItemId']?.toString() ?? '';
+      final pId = payload['productId']?.toString() ?? '';
+      currentProductId.value = pId;
       currentProductTitle.value = payload['productTitle']?.toString() ?? 'Product';
       currentProductImage.value = payload['productImage']?.toString() ?? '';
       currentBidPrice.value = double.tryParse(payload['startingBid']?.toString() ?? '0') ?? 0.0;
@@ -733,6 +784,10 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       lastBidderName.value = "";
       showWinnerOverlay.value = false;
       auctionActive.value = true;
+      
+      if (pId.isNotEmpty) {
+        fetchProductReservePrice(pId);
+      }
       
       final duration = int.tryParse(payload['timerDuration']?.toString() ?? '60') ?? 60;
       startCountdown(duration);
@@ -946,6 +1001,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
           currentProductTitle.value = productTitle;
           currentProductImage.value = productImage;
           currentBidPrice.value = startingBid;
+          await fetchProductReservePrice(productId);
           lastBidderId.value = "";
           lastBidderName.value = "";
           showWinnerOverlay.value = false;
@@ -1017,6 +1073,18 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     _countdownTimer?.cancel();
     
     if (wasHost && streamId.value.isNotEmpty) {
+      // Complete the active auction item on the backend
+      if (auctionItemId.value.isNotEmpty) {
+        try {
+          final res = await _apiClient.postData("/auctions/item/${auctionItemId.value}/complete", {});
+          if (res.statusCode == 200 || res.statusCode == 201) {
+            debugPrint("✅ Auction item completed manually by host ending stream");
+          }
+        } catch (e) {
+          debugPrint("❌ Error completing auction item on end stream: $e");
+        }
+      }
+
       // 1. Update stream status to ended in backend
       try {
         final res = await _apiClient.patchData("${ApiUrl.startStream}/${streamId.value}/status", {

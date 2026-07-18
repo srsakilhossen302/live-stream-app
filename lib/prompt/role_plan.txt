@@ -1,0 +1,34 @@
+User & Seller Verification Flow Guide
+This document explains the dual verification system implemented in the backend. App developers must understand the difference between a "Verified Account" (Email/OTP) and a "Verified Seller" (Admin Approved) to correctly handle API responses and user flows.
+1. Normal User Verification (Account / Email Verification)
+This is the standard verification process that happens when a user creates a new account to prove they own the provided email or phone number.
+Process: After registration, the backend sends a One-Time Passcode (OTP). The app submits this OTP to verify the account.
+Backend Effect: Upon successful OTP verification, the backend sets the user's verified field to true.
+Meaning: verified: true simply means the user is a legitimate, active user on the platform. They can browse, buy products, and place bids in auctions.
+Important: Being verified: true does NOT give the user permission to act as a seller (e.g., list products or start live streams).
+2. Seller Verification (Admin Approval)
+Selling on the platform requires an additional layer of security and trust. A user must be explicitly approved by an Admin to become a seller.
+How to Request Seller Status (App Developer Flow)
+Trigger the Request: When a user (who is currently a buyer) wants to become a seller, the app must call the role-switching API.
+Endpoint: PATCH /users/switch-role
+Payload:
+Backend Effect:
+The backend adds "seller" to the user's roles array.
+The backend automatically sets a special field called sellerVerified to false.
+The user is instantly placed in the Admin Dashboard's "Pending Seller Verifications" queue.
+Admin Approval Process
+The Admin reviews the user's request from the dashboard.
+If the Admin clicks Approve, the backend updates the user's sellerVerified field to true.
+The user is now a fully verified seller.
+3. Handling Permissions & Errors in the App
+The backend enforces strict security rules based on the sellerVerified status. App developers must handle the following scenario gracefully.
+The 403 Forbidden Error
+If a user attempts to perform a seller-only action (like creating a product or starting a live auction stream) while their sellerVerified status is still false (i.e., pending admin approval), the backend will block the request and return a 403 Forbidden status code.
+Example Blocked Endpoints:
+POST /products (Creating a product listing)
+POST /auctions/stream (Starting a live stream)
+Backend Error Response:
+json{  "success": false,  "message": "Your seller account is not verified yet. Please wait for admin approval."}
+App Developer Action Item:
+When calling seller-restricted APIs, always catch the 403 error. If this specific message is returned, show a user-friendly UI alert (e.g., a modal or toast) saying: "Your seller application is currently under review by our team. You will be notified once approved." Do not treat it as a generic app crash or network error.
+json{  "role": "seller"}

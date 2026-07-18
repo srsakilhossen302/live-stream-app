@@ -39,40 +39,48 @@ class ProfileScreen extends GetView<ProfileController> {
             ),
 
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    SizedBox(height: 8.h),
+              child: RefreshIndicator(
+                onRefresh: () => controller.fetchProfileData(),
+                color: const Color(0xFF8B9BFF),
+                backgroundColor: const Color(0xFF11111A),
+                strokeWidth: 2.5,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 8.h),
 
-                    // Profile Info — Facebook-style cover
-                    _buildProfileHeader(),
+                      // Profile Info — Facebook-style cover
+                      _buildProfileHeader(),
 
-                    SizedBox(height: 24.h),
+                      SizedBox(height: 24.h),
 
-                    // Stats Row
-                    _buildStatsRow(),
+                      // Stats Row
+                      _buildStatsRow(),
 
-                    SizedBox(height: 32.h),
+                      SizedBox(height: 32.h),
 
-                    // Tabs
-                    _buildTabBar(),
+                      // Tabs
+                      _buildTabBar(),
 
-                    SizedBox(height: 24.h),
+                      SizedBox(height: 24.h),
 
-                    // Content Section
-                    Obx(() {
-                      if (controller.selectedTab.value == 1) {
-                        return _buildActivityTab();
-                      } else if (controller.selectedTab.value == 2) {
-                        return _buildSettingsTab();
-                      } else {
-                        return _buildListingsGrid();
-                      }
-                    }),
+                      // Content Section
+                      Obx(() {
+                        if (controller.selectedTab.value == 1) {
+                          return _buildActivityTab();
+                        } else if (controller.selectedTab.value == 2) {
+                          return _buildSettingsTab();
+                        } else {
+                          return _buildListingsGrid();
+                        }
+                      }),
 
-                    SizedBox(height: 120.h),
-                  ],
+                      SizedBox(height: 120.h),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -849,6 +857,8 @@ class ProfileScreen extends GetView<ProfileController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildRoleSwitcherCard(),
+        SizedBox(height: 16.h),
         _buildSettingsSection("ACCOUNT", [
           _buildSettingsTile(
             svgPath: "assets/icons/Edit Profile.svg",
@@ -927,6 +937,374 @@ class ProfileScreen extends GetView<ProfileController> {
       ],
     );
   }
+
+  Widget _buildRoleSwitcherCard() {
+    return Obx(() {
+      final isSeller = controller.role.value == 'seller';
+      final sellerVerified = controller.sellerVerified.value;
+      final isLoading = controller.isSwitchingRole.value;
+
+      // State 1: Buyer
+      if (!isSeller) return _buildBuyerCard(isLoading);
+      // State 2: Seller Pending
+      if (!sellerVerified) return _buildPendingSellerCard();
+      // State 3: Verified Seller
+      return _buildVerifiedSellerCard();
+    });
+  }
+
+  /// STATE 1 — Buyer: show CTA to apply as seller
+  Widget _buildBuyerCard(bool isLoading) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F1E36), Color(0xFF0D0D1A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.15), width: 1.5),
+        boxShadow: [BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.04), blurRadius: 18, offset: const Offset(0, 6))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.r),
+                decoration: BoxDecoration(color: const Color(0xFF8B9BFF).withOpacity(0.10), shape: BoxShape.circle),
+                child: Icon(Icons.shopping_bag_outlined, color: const Color(0xFF8B9BFF), size: 22.sp),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Buyer Account', style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                    SizedBox(height: 3.h),
+                    Text('Browse, bid & buy from the platform', style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20.h),
+          Divider(color: Colors.white.withOpacity(0.05)),
+          SizedBox(height: 14.h),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Want to sell?', style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800)),
+                    SizedBox(height: 3.h),
+                    Text('Apply to list products & host live streams.', style: TextStyle(color: Colors.white38, fontSize: 11.sp, height: 1.4)),
+                  ],
+                ),
+              ),
+              SizedBox(width: 12.w),
+              GestureDetector(
+                onTap: isLoading ? null : () => _showBecomeSeller(),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 11.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFF8B9BFF), Color(0xFF6C7BFF)]),
+                    borderRadius: BorderRadius.circular(20.r),
+                    boxShadow: [BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))],
+                  ),
+                  child: isLoading
+                      ? SizedBox(width: 16.r, height: 16.r, child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.storefront_rounded, color: Colors.white, size: 14.sp),
+                            SizedBox(width: 5.w),
+                            Text('Apply Now', style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// STATE 2 — Seller Pending: informational only, no action
+  Widget _buildPendingSellerCard() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1200), Color(0xFF0D0D1A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.18), width: 1.5),
+        boxShadow: [BoxShadow(color: const Color(0xFFFFB800).withOpacity(0.04), blurRadius: 18, offset: const Offset(0, 6))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.r),
+                decoration: BoxDecoration(color: const Color(0xFFFFB800).withOpacity(0.10), shape: BoxShape.circle),
+                child: Icon(Icons.hourglass_top_rounded, color: const Color(0xFFFFB800), size: 22.sp),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('Seller Application', style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                        SizedBox(width: 8.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFB800).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.28)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(width: 5.r, height: 5.r, decoration: const BoxDecoration(color: Color(0xFFFFB800), shape: BoxShape.circle)),
+                              SizedBox(width: 4.w),
+                              Text('PENDING', style: TextStyle(color: const Color(0xFFFFB800), fontSize: 9.sp, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5.h),
+                    Text('Seller account request submitted. Please wait for approval.', style: TextStyle(color: Colors.white54, fontSize: 12.sp, height: 1.45)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFB800).withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.12)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded, color: const Color(0xFFFFB800), size: 15.sp),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    'Admin review is in progress. You will be notified once your seller account is approved.',
+                    style: TextStyle(color: const Color(0xFFFFB800).withOpacity(0.85), fontSize: 11.sp, fontWeight: FontWeight.w600, height: 1.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 14.h),
+          Row(
+            children: [
+              _buildAccessChip(Icons.shopping_bag_outlined, 'Buy', true),
+              SizedBox(width: 8.w),
+              _buildAccessChip(Icons.gavel_rounded, 'Bid', true),
+              SizedBox(width: 8.w),
+              _buildAccessChip(Icons.storefront_rounded, 'Sell', false),
+              SizedBox(width: 8.w),
+              _buildAccessChip(Icons.videocam_outlined, 'Stream', false),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// STATE 3 — Verified Seller: all features active
+  Widget _buildVerifiedSellerCard() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF12003A), Color(0xFF0D0D1A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28.r),
+        border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.22), width: 1.5),
+        boxShadow: [BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.07), blurRadius: 20, offset: const Offset(0, 8))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10.r),
+                decoration: BoxDecoration(color: const Color(0xFF8B9BFF).withOpacity(0.15), shape: BoxShape.circle),
+                child: Icon(Icons.storefront_rounded, color: const Color(0xFF8B9BFF), size: 22.sp),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text('Seller Account', style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                        SizedBox(width: 6.w),
+                        Icon(Icons.verified_rounded, color: const Color(0xFF8B9BFF), size: 16.sp),
+                      ],
+                    ),
+                    SizedBox(height: 3.h),
+                    Text('Verified Merchant · All features unlocked', style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B9BFF).withOpacity(0.06),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.12)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: const Color(0xFF8B9BFF), size: 15.sp),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    'Your seller account is fully active. You can list products and host live auction streams.',
+                    style: TextStyle(color: const Color(0xFF8B9BFF).withOpacity(0.9), fontSize: 11.sp, fontWeight: FontWeight.w600, height: 1.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 14.h),
+          Row(
+            children: [
+              _buildAccessChip(Icons.shopping_bag_outlined, 'Buy', true),
+              SizedBox(width: 8.w),
+              _buildAccessChip(Icons.gavel_rounded, 'Bid', true),
+              SizedBox(width: 8.w),
+              _buildAccessChip(Icons.storefront_rounded, 'Sell', true),
+              SizedBox(width: 8.w),
+              _buildAccessChip(Icons.videocam_outlined, 'Stream', true),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccessChip(IconData icon, String label, bool active) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8.h),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFF8B9BFF).withOpacity(0.08) : Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: active ? const Color(0xFF8B9BFF).withOpacity(0.18) : Colors.white.withOpacity(0.05),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 14.sp, color: active ? const Color(0xFF8B9BFF) : Colors.white24),
+            SizedBox(height: 3.h),
+            Text(label, style: TextStyle(color: active ? const Color(0xFF8B9BFF) : Colors.white24, fontSize: 9.sp, fontWeight: FontWeight.w800)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBecomeSeller() {
+    Get.dialog(
+      Dialog(
+        backgroundColor: const Color(0xFF11111A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.r)),
+        child: Padding(
+          padding: EdgeInsets.all(24.r),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(color: const Color(0xFF8B9BFF).withOpacity(0.10), shape: BoxShape.circle),
+                child: Icon(Icons.storefront_rounded, color: const Color(0xFF8B9BFF), size: 32.sp),
+              ),
+              SizedBox(height: 18.h),
+              Text('Become a Seller?', style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
+              SizedBox(height: 10.h),
+              Text(
+                'Submit your seller application for admin review. Once approved, you can list products and host live auction streams.',
+                style: TextStyle(color: Colors.white60, fontSize: 13.sp, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 12.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+                decoration: BoxDecoration(color: const Color(0xFFFFB800).withOpacity(0.06), borderRadius: BorderRadius.circular(12.r), border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.15))),
+                child: Row(
+                  children: [
+                    Icon(Icons.hourglass_top_rounded, color: const Color(0xFFFFB800), size: 14.sp),
+                    SizedBox(width: 8.w),
+                    Expanded(child: Text('Approval is not instant. Admin reviews may take some time.', style: TextStyle(color: const Color(0xFFFFB800).withOpacity(0.85), fontSize: 11.sp, fontWeight: FontWeight.w600))),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Get.back(),
+                      child: Text('Cancel', style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back();
+                        controller.switchRole('seller');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8B9BFF),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                      ),
+                      child: Text('Apply Now', style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildSettingsSection(String title, List<Widget> children) {
     return Column(

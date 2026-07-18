@@ -1,0 +1,10 @@
+Product Category Guide for App Developers
+When an app developer is building the "Add Product" (Create Listing) screen, they must follow the backend's validation rules for the category and condition fields.
+1. Category Field (Database Reference ID)
+Important Update: The category field for creating a product (POST /products) is now a Database Reference (ObjectId). It no longer accepts a string name.
+You must fetch the categories from the Home Page Category API (GET /categories) and pass the _id of the selected category into the product's category field.
+Example Payload for POST /products:
+json{  "title": "Vintage Rolex Daytona",  "category": "6a5a8e2e4cc6ec83cdb85f84", // ✅ Valid MongoDB ObjectId  "condition": "Good",  ...}
+When you fetch a product (GET /products), the category field will automatically be populated with its details (e.g., name, image, icon, theme).
+Example Response from GET /products:
+json{  "title": "Vintage Rolex Daytona",  "category": {      "_id": "6a5a8e2e4cc6ec83cdb85f84",      "name": "Watches",      "image": "url_to_image",      "icon": "url_to_icon"  },  "condition": "Good",  ...}

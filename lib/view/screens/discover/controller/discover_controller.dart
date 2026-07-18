@@ -64,13 +64,30 @@ class DiscoverController extends GetxController {
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body)['data'] ?? [];
         final parsedShows = data.where((item) => item['status'] == 'live').map((item) {
-          final title = item['title'] ?? "Live Show";
           final hostName = item['curator'] ?? item['sellerId']?['fullName'] ?? "Curator";
+          
+          // Get product info from productId directly or nested auctionItems
+          Map<String, dynamic>? prod;
+          if (item['productId'] is Map) {
+            prod = Map<String, dynamic>.from(item['productId']);
+          }
+
+          final auctionItems = item['auctionItems'];
+          if (auctionItems is List && auctionItems.isNotEmpty) {
+            final firstAuctionItem = auctionItems[0];
+            if (firstAuctionItem is Map) {
+              final prodData = firstAuctionItem['productId'];
+              if (prod == null && prodData is Map) {
+                prod = Map<String, dynamic>.from(prodData);
+              }
+            }
+          }
+
+          final title = item['title'] ?? (prod != null ? (prod['title'] ?? prod['name']) : null) ?? "Live Show";
           
           String imageUrl = "";
           String imagePath = item['image'] ?? "";
-          if (imagePath.isEmpty && item['productId'] is Map) {
-            final prod = item['productId'];
+          if (imagePath.isEmpty && prod != null) {
             final List prodImages = prod['images'] ?? [];
             if (prodImages.isNotEmpty) {
               imagePath = prodImages[0].toString();
@@ -80,7 +97,7 @@ class DiscoverController extends GetxController {
           }
 
           if (imagePath.isNotEmpty) {
-            imageUrl = imagePath.startsWith('http')
+            imageUrl = (imagePath.startsWith('http') || imagePath.startsWith('data:image/'))
                 ? imagePath
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           } else {
@@ -109,17 +126,59 @@ class DiscoverController extends GetxController {
         }).toList();
         liveShows.assignAll(parsedShows);
 
-        final parsedFeatured = data.take(2).map((item) {
-          final prod = item['productId'];
-          final title = item['title'] ?? ((prod is Map) ? (prod['title'] ?? prod['name']) : null) ?? "Live Item";
-          final priceVal = (prod is Map) 
-              ? (prod['startingBid'] ?? prod['buyNowPrice'] ?? prod['price'] ?? 0) 
-              : (item['startingBid'] ?? 0);
-          
+        final List<Map<String, dynamic>> parsedFeatured = [];
+        for (var item in data.take(2)) {
+          String prodId = "";
+          if (item['productId'] is Map) {
+            prodId = (item['productId']['_id'] ?? item['productId']['id'] ?? "").toString();
+          } else if (item['productId'] != null) {
+            prodId = item['productId'].toString();
+          }
+
+          final auctionItems = item['auctionItems'];
+          if (auctionItems is List && auctionItems.isNotEmpty) {
+            final firstAuctionItem = auctionItems[0];
+            if (firstAuctionItem is Map) {
+              final prodData = firstAuctionItem['productId'];
+              if (prodData is Map) {
+                if (prodId.isEmpty) {
+                  prodId = (prodData['_id'] ?? prodData['id'] ?? "").toString();
+                }
+              } else if (prodData != null && prodId.isEmpty) {
+                prodId = prodData.toString();
+              }
+            }
+          }
+
+          Map<String, dynamic>? prod;
+          if (prodId.isNotEmpty) {
+            try {
+              final pRes = await _apiClient.getData("/products/$prodId");
+              if (pRes.statusCode == 200) {
+                final body = jsonDecode(pRes.body);
+                final pData = body['data'] ?? body['product'] ?? body;
+                if (pData is Map) {
+                  prod = Map<String, dynamic>.from(pData);
+                }
+              }
+            } catch (e) {
+              debugPrint("Error fetching product details for discover: $e");
+            }
+          }
+
+          if (prod == null && item['productId'] is Map) {
+            prod = Map<String, dynamic>.from(item['productId']);
+          }
+
+          final title = item['title'] ?? (prod != null ? (prod['title'] ?? prod['name']) : null) ?? "Live Item";
+          double priceVal = 0.0;
+          if (prod != null) {
+            priceVal = double.tryParse(prod['buyNowPrice']?.toString() ?? prod['estValue']?.toString() ?? prod['price']?.toString() ?? prod['startingBid']?.toString() ?? '0') ?? 0.0;
+          }
+
           String imageUrl = "";
           String imagePath = item['image'] ?? "";
-          if (imagePath.isEmpty && item['productId'] is Map) {
-            final prod = item['productId'];
+          if (imagePath.isEmpty && prod != null) {
             final List prodImages = prod['images'] ?? [];
             if (prodImages.isNotEmpty) {
               imagePath = prodImages[0].toString();
@@ -129,22 +188,41 @@ class DiscoverController extends GetxController {
           }
 
           if (imagePath.isNotEmpty) {
-            imageUrl = imagePath.startsWith('http')
+            imageUrl = (imagePath.startsWith('http') || imagePath.startsWith('data:image/'))
                 ? imagePath
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           } else {
             imageUrl = "";
           }
 
-          return <String, dynamic>{
-            "category": (item['category'] ?? "AUCTION").toString().toUpperCase(),
+          if (prod == null) {
+            final seller = item['sellerId'];
+            prod = {
+              "id": item['id'] ?? item['_id'] ?? "dummy_id_${title}",
+              "_id": item['_id'] ?? item['id'] ?? "dummy_id_${title}",
+              "title": title,
+              "description": item['description'] ?? "No description provided.",
+              "category": "PRODUCT",
+              "condition": "BRAND NEW",
+              "estValue": "0",
+              "price": "0",
+              "buyNowPrice": "0",
+              "images": imageUrl.isNotEmpty ? [imageUrl] : [],
+              "sellerId": seller,
+              "allowTrade": true,
+            };
+          }
+
+          parsedFeatured.add(<String, dynamic>{
+            "category": "PRODUCT",
             "title": title,
-            "price": "\$${priceVal.toString()}",
+            "price": "\$${priceVal.toStringAsFixed(0)}",
             "image": imageUrl,
-            "badge": "LIVE NOW",
+            "badge": "BUY NOW",
             "raw": item,
-          };
-        }).toList();
+            "productRaw": prod,
+          });
+        }
         featuredLiveItems.assignAll(parsedFeatured);
       }
     } catch (e) {

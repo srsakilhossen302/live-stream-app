@@ -9,6 +9,8 @@ class MyTradeModel {
   final String? traderAvatar;
   final String? date;
   final MyTradeStatus status;
+  final String? rawObjectId;
+  final bool? isUserSender;
 
   MyTradeModel({
     required this.tradeId,
@@ -19,5 +21,7 @@ class MyTradeModel {
     this.traderAvatar,
     this.date,
     required this.status,
+    this.rawObjectId,
+    this.isUserSender,
   });
 }

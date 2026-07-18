@@ -1,0 +1,436 @@
+১. Product Model
+
+প্রতিটি product-এর কিছু তথ্য (fields) থাকবে।
+
+Product
+│
+├── estValue
+├── startingBid
+├── reservePrice
+├── buyNowPrice
+├── allowTrade
+└── status
+
+এগুলোর কাজ কী?
+
+estValue
+
+Product-এর আনুমানিক বাজার মূল্য।
+
+উদাহরণ:
+
+iPhone 14 এর estimated value = $700
+
+এটা শুধু reference হিসেবে থাকে।
+
+startingBid
+
+Auction শুরু হলে প্রথম bid কত থেকে শুরু হবে।
+
+উদাহরণ
+
+startingBid = $100
+
+কেউ $50 bid করতে পারবে না।
+
+প্রথম bid কমপক্ষে $100 হতে হবে।
+
+reservePrice
+
+Seller-এর minimum acceptable price।
+
+ধরো
+
+reservePrice = $500
+
+Auction শেষ হলো $450-এ।
+
+তাহলে product বিক্রি হবে না।
+
+কারণ seller minimum $500 চেয়েছিল।
+
+buyNowPrice
+
+Auction না করেই সরাসরি কিনে নেওয়ার দাম।
+
+ধরো
+
+buyNowPrice = $650
+
+Buyer যদি সাথে সাথে $650 দেয়
+
+তাহলে auction বাদ।
+
+Direct sold.
+
+allowTrade
+true
+
+মানে exchange করা যাবে।
+
+false
+
+মানে শুধু sell করা যাবে।
+
+status
+
+Product-এর বর্তমান অবস্থা।
+
+active
+
+এখন available।
+
+↓
+
+pending
+
+Transaction চলছে।
+
+↓
+
+sold
+
+Complete।
+
+এখন Product কিভাবে Sell হয়?
+
+দুইটা উপায়।
+
+Method 1 — Live Auction
+
+Flow:
+
+Seller
+     │
+     ▼
+Product Upload
+     │
+     ▼
+Live Stream Start
+     │
+     ▼
+Viewers Join
+     │
+     ▼
+Real-time Bidding
+     │
+     ▼
+Timer End
+     │
+     ▼
+Highest Bid Wins
+     │
+     ▼
+Payment
+     │
+     ▼
+Ownership Transfer
+
+ধরি
+
+Seller একটি painting upload করলো।
+
+startingBid = $100
+
+reservePrice = $500
+
+Auction শুরু হলো।
+
+People bid করলো।
+
+User A → $200
+
+User B → $300
+
+User C → $450
+
+User D → $600
+
+Timer শেষ।
+
+Highest bid
+
+$600
+
+Reserve price ছিল
+
+$500
+
+So
+
+Winner = User D
+
+↓
+
+Payment
+
+↓
+
+Product
+
+status
+
+active
+
+↓
+
+pending
+
+↓
+
+sold
+
+যদি highest bid হতো
+
+$450
+
+তাহলে
+
+reservePrice = $500
+
+Seller accept করবে না।
+
+Result
+
+unsold
+এই Auction-এর সময় Backend-এ কী হয়?
+
+ধরো
+
+১০০ জন live দেখছে।
+
+প্রত্যেক bid real-time update হবে।
+
+User A bid
+
+↓
+
+Socket.IO
+
+↓
+
+Server
+
+↓
+
+সব viewer-এর screen update
+
+এইজন্য Socket.IO ব্যবহার হয়।
+
+ভিডিও দেখানোর জন্য
+
+Agora
+Method 2 — Buy Now
+
+Auction-এর দরকার নেই।
+
+Buyer price দেখে
+
+Buy Now
+
+click করলো।
+
+buyNowPrice = $700
+
+↓
+
+Payment
+
+↓
+
+Stripe Success
+
+↓
+
+status
+
+active
+
+↓
+
+sold
+
+Finished.
+
+এবার Exchange
+
+এটা একটু আলাদা।
+
+এখানে টাকা প্রধান বিষয় না।
+
+Product swap হয়।
+
+ধরি
+
+User A
+
+Sports Card
+
+User B
+
+Painting
+
+দুইজনের product-এই
+
+allowTrade = true
+
+A ভাবলো
+
+"আমি painting চাই।"
+
+তখন
+
+Trade Offer পাঠালো।
+
+Offer
+
+My Product
+
+Sports Card
+
+↓
+
+Your Product
+
+Painting
+
+যদি painting বেশি দামী হয়
+
+তাহলে
+
+Cash supplement যোগ করতে পারে।
+
+My Card
+
++
+
+$50
+
+↓
+
+Your Painting
+
+Offer চলে গেলো।
+
+Pending
+
+B-এর কাছে notification গেলো।
+
+Accept?
+
+Decline?
+
+যদি Accept করে
+
+তাহলে
+
+দুইটা product
+
+active
+
+↓
+
+pending
+
+কারণ shipping হবে।
+
+Shipping complete
+
+↓
+
+Ownership বদলাবে।
+
+আগে
+
+Sports Card
+
+Owner = User A
+
+পরে
+
+Owner = User B
+
+আগে
+
+Painting
+
+Owner = User B
+
+পরে
+
+Owner = User A
+
+Finished.
+
+Exchange Flow
+User A
+   │
+   ▼
+Select Product
+   │
+   ▼
+Trade Offer
+   │
+   ▼
+User B Receives
+   │
+   ├── Reject ❌
+   │
+   ▼
+Accept
+   │
+   ▼
+Pending
+   │
+   ▼
+Shipping
+   │
+   ▼
+Ownership Swap
+কেন Pending লাগে?
+
+কারণ Accept করলেই সাথে সাথে owner change করলে সমস্যা হতে পারে।
+
+ধরো
+
+A product পাঠালো
+
+কিন্তু B পাঠালো না।
+
+তখন?
+
+তাই
+
+Pending
+
+অবস্থায় রাখা হয়।
+
+অনেক marketplace-এ escrow ব্যবহার করা হয়, যেখানে সিস্টেম transaction শেষ না হওয়া পর্যন্ত উভয় পক্ষের অবস্থা ধরে রাখে।
+
+Sell vs Exchange
+Feature	Sell	Exchange
+কী আদান-প্রদান হয়	টাকা	Product ↔ Product
+Payment	Buyer → Seller	Optional cash supplement
+Owner Change	Buyer becomes owner	দুইজনের ownership swap
+Live Auction	✅	❌
+Buy Now	✅	❌
+allowTrade লাগে	❌	✅
+Stripe লাগে	✅	Optional
+Socket.IO লাগে	Auction-এর জন্য	সাধারণত লাগে না
+পুরো সিস্টেমের ধারণা
+                    Marketplace
+                         │
+        ┌────────────────┴────────────────┐
+        │                                 │
+      SELL                            EXCHANGE
+        │                                 │
+   ┌────┴─────┐                    Trade Offer
+   │          │                         │
+Auction     Buy Now                     │
+   │          │                    Accept/Reject
+   │          │                         │
+Highest Bid  Payment                 Pending
+   │          │                         │
+   └──────┬───┘                         │
+          ▼                             ▼
+       Product Sold              Ownership Swap

@@ -303,6 +303,67 @@ class MyTradesScreen extends GetView<MyTradesController> {
               ],
             ),
             SizedBox(height: 28.h),
+            if (trade.status == MyTradeStatus.pending && trade.isUserSender == false) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      "Accept Trade",
+                      const Color(0xFF8B9BFF),
+                      const Color(0xFF0F0B1E),
+                      onTap: () {
+                        if (trade.rawObjectId != null) {
+                          controller.acceptTradeOffer(trade.rawObjectId!);
+                        }
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (trade.rawObjectId != null) {
+                          controller.declineTradeOffer(trade.rawObjectId!);
+                        }
+                      },
+                      child: Container(
+                        height: 56.h,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(28.r),
+                          border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "Decline",
+                          style: TextStyle(color: Colors.redAccent, fontSize: 15.sp, fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+            ],
+            if (trade.status == MyTradeStatus.shipped) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      "Complete Trade",
+                      const Color(0xFF22C55E),
+                      Colors.white,
+                      onTap: () {
+                        if (trade.rawObjectId != null) {
+                          controller.completeTradeOffer(trade.rawObjectId!);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.h),
+            ],
             Row(
               children: [
                 Expanded(

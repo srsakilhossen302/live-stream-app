@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../../profile/controller/profile_controller.dart';
 import '../controller/bidshwap_controller.dart';
 import '../model/trade_model.dart';
+import '../../../../data/services/api_url.dart';
 
 class BidShwapScreen extends GetView<BidShwapController> {
   const BidShwapScreen({super.key});
@@ -195,11 +197,11 @@ class BidShwapScreen extends GetView<BidShwapController> {
 
   Widget _buildTradeCard(TradeModel trade) {
     return Container(
-      margin: EdgeInsets.only(bottom: 24.h),
-      padding: EdgeInsets.all(28.r),
+      margin: EdgeInsets.only(bottom: 20.h),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
       decoration: BoxDecoration(
         color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(36.r),
+        borderRadius: BorderRadius.circular(28.r),
       ),
       child: Column(
         children: [
@@ -216,7 +218,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
                     height: 36.r,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Image.network(
-                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
+                      "",
                       width: 36.r,
                       height: 36.r,
                       fit: BoxFit.cover,
@@ -251,7 +253,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
             ],
           ),
           
-          SizedBox(height: 28.h),
+          SizedBox(height: 16.h),
           
           // Offered Item & Looking For Section
           Stack(
@@ -261,32 +263,28 @@ class BidShwapScreen extends GetView<BidShwapController> {
               Column(
                 children: [
                   Container(
-                    height: 260.h,
+                    height: 200.h,
                     width: double.infinity,
                     clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28.r),
+                      borderRadius: BorderRadius.circular(20.r),
                     ),
                     child: Stack(
                       children: [
                         Positioned.fill(
-                          child: Image.network(
+                          child: _buildTradeItemImageWidget(
                             trade.offeredItemImage,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Image.network(
-                              "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=2069&auto=format&fit=crop",
-                              fit: BoxFit.cover,
-                            ),
                           ),
                         ),
                         Positioned(
-                          left: 16.w,
-                          bottom: 16.h,
+                          left: 12.w,
+                          bottom: 12.h,
                           child: Container(
-                            padding: EdgeInsets.all(16.r),
+                            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                             decoration: BoxDecoration(
                               color: Colors.black.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(18.r),
+                              borderRadius: BorderRadius.circular(14.r),
                               border: Border.all(color: Colors.white10),
                             ),
                             child: Column(
@@ -305,7 +303,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
                     ),
                   ),
 
-                   SizedBox(height: 10.h),
+                   SizedBox(height: 8.h),
                   
                   // Swap Icon sitting in the middle
                   Transform.translate(
@@ -314,25 +312,25 @@ class BidShwapScreen extends GetView<BidShwapController> {
                       alignment: Alignment.center,
                       clipBehavior: Clip.none,
                       children: [
-                        SizedBox(height: 10.h), // Tighten the gap
+                        SizedBox(height: 8.h), // Tighten the gap
                         Positioned(
                           child: Container(
-                            width: 60.w,
-                            height: 60.w,
+                            width: 44.w,
+                            height: 44.w,
                             decoration: BoxDecoration(
                               color: const Color(0xFF8B9BFF), // Added the missing background color
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
                                   color: const Color(0xFF8B9BFF).withOpacity(0.4),
-                                  blurRadius: 30.r,
-                                  spreadRadius: 4.r,
+                                  blurRadius: 20.r,
+                                  spreadRadius: 2.r,
                                 ),
                               ],
                             ),
                             child: Center(
                               child: Padding(
-                                padding: EdgeInsets.all(12.r), // Adjust padding to scale SVG
+                                padding: EdgeInsets.all(8.r), // Adjust padding to scale SVG
                                 child: SvgPicture.asset(
                                   "assets/icons/Container1.svg",
                                   fit: BoxFit.contain,
@@ -345,16 +343,16 @@ class BidShwapScreen extends GetView<BidShwapController> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 10.h),
+                  SizedBox(height: 8.h),
 
 
                   // Looking For
                   Container(
                     width: double.infinity,
-                    padding: EdgeInsets.all(24.r),
+                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F0B1E),
-                      borderRadius: BorderRadius.circular(28.r),
+                      borderRadius: BorderRadius.circular(20.r),
                     ),
                     child: Row(
                       children: [
@@ -363,10 +361,10 @@ class BidShwapScreen extends GetView<BidShwapController> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text("LOOKING FOR", style: TextStyle(color: const Color(0xFFFF8BFF), fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                              SizedBox(height: 12.h),
-                              Text(trade.lookingForItemName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
-                              SizedBox(height: 4.h),
-                              Text(trade.lookingForItemValue, style: TextStyle(color: Colors.white38, fontSize: 13.sp, fontWeight: FontWeight.w700)),
+                              SizedBox(height: 8.h),
+                              Text(trade.lookingForItemName, style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                              SizedBox(height: 2.h),
+                              Text(trade.lookingForItemValue, style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ),
@@ -379,7 +377,7 @@ class BidShwapScreen extends GetView<BidShwapController> {
             ],
           ),
           
-          SizedBox(height: 32.h),
+          SizedBox(height: 16.h),
           
           // Action Buttons
           Row(
@@ -602,13 +600,13 @@ class BidShwapScreen extends GetView<BidShwapController> {
 
   Widget _buildActionButton(String text, Color bg, Color textCol, {VoidCallback? onTap}) {
     return SizedBox(
-      height: 56.h,
+      height: 48.h,
       child: ElevatedButton(
         onPressed: onTap ?? () {},
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: textCol,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.r)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
           elevation: 0,
           padding: EdgeInsets.symmetric(horizontal: 4.w),
         ),
@@ -619,6 +617,41 @@ class BidShwapScreen extends GetView<BidShwapController> {
           style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
         ),
       ),
+    );
+  }
+
+  Widget _buildTradeItemImageWidget(String imgStr, {BoxFit fit = BoxFit.cover}) {
+    final placeholder = Image.network(
+      "https://images.unsplash.com/photo-1613771404721-1f92d799e49f?q=80&w=2069&auto=format&fit=crop",
+      fit: fit,
+    );
+
+    if (imgStr.isEmpty) {
+      return placeholder;
+    }
+    
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final base64Content = imgStr.split('base64,').last;
+        final bytes = base64Decode(base64Content);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => placeholder,
+        );
+      } catch (_) {
+        return placeholder;
+      }
+    }
+    
+    final cleanUrl = imgStr.startsWith('http')
+        ? imgStr
+        : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => placeholder,
     );
   }
 }

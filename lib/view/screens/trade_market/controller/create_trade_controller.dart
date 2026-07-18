@@ -17,24 +17,19 @@ class CreateTradeController extends GetxController {
   final itemNameController = TextEditingController();
   final descriptionController = TextEditingController();
   final estValueController = TextEditingController();
+  final buyNowPriceController = TextEditingController(); // Optional instant buy price
+  final RxBool enableBuyNow = false.obs; // Toggle for buy now price
 
   var selectedCategory = "Streetwear".obs;
   var selectedCondition = "Mint".obs;
 
-  final RxList<String> categories = <String>[
-    "Fine Art",
-    "Sports Cards",
-    "Rare Spirits",
-    "Luxury Cars",
-    "Electronics",
-    "Streetwear",
-    "TCG",
-    "Digital Assets",
-  ].obs;
+  final RxList<String> categories = <String>[].obs;
+  final RxMap<String, String> categoryNameToId = <String, String>{}.obs;
   final conditions = ["Mint", "Near Mint", "Excellent", "Good", "Fair"];
 
   // Image handling
   final RxList<File> selectedImages = <File>[].obs;
+  final RxInt selectedImageIndex = 0.obs; // Currently viewed image index
   final RxBool isLoading = false.obs;
 
   // What You Want Fields
@@ -43,13 +38,32 @@ class CreateTradeController extends GetxController {
   final maxValueController = TextEditingController();
 
   var targetCategory = "Any Category".obs;
-  final targetCategories = [
-    "Any Category",
-    "Watches",
-    "Sneakers",
-    "Trading Cards",
-    "Tech",
-  ];
+  final RxList<String> targetCategories = <String>["Any Category"].obs;
+
+  Future<void> pickImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage(
+        imageQuality: 20,
+        maxWidth: 600,
+        maxHeight: 600,
+      );
+      if (images.isNotEmpty) {
+        selectedImages.addAll(images.map((img) => File(img.path)));
+        selectedImageIndex.value = selectedImages.length - 1; // set preview to last selected
+      }
+    } catch (e) {
+      Get.snackbar("Error", "Failed to pick images");
+    }
+  }
+
+  void removeImage(int index) {
+    if (index >= 0 && index < selectedImages.length) {
+      selectedImages.removeAt(index);
+      if (selectedImageIndex.value >= selectedImages.length) {
+        selectedImageIndex.value = selectedImages.isEmpty ? 0 : selectedImages.length - 1;
+      }
+    }
+  }
 
   @override
   void onInit() {
@@ -62,12 +76,67 @@ class CreateTradeController extends GetxController {
   
   Future<void> fetchCategories() async {
     try {
-      final response = await _apiClient.getData(ApiUrl.category);
-      if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body)['data'] ?? [];
-        final parsed = data.map((item) => item['name']?.toString() ?? "").where((name) => name.isNotEmpty).toList();
+      Get.log("🔄 [fetchCategories] Fetching category from primary: /categories");
+      var response = await _apiClient.getData("/categories");
+      Get.log("🔄 [fetchCategories] /categories status code: ${response.statusCode}");
+
+      // Fallback: try singular /category if /categories fails
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        Get.log("🔄 [fetchCategories] /categories failed, trying fallback: ${ApiUrl.category}");
+        response = await _apiClient.getData(ApiUrl.category);
+        Get.log("🔄 [fetchCategories] /category fallback status code: ${response.statusCode}");
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        var decoded = jsonDecode(response.body);
+        List<dynamic> dataList = [];
+        
+        if (decoded is List) {
+          dataList = decoded;
+        } else if (decoded is Map) {
+          if (decoded['data'] is List) {
+            dataList = decoded['data'];
+          } else if (decoded['categories'] is List) {
+            dataList = decoded['categories'];
+          } else if (decoded['data'] is Map && decoded['data']['data'] is List) {
+            dataList = decoded['data']['data'];
+          }
+        }
+
+        // If categories are empty, try the other endpoint just in case
+        if (dataList.isEmpty && response.request?.url.path.endsWith("/categories") == true) {
+          Get.log("🔄 [fetchCategories] /categories was empty, trying fallback: ${ApiUrl.category}");
+          response = await _apiClient.getData(ApiUrl.category);
+          decoded = jsonDecode(response.body);
+          if (decoded is List) {
+            dataList = decoded;
+          } else if (decoded is Map) {
+            if (decoded['data'] is List) {
+              dataList = decoded['data'];
+            } else if (decoded['categories'] is List) {
+              dataList = decoded['categories'];
+            }
+          }
+        }
+
+        categoryNameToId.clear();
+        final List<String> parsed = [];
+        for (var item in dataList) {
+          if (item is Map) {
+            final String name = item['name']?.toString() ?? item['title']?.toString() ?? "";
+            final String id = item['_id']?.toString() ?? item['id']?.toString() ?? "";
+            if (name.isNotEmpty && id.isNotEmpty) {
+              parsed.add(name);
+              categoryNameToId[name] = id;
+            }
+          }
+        }
+
+        Get.log("🔄 [fetchCategories] Successfully parsed ${parsed.length} categories: $parsed");
+
         if (parsed.isNotEmpty) {
           categories.assignAll(parsed);
+          targetCategories.assignAll(["Any Category", ...parsed]);
           if (!categories.contains(selectedCategory.value)) {
             selectedCategory.value = parsed[0];
           }
@@ -75,21 +144,6 @@ class CreateTradeController extends GetxController {
       }
     } catch (e) {
       Get.log("Error fetching categories: $e");
-    }
-  }
-
-  Future<void> pickImages() async {
-    try {
-      final List<XFile> images = await _picker.pickMultiImage(
-        imageQuality: 20,
-        maxWidth: 600,
-        maxHeight: 600,
-      );
-      if (images.isNotEmpty) {
-        selectedImages.addAll(images.map((img) => File(img.path)));
-      }
-    } catch (e) {
-      Get.snackbar("Error", "Failed to pick images");
     }
   }
 
@@ -183,16 +237,27 @@ class CreateTradeController extends GetxController {
         }
       }
 
+      final String buyNowRaw = buyNowPriceController.text.trim();
+      final double? buyNowParsed = enableBuyNow.value && buyNowRaw.isNotEmpty
+          ? double.tryParse(buyNowRaw)
+          : null;
+
+      final selectedCategoryId = categoryNameToId[selectedCategory.value] ?? selectedCategory.value;
+
       final Map<String, dynamic> requestBody = {
         "title": title,
         "description": description,
-        "category": selectedCategory.value,
+        "category": selectedCategoryId, // ✅ Passes valid MongoDB ObjectId reference
         "condition": selectedCondition.value,
         "estValue": double.tryParse(estValue) ?? 0.0,
-        "buyNowPrice": double.tryParse(estValue) ?? 0.0,
+        if (buyNowParsed != null) "buyNowPrice": buyNowParsed,
         "allowTrade": true,
         "sellerId": userId,
         "images": imageUrls,
+        "lookingFor": desiredItemController.text.trim(),
+        "targetCategory": targetCategory.value,
+        "minValue": double.tryParse(minValueController.text.trim()) ?? 0.0,
+        "maxValue": double.tryParse(maxValueController.text.trim()) ?? 0.0,
       };
 
       final response = await _apiClient.postData(
@@ -246,6 +311,7 @@ class CreateTradeController extends GetxController {
     itemNameController.dispose();
     descriptionController.dispose();
     estValueController.dispose();
+    buyNowPriceController.dispose();
     desiredItemController.dispose();
     minValueController.dispose();
     maxValueController.dispose();

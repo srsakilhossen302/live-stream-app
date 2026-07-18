@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:url_launcher/url_launcher.dart';
 import '../helpers/shared_prefe.dart';
 import 'api_url.dart';
 
@@ -55,6 +57,101 @@ class SocketService extends GetxService {
             .setQuery({'token': token, 'userId': userId})
             .build(),
       );
+
+      // Register global real-time notifications
+      socket?.on('auction-won', (data) {
+        Get.log('🏆 [SocketService] auction-won event: $data');
+        if (data is Map) {
+          final title = data['productTitle'] ?? 'Product';
+          final bid = data['winningBid'] ?? '0';
+          final checkoutUrl = data['checkoutUrl']?.toString() ?? '';
+          final message = data['message'] ?? 'You won the auction!';
+          
+          Get.snackbar(
+            "Auction Won! 🏆",
+            "$message\nWinning Bid: \$$bid",
+            duration: const Duration(seconds: 10),
+            backgroundColor: const Color(0xFF22C55E),
+            colorText: Colors.white,
+            mainButton: checkoutUrl.isNotEmpty
+                ? TextButton(
+                    onPressed: () async {
+                      final uri = Uri.parse(checkoutUrl);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    child: const Text("PAY NOW", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  )
+                : null,
+          );
+        }
+      });
+
+      socket?.on('auction-payment-received', (data) {
+        Get.log('💰 [SocketService] auction-payment-received: $data');
+        if (data is Map) {
+          final message = data['message'] ?? 'Winner has completed payment!';
+          Get.snackbar(
+            "Payment Received 💰",
+            message,
+            backgroundColor: const Color(0xFF8B9BFF),
+            colorText: Colors.white,
+          );
+        }
+      });
+
+      socket?.on('trade-accepted', (data) {
+        Get.log('🤝 [SocketService] trade-accepted: $data');
+        if (data is Map) {
+          final message = data['message'] ?? 'Your trade offer was accepted!';
+          Get.snackbar(
+            "Trade Accepted 🤝",
+            message,
+            backgroundColor: const Color(0xFF22C55E),
+            colorText: Colors.white,
+          );
+        }
+      });
+
+      socket?.on('trade-declined', (data) {
+        Get.log('❌ [SocketService] trade-declined: $data');
+        if (data is Map) {
+          final message = data['message'] ?? 'Your trade offer was declined.';
+          Get.snackbar(
+            "Trade Declined ❌",
+            message,
+            backgroundColor: Colors.redAccent,
+            colorText: Colors.white,
+          );
+        }
+      });
+
+      socket?.on('trade-completed', (data) {
+        Get.log('✅ [SocketService] trade-completed: $data');
+        if (data is Map) {
+          final message = data['message'] ?? 'Trade completed successfully!';
+          Get.snackbar(
+            "Trade Completed ✅",
+            message,
+            backgroundColor: const Color(0xFFBD8BFF),
+            colorText: Colors.white,
+          );
+        }
+      });
+
+      socket?.on('trade-expired', (data) {
+        Get.log('⏳ [SocketService] trade-expired: $data');
+        if (data is Map) {
+          final message = data['message'] ?? 'Trade offer has expired.';
+          Get.snackbar(
+            "Trade Expired ⏳",
+            message,
+            backgroundColor: Colors.grey,
+            colorText: Colors.white,
+          );
+        }
+      });
 
       socket?.onConnect((_) {
         isConnected.value = true;

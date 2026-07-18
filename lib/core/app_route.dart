@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:get/get.dart';
 import '../view/screens/onboarding/screen/onboarding_screen.dart';
 import '../view/screens/auth/screen/login_screen.dart';
@@ -27,6 +27,7 @@ import '../view/screens/profile/screen/trader_profile_screen.dart';
 import '../view/screens/purchases/screen/purchases_screen.dart';
 import '../view/screens/my_trades/screen/my_trades_screen.dart';
 import '../view/screens/trade_details/screen/make_offer_screen.dart';
+import '../view/screens/discover/screen/all_live_shows_screen.dart';
 
 class AppRoute {
   static final routeStream = StreamController<String>.broadcast();
@@ -57,6 +58,7 @@ class AppRoute {
   static const String terms = "/terms";
   static const String notifications = "/notifications";
   static const String newOffer = "/new_offer";
+  static const String allLiveShows = "/all_live_shows";
 
   static List<GetPage> routes = [
     GetPage(name: forgotPassword, page: () => const ForgotPasswordScreen()),
@@ -89,5 +91,6 @@ class AppRoute {
     GetPage(name: terms, page: () => const TermsConditionsScreen()),
     GetPage(name: notifications, page: () => const NotificationsScreen()),
     GetPage(name: newOffer, page: () => const TradeOfferScreen()),
+    GetPage(name: allLiveShows, page: () => const AllLiveShowsScreen()),
   ];
 }

@@ -42,96 +42,177 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
           children: [
             Obx(() {
               final product = controller.product;
-              
-              final category = (product['category'] ?? "APPAREL").toString().toUpperCase();
-              final condition = (product['condition'] ?? "BRAND NEW").toString().toUpperCase();
-              final title = product['title'] ?? "Off-White Tee – Chicago Edition";
-              final estValue = product['estValue'] ?? "250";
-              final description = product['description'] ?? "Exclusive Chicago Edition drop. Kept in original packaging since release. Looking for a high-end timepiece trade specifically, but open to hearing other luxury offers in the watch category.";
+
+              final dynamic categoryRaw = product['category'];
+              String category = '';
+              if (categoryRaw is Map) {
+                category = categoryRaw['name']?.toString() ?? '';
+              } else if (categoryRaw != null) {
+                category = categoryRaw.toString();
+              }
+
+              final condition = (product['condition'] ?? '').toString();
+              final title = product['title'] ?? '';
+              final description = product['description'] ?? '';
+              final estValue = product['estValue'] ?? product['buyNowPrice'] ?? '';
+              final buyNowPrice = product['buyNowPrice'];
+              final allowTrade = product['allowTrade'];
+              final lookingFor = product['lookingFor'] ?? '';
+              final minValue = product['minValue'];
+              final maxValue = product['maxValue'];
+              final targetCategory = product['targetCategory'] ?? '';
+              final createdAt = product['createdAt'] ?? '';
+
+              // Parse all extra specification fields dynamically
+              final List<MapEntry<String, String>> extraSpecs = [];
+              const knownKeys = {
+                '_id', 'id', 'title', 'description', 'category', 'condition',
+                'images', 'estValue', 'buyNowPrice', 'allowTrade', 'lookingFor',
+                'minValue', 'maxValue', 'targetCategory', 'sellerId', 'isSold',
+                'status', 'createdAt', 'updatedAt', '__v', 'rating', 'reviewsCount',
+              };
+              product.forEach((key, value) {
+                if (!knownKeys.contains(key) && value != null && value.toString().trim().isNotEmpty) {
+                  extraSpecs.add(MapEntry(key, value.toString()));
+                }
+              });
 
               return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildDynamicImageGallery(product),
-                    
+                    // ── Image Gallery ──────────────────────────────────
+                    _buildImageGallery(product),
+
                     Padding(
                       padding: EdgeInsets.all(24.r),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("$category • $condition", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1)),
-                          SizedBox(height: 8.h),
-                          Text(title, style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900)),
-                          
-                          SizedBox(height: 32.h),
+                          // ── Category & Condition chips ─────────────
+                          if (category.isNotEmpty || condition.isNotEmpty)
+                            Wrap(
+                              spacing: 8.w,
+                              runSpacing: 6.h,
+                              children: [
+                                if (category.isNotEmpty) _buildChip(category.toUpperCase(), const Color(0xFF8B9BFF)),
+                                if (condition.isNotEmpty) _buildChip(condition.toUpperCase(), const Color(0xFF9155FF)),
+                              ],
+                            ),
+                          SizedBox(height: 12.h),
+
+                          // ── Title ──────────────────────────────────
+                          if (title.isNotEmpty)
+                            Text(
+                              title,
+                              style: TextStyle(color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.w900, height: 1.25),
+                            ),
+
+                          // ── Pricing Row ────────────────────────────
+                          if (estValue.toString().isNotEmpty) ...[
+                            SizedBox(height: 14.h),
+                            _buildPricingRow(estValue: estValue.toString(), buyNowPrice: buyNowPrice?.toString()),
+                          ],
+
+                          SizedBox(height: 28.h),
+
+                          // ── Seller Card ────────────────────────────
                           _buildDynamicTraderCard(product),
-                          SizedBox(height: 32.h),
-                          
+
+                          SizedBox(height: 28.h),
+
+                          // ── Offering Box ───────────────────────────
                           _buildTradeBox(
                             title: "OFFERING",
-                            name: title,
-                            subName: "$condition condition",
+                            name: title.isNotEmpty ? title : "This Item",
+                            subName: condition.isNotEmpty ? "${condition.toUpperCase()} condition" : "See description",
                             isOffering: true,
                           ),
-                          
+
                           Center(
                             child: Container(
-                              height: 48.h,
-                              width: 48.h,
-                              margin: EdgeInsets.symmetric(vertical: 12.h),
+                              height: 44.h,
+                              width: 44.h,
+                              margin: EdgeInsets.symmetric(vertical: 10.h),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF282C36),
                                 shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10.r, offset: const Offset(0, 4)),
-                                ],
+                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10.r)],
                               ),
                               child: Center(
                                 child: SvgPicture.asset(
                                   "assets/icons/updaont.svg",
-                                  width: 22.sp,
-                                  height: 22.sp,
+                                  width: 20.sp,
+                                  height: 20.sp,
                                   colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
                                 ),
                               ),
                             ),
                           ),
-                          
+
+                          // ── Looking For Box ────────────────────────
                           _buildTradeBox(
                             title: "LOOKING FOR",
-                            name: (product['lookingFor'] ?? "Equal Value Swaps").toString(),
-                            subName: "Estimated Value: \$${product['estValue'] ?? estValue}",
+                            name: lookingFor.isNotEmpty ? lookingFor : "Equal Value Swaps",
+                            subName: estValue.toString().isNotEmpty ? "Est. Value: \$$estValue" : "Open to offers",
                             isOffering: false,
-                            badge: "ANY CATEGORY",
+                            badge: targetCategory.isNotEmpty ? targetCategory.toUpperCase() : (allowTrade == true ? "ANY CATEGORY" : null),
                           ),
-                          
-                          SizedBox(height: 32.h),
-                          Text("DESCRIPTION", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                          SizedBox(height: 16.h),
-                          Text(
-                            description,
-                            style: TextStyle(color: Colors.white60, fontSize: 14.sp, height: 1.6, fontWeight: FontWeight.w500),
-                          ),
-                          
-                          SizedBox(height: 32.h),
-                          Text("VERIFICATION METHODS", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                          SizedBox(height: 16.h),
+
+                          SizedBox(height: 28.h),
+
+                          // ── Description ────────────────────────────
+                          if (description.isNotEmpty) ...[
+                            _buildSectionLabel("DESCRIPTION"),
+                            SizedBox(height: 12.h),
+                            Text(
+                              description,
+                              style: TextStyle(color: Colors.white60, fontSize: 14.sp, height: 1.65, fontWeight: FontWeight.w500),
+                            ),
+                            SizedBox(height: 28.h),
+                          ],
+
+                          // ── Specifications / Details ───────────────
+                          _buildSectionLabel("PRODUCT DETAILS"),
+                          SizedBox(height: 14.h),
+                          _buildSpecGrid(product, category, condition, estValue, buyNowPrice, allowTrade, minValue, maxValue, targetCategory, createdAt),
+
+                          // ── Extra dynamic fields ───────────────────
+                          if (extraSpecs.isNotEmpty) ...[
+                            SizedBox(height: 20.h),
+                            _buildSectionLabel("ADDITIONAL INFO"),
+                            SizedBox(height: 14.h),
+                            _buildExtraSpecsGrid(extraSpecs),
+                          ],
+
+                          SizedBox(height: 28.h),
+
+                          // ── Trade Preferences ──────────────────────
+                          _buildSectionLabel("TRADE PREFERENCES"),
+                          SizedBox(height: 14.h),
+                          _buildTradePreferences(product, allowTrade, minValue, maxValue, targetCategory, lookingFor),
+
+                          SizedBox(height: 28.h),
+
+                          // ── Verification ───────────────────────────
+                          _buildSectionLabel("VERIFICATION"),
+                          SizedBox(height: 14.h),
                           Row(
                             children: [
                               Expanded(child: _buildVerificationCard(null, "Platform Verified", "100% Secure Auth", iconData: Icons.shield_outlined)),
                               SizedBox(width: 16.w),
-                              Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Direct Trade", "Peer-to-peer risk")),
+                              Expanded(child: _buildVerificationCard("assets/icons/Direct Trade-icons.svg", "Direct Trade", "Peer-to-peer")),
                             ],
                           ),
-                          
-                          SizedBox(height: 32.h),
-                          _buildStatsRow(),
-                          SizedBox(height: 32.h),
-                          Text("SIMILAR TRADES", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                          SizedBox(height: 16.h),
+
+                          SizedBox(height: 28.h),
+
+                          // ── Similar Trades ─────────────────────────
+                          _buildSectionLabel("SIMILAR TRADES"),
+                          SizedBox(height: 14.h),
                           _buildSimilarTrades(product),
+
                           SizedBox(height: 120.h),
                         ],
                       ),
@@ -140,19 +221,25 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                 ),
               );
             }),
-            
-            // Floating Bottom Action Bar
+
+            // ── Floating CTA Bar ───────────────────────────────────────
             Obx(() {
               final product = controller.product;
               if (product.isEmpty) return const SizedBox.shrink();
-              
+
               final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
               final seller = product['sellerId'];
-              final sellerId = (seller is Map) ? (seller['_id'] ?? seller['id'] ?? "") : seller.toString();
+              final sellerId = (seller is Map) ? (seller['_id'] ?? seller['id'] ?? '') : seller.toString();
               final isOwner = currentUserId.isNotEmpty && currentUserId == sellerId;
-              
               if (isOwner) return const SizedBox.shrink();
-              
+
+              final buyNowPriceVal = product['buyNowPrice'] ?? product['price'];
+              final hasBuyNow = buyNowPriceVal != null &&
+                  double.tryParse(buyNowPriceVal.toString()) != null &&
+                  double.parse(buyNowPriceVal.toString()) > 0;
+              final allowTradeVal = product['allowTrade'];
+              final hasTrade = allowTradeVal == true || allowTradeVal == 'true' || allowTradeVal == null;
+
               return Positioned(
                 bottom: 0,
                 left: 0,
@@ -163,38 +250,60 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.0),
-                        Colors.black.withOpacity(0.95),
-                        Colors.black,
-                      ],
+                      colors: [Colors.black.withOpacity(0.0), Colors.black.withOpacity(0.95), Colors.black],
                     ),
                   ),
-                  child: GestureDetector(
-                    onTap: () => Get.toNamed('/make_offer', arguments: product),
-                    child: Container(
-                      height: 56.h,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8B9BFF),
-                        borderRadius: BorderRadius.circular(28.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF8B9BFF).withOpacity(0.3),
-                            blurRadius: 16.r,
-                            offset: const Offset(0, 4),
+                  child: Row(
+                    children: [
+                      if (hasTrade)
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => Get.toNamed('/make_offer', arguments: product),
+                            child: Container(
+                              height: 56.h,
+                              decoration: BoxDecoration(
+                                color: hasBuyNow ? Colors.white.withOpacity(0.08) : const Color(0xFF8B9BFF),
+                                borderRadius: BorderRadius.circular(28.r),
+                                border: hasBuyNow ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+                                boxShadow: hasBuyNow ? [] : [
+                                  BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.3), blurRadius: 16.r, offset: const Offset(0, 4)),
+                                ],
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                "Make Offer",
+                                style: TextStyle(
+                                  color: hasBuyNow ? Colors.white : const Color(0xFF0F172A),
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        "Make Offer",
-                        style: TextStyle(
-                          color: const Color(0xFF0F172A),
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w900,
                         ),
-                      ),
-                    ),
+                      if (hasTrade && hasBuyNow) SizedBox(width: 16.w),
+                      if (hasBuyNow)
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: controller.isOrdering.value ? null : () => controller.buyProduct(),
+                            child: Container(
+                              height: 56.h,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B9BFF),
+                                borderRadius: BorderRadius.circular(28.r),
+                                boxShadow: [BoxShadow(color: const Color(0xFF8B9BFF).withOpacity(0.3), blurRadius: 16.r, offset: const Offset(0, 4))],
+                              ),
+                              alignment: Alignment.center,
+                              child: controller.isOrdering.value
+                                  ? SizedBox(width: 20.r, height: 20.r, child: const CircularProgressIndicator(color: Color(0xFF0F172A), strokeWidth: 2))
+                                  : Text(
+                                      "Buy Now \$$buyNowPriceVal",
+                                      style: TextStyle(color: const Color(0xFF0F172A), fontSize: 16.sp, fontWeight: FontWeight.w900),
+                                    ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -205,54 +314,441 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     );
   }
 
-  Widget _buildDynamicImageGallery(Map<String, dynamic> product) {
-    String galleryUrl = "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000";
-    final List? images = product['images'] as List?;
-    if (images != null && images.isNotEmpty) {
-      final path = images[0].toString();
-      galleryUrl = (path.startsWith('http') || path.startsWith('data:image/'))
-          ? path
-          : "${ApiUrl.imageBaseUrl}${path.startsWith('/') ? path : '/$path'}";
+  // ──────────────────────────────────────────────────────────────────────────
+  // IMAGE GALLERY — horizontal page swiper for all product images
+  // ──────────────────────────────────────────────────────────────────────────
+  Widget _buildImageGallery(Map<String, dynamic> product) {
+    final dynamic rawImages = product['images'];
+    List<dynamic> images = [];
+    if (rawImages is List) {
+      images = rawImages;
+    } else if (rawImages is String && rawImages.isNotEmpty) {
+      final trimmed = rawImages.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          images = jsonDecode(trimmed) as List;
+        } catch (_) {
+          images = [rawImages];
+        }
+      } else if (trimmed.contains(',')) {
+        images = trimmed.split(',');
+      } else {
+        images = [rawImages];
+      }
     }
-    
-    final estValue = product['estValue'] ?? "250";
 
-    return Stack(
+    final estValue = product['estValue'] ?? product['buyNowPrice'] ?? '';
+    final isSold = product['isSold'] == true || product['status'] == 'sold';
+
+    final List<String> imageUrls = images.map<String>((img) {
+      final path = img.toString();
+      if (path.startsWith('http') || path.startsWith('data:image/')) return path;
+      return "${ApiUrl.imageBaseUrl}${path.startsWith('/') ? path : '/$path'}";
+    }).toList();
+
+    if (imageUrls.isEmpty) imageUrls.add('');
+
+    return SizedBox(
+      height: 420.h,
+      child: Stack(
+        children: [
+          PageView.builder(
+            itemCount: imageUrls.length,
+            onPageChanged: (i) => controller.currentImageIndex.value = i,
+            itemBuilder: (_, i) => Container(
+              color: const Color(0xFFF0F0F0),
+              child: _buildDetailsProductImage(imageUrls[i], fit: BoxFit.contain),
+            ),
+          ),
+
+          // Sold overlay
+          if (isSold)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(12.r)),
+                    child: Text("SOLD", style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900, letterSpacing: 4)),
+                  ),
+                ),
+              ),
+            ),
+
+          // Top badges
+          Positioned(
+            top: 16.h,
+            left: 16.w,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBadge("OPEN TRADE", const Color(0xFF8B9BFF)),
+                if (estValue.toString().isNotEmpty) ...[
+                  SizedBox(height: 8.h),
+                  _buildBadge("\$$estValue EST. VALUE", Colors.black.withOpacity(0.75)),
+                ],
+              ],
+            ),
+          ),
+
+          // Page indicator dots
+          if (imageUrls.length > 1)
+            Positioned(
+              bottom: 16.h,
+              left: 0,
+              right: 0,
+              child: Obx(() => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(imageUrls.length, (i) {
+                  final active = controller.currentImageIndex.value == i;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: EdgeInsets.symmetric(horizontal: 3.w),
+                    width: active ? 20.w : 7.w,
+                    height: 7.h,
+                    decoration: BoxDecoration(
+                      color: active ? const Color(0xFF8B9BFF) : Colors.white38,
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  );
+                }),
+              )),
+            ),
+
+          // Image counter pill
+          Positioned(
+            bottom: 16.h,
+            right: 16.w,
+            child: Obx(() => Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20.r)),
+              child: Text(
+                "${controller.currentImageIndex.value + 1} / ${imageUrls.length}",
+                style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
+              ),
+            )),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // PRICING ROW
+  // ──────────────────────────────────────────────────────────────────────────
+  Widget _buildPricingRow({required String estValue, String? buyNowPrice}) {
+    return Row(
       children: [
         Container(
-          height: 450.h,
-          width: double.infinity,
-          color: const Color(0xFFF5F5F5),
-          child: _buildDetailsProductImage(galleryUrl, fit: BoxFit.contain),
-        ),
-        Positioned(
-          top: 20.h,
-          left: 20.w,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFF8B9BFF).withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.25)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildBadge("OPEN TRADE", const Color(0xFF8B9BFF)),
-              SizedBox(height: 8.h),
-              _buildBadge("\$$estValue EST. VALUE", Colors.black.withOpacity(0.8)),
+              Icon(Icons.attach_money_rounded, color: const Color(0xFF8B9BFF), size: 16.sp),
+              Text(
+                "\$$estValue est.",
+                style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 13.sp, fontWeight: FontWeight.w800),
+              ),
             ],
           ),
         ),
-        Positioned(
-          bottom: 20.h,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-              decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(20.r)),
-              child: Obx(() => Text(
-                "${controller.currentImageIndex.value == 0 ? 1 : controller.currentImageIndex.value} / ${controller.totalImages}",
-                style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
-              )),
+        if (buyNowPrice != null && double.tryParse(buyNowPrice) != null && double.parse(buyNowPrice) > 0) ...[
+          SizedBox(width: 10.w),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF8BFF).withOpacity(0.10),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: const Color(0xFFFF8BFF).withOpacity(0.20)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.shopping_bag_outlined, color: const Color(0xFFFF8BFF), size: 15.sp),
+                SizedBox(width: 4.w),
+                Text(
+                  "Buy \$$buyNowPrice",
+                  style: TextStyle(color: const Color(0xFFFF8BFF), fontSize: 13.sp, fontWeight: FontWeight.w800),
+                ),
+              ],
             ),
           ),
-        ),
+        ],
       ],
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // SPEC GRID — all core seller-provided fields
+  // ──────────────────────────────────────────────────────────────────────────
+  Widget _buildSpecGrid(
+    Map<String, dynamic> product,
+    String category,
+    String condition,
+    dynamic estValue,
+    dynamic buyNowPrice,
+    dynamic allowTrade,
+    dynamic minValue,
+    dynamic maxValue,
+    String targetCategory,
+    String createdAt,
+  ) {
+    final List<_SpecItem> specs = [];
+
+    if (category.isNotEmpty) specs.add(_SpecItem("Category", category, Icons.category_outlined));
+    if (condition.isNotEmpty) specs.add(_SpecItem("Condition", condition, Icons.stars_outlined));
+    if (estValue != null && estValue.toString().isNotEmpty) specs.add(_SpecItem("Est. Value", "\$$estValue", Icons.attach_money_rounded));
+    if (buyNowPrice != null && double.tryParse(buyNowPrice.toString()) != null && double.parse(buyNowPrice.toString()) > 0)
+      specs.add(_SpecItem("Buy Now Price", "\$$buyNowPrice", Icons.shopping_bag_outlined));
+    specs.add(_SpecItem("Trade Allowed", allowTrade == true ? "Yes" : "No", Icons.swap_horiz_rounded));
+    if (minValue != null && minValue.toString().isNotEmpty) specs.add(_SpecItem("Min Offer Value", "\$$minValue", Icons.arrow_downward_rounded));
+    if (maxValue != null && maxValue.toString().isNotEmpty) specs.add(_SpecItem("Max Offer Value", "\$$maxValue", Icons.arrow_upward_rounded));
+    if (targetCategory.isNotEmpty) specs.add(_SpecItem("Target Category", targetCategory, Icons.filter_list_rounded));
+    if (createdAt.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(createdAt).toLocal();
+        specs.add(_SpecItem("Listed On", "${dt.day}/${dt.month}/${dt.year}", Icons.calendar_today_outlined));
+      } catch (_) {}
+    }
+
+    if (specs.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(color: const Color(0xFF11111A), borderRadius: BorderRadius.circular(24.r)),
+      child: Column(
+        children: List.generate(specs.length, (i) {
+          final spec = specs[i];
+          final isLast = i == specs.length - 1;
+          return Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(7.r),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B9BFF).withOpacity(0.10),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(spec.icon, color: const Color(0xFF8B9BFF), size: 14.sp),
+                    ),
+                    SizedBox(width: 12.w),
+                    Text(
+                      spec.label,
+                      style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.w600),
+                    ),
+                    const Spacer(),
+                    Flexible(
+                      child: Text(
+                        spec.value,
+                        style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800),
+                        textAlign: TextAlign.end,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isLast)
+                Divider(color: Colors.white.withOpacity(0.04), height: 1, indent: 20.w, endIndent: 20.w),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // EXTRA SPECS — any non-standard fields from API
+  // ──────────────────────────────────────────────────────────────────────────
+  Widget _buildExtraSpecsGrid(List<MapEntry<String, String>> extras) {
+    return Container(
+      decoration: BoxDecoration(color: const Color(0xFF11111A), borderRadius: BorderRadius.circular(24.r)),
+      child: Column(
+        children: List.generate(extras.length, (i) {
+          final entry = extras[i];
+          final isLast = i == extras.length - 1;
+          final label = entry.key
+              .replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m[0]}')
+              .trim()
+              .split(' ')
+              .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+              .join(' ');
+          return Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.w600),
+                    ),
+                    const Spacer(),
+                    SizedBox(width: 16.w),
+                    Flexible(
+                      child: Text(
+                        entry.value,
+                        style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800),
+                        textAlign: TextAlign.end,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isLast)
+                Divider(color: Colors.white.withOpacity(0.04), height: 1, indent: 20.w, endIndent: 20.w),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // TRADE PREFERENCES CARD
+  // ──────────────────────────────────────────────────────────────────────────
+  Widget _buildTradePreferences(
+    Map<String, dynamic> product,
+    dynamic allowTrade,
+    dynamic minValue,
+    dynamic maxValue,
+    String targetCategory,
+    String lookingFor,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(20.r),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1035), Color(0xFF0F0F1A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Trade toggle row
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.r),
+                decoration: BoxDecoration(color: const Color(0xFF8B9BFF).withOpacity(0.12), shape: BoxShape.circle),
+                child: Icon(Icons.swap_horiz_rounded, color: const Color(0xFF8B9BFF), size: 18.sp),
+              ),
+              SizedBox(width: 12.w),
+              Text("Trade Accepted", style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800)),
+              const Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color: allowTrade == true ? const Color(0xFF8B9BFF).withOpacity(0.15) : Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  allowTrade == true ? "YES" : "NO",
+                  style: TextStyle(
+                    color: allowTrade == true ? const Color(0xFF8B9BFF) : Colors.white38,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          if (lookingFor.isNotEmpty) ...[
+            SizedBox(height: 16.h),
+            Divider(color: Colors.white.withOpacity(0.05)),
+            SizedBox(height: 12.h),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.search_rounded, color: Colors.white38, size: 16.sp),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Looking For", style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                      SizedBox(height: 4.h),
+                      Text(lookingFor, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          if (targetCategory.isNotEmpty) ...[
+            SizedBox(height: 14.h),
+            Row(
+              children: [
+                Icon(Icons.filter_list_rounded, color: Colors.white38, size: 16.sp),
+                SizedBox(width: 10.w),
+                Text("Preferred Category:", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                SizedBox(width: 8.w),
+                Flexible(
+                  child: Text(targetCategory, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800)),
+                ),
+              ],
+            ),
+          ],
+
+          if ((minValue != null && minValue.toString().isNotEmpty) ||
+              (maxValue != null && maxValue.toString().isNotEmpty)) ...[
+            SizedBox(height: 14.h),
+            Row(
+              children: [
+                Icon(Icons.monetization_on_outlined, color: Colors.white38, size: 16.sp),
+                SizedBox(width: 10.w),
+                Text("Accepted Value Range:", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                SizedBox(width: 8.w),
+                Text(
+                  [
+                    if (minValue != null && minValue.toString().isNotEmpty) "\$$minValue",
+                    if (maxValue != null && maxValue.toString().isNotEmpty) "\$$maxValue",
+                  ].join(" – "),
+                  style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 13.sp, fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // HELPERS
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildSectionLabel(String label) {
+    return Text(label, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w900, letterSpacing: 1.2));
+  }
+
+  Widget _buildChip(String label, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 11.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
     );
   }
 
@@ -267,11 +763,12 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   Widget _buildDynamicTraderCard(Map<String, dynamic> product) {
     final seller = product['sellerId'];
     final Map<String, dynamic>? sellerMap = seller is Map ? Map<String, dynamic>.from(seller) : null;
-    final name = sellerMap?['fullName'] ?? sellerMap?['name'] ?? "Julian_D";
-    final rating = (sellerMap?['rating'] ?? "4.8").toString();
-    final address = sellerMap?['address'] ?? "New York, NY";
-    
-    String avatarUrl = "";
+    final name = sellerMap?['fullName'] ?? sellerMap?['name'] ?? "Seller";
+    final rating = (sellerMap?['rating'] ?? "—").toString();
+    final address = sellerMap?['address'] ?? '';
+    final isVerified = sellerMap?['isVerified'] == true;
+
+    String avatarUrl = '';
     final sellerImage = (sellerMap?['profile'] ?? sellerMap?['image'] ?? sellerMap?['profileImageUrl'] ?? sellerMap?['avatar'])?.toString();
     if (sellerImage != null && sellerImage.isNotEmpty) {
       avatarUrl = (sellerImage.startsWith('http') || sellerImage.startsWith('data:image/'))
@@ -283,45 +780,53 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
       onTap: () => Get.toNamed('/trader_profile', arguments: {
         "id": sellerMap?['_id'] ?? sellerMap?['id'] ?? (seller is String ? seller : ''),
         "name": name,
-        "avatar": avatarUrl.isNotEmpty ? avatarUrl : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop",
+        "avatar": avatarUrl,
         "bio": sellerMap?['bio'] ?? sellerMap?['description'] ?? '',
       }),
       child: Container(
-        padding: EdgeInsets.all(20.r),
+        padding: EdgeInsets.all(18.r),
         decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 24.r,
-              backgroundColor: Colors.white10,
-              child: avatarUrl.isNotEmpty
-                  ? ClipOval(
-                      child: SizedBox(
-                        width: 48.r,
-                        height: 48.r,
-                        child: _buildDetailsProductImage(avatarUrl),
-                      ),
-                    )
-                  : Icon(Icons.person, color: Colors.white24, size: 24.sp),
+            // Avatar
+            Container(
+              width: 48.r,
+              height: 48.r,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white10),
+              child: ClipOval(
+                child: avatarUrl.isNotEmpty
+                    ? _buildDetailsProductImage(avatarUrl)
+                    : Center(child: Icon(Icons.person, color: Colors.white24, size: 26.sp)),
+              ),
             ),
-            SizedBox(width: 16.w),
+            SizedBox(width: 14.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(name, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
-                      SizedBox(width: 4.w),
-                      Icon(Icons.verified, color: const Color(0xFF8B9BFF), size: 16.sp),
+                      Flexible(
+                        child: Text(name, style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                      if (isVerified) ...[
+                        SizedBox(width: 4.w),
+                        Icon(Icons.verified, color: const Color(0xFF8B9BFF), size: 15.sp),
+                      ],
                     ],
                   ),
                   SizedBox(height: 4.h),
-                  Text("⭐ $rating • $address", style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w700)),
+                  Text(
+                    [if (rating != '—') "⭐ $rating", if (address.isNotEmpty) address].join('  •  '),
+                    style: TextStyle(color: Colors.white38, fontSize: 12.sp, fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 28.sp),
+            Icon(Icons.chevron_right_rounded, color: Colors.white24, size: 26.sp),
           ],
         ),
       ),
@@ -329,34 +834,19 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   }
 
   Widget _buildTradeBox({required String title, required String name, required String subName, required bool isOffering, String? badge}) {
-    // Exact colors from mockup
-    final offeringColor = const Color(0xFF8B9BFF);
-    final lookingForLabelColor = const Color(0xFFFF8BFF);
-    final lookingForBarColor = const Color(0xFF9155FF); // Exact purple from mockup
-
-    final primaryColor = isOffering ? offeringColor : lookingForBarColor;
-    final labelColor = isOffering ? offeringColor : lookingForLabelColor;
+    final primaryColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFF9155FF);
+    final labelColor = isOffering ? const Color(0xFF8B9BFF) : const Color(0xFFFF8BFF);
 
     return Container(
       padding: EdgeInsets.all(24.r),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(32.r),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(32.r)),
       child: Stack(
         children: [
-          // Vertical indicator bar - Perfect Pill shape
           Positioned(
             left: 0,
             top: 2.h,
             bottom: 2.h,
-            child: Container(
-              width: 6.w,
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-            ),
+            child: Container(width: 6.w, decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(20.r))),
           ),
           Padding(
             padding: EdgeInsets.only(left: 28.w),
@@ -375,17 +865,13 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                   ],
                 ),
                 SizedBox(height: 18.h),
-                Text(name, style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                Text(name, style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                 SizedBox(height: 8.h),
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        subName,
-                        style: TextStyle(color: Colors.white38, fontSize: 15.sp, fontWeight: FontWeight.w700),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: Text(subName, style: TextStyle(color: Colors.white38, fontSize: 14.sp, fontWeight: FontWeight.w700),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     if (badge != null) ...[
                       SizedBox(width: 14.w),
@@ -417,70 +903,13 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (svgPath != null)
-            SvgPicture.asset(
-              svgPath,
-              width: 32.sp,
-              height: 32.sp,
-              colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
-            )
+            SvgPicture.asset(svgPath, width: 30.sp, height: 30.sp, colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn))
           else if (iconData != null)
-            Icon(iconData, color: const Color(0xFF8B9BFF), size: 32.sp),
-          SizedBox(height: 16.h),
+            Icon(iconData, color: const Color(0xFF8B9BFF), size: 30.sp),
+          SizedBox(height: 14.h),
           Text(title, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w900)),
           SizedBox(height: 4.h),
           Text(subtitle, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard("12", "OFFERS", const Color(0xFF8B9BFF)),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: _buildStatCard("3d", "ACTIVE", const Color(0xFF9155FF)),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: _buildStatCard("~2h", "RESPONSE", const Color(0xFFFF8BFF)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(String val, String label, Color valColor) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 12.w),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161622),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: Colors.white.withOpacity(0.02)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            val,
-            style: TextStyle(
-              color: valColor,
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: 6.h),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white38,
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
         ],
       ),
     );
@@ -490,33 +919,25 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
     final List<Map<String, dynamic>> similarItems = [];
     try {
       final discoverCtrl = Get.find<DiscoverController>();
-      final String currentCategory = (product['category'] ?? "").toString();
-      final String currentTitle = (product['title'] ?? "").toString();
-      
+      final String currentCategory = (product['category'] ?? '').toString();
+      final String currentTitle = (product['title'] ?? '').toString();
       final matched = discoverCtrl.tradeMarketItems.where((item) {
         final raw = item['raw'];
         if (raw == null) return false;
         return raw['category']?.toString() == currentCategory && item['title'] != currentTitle;
       }).toList();
-
       if (matched.isNotEmpty) {
-        similarItems.addAll(matched.take(3).cast<Map<String, dynamic>>());
+        similarItems.addAll(matched.take(4).cast<Map<String, dynamic>>());
       } else {
-        similarItems.addAll(discoverCtrl.tradeMarketItems
-            .where((item) => item['title'] != currentTitle)
-            .take(3)
-            .cast<Map<String, dynamic>>());
+        similarItems.addAll(discoverCtrl.tradeMarketItems.where((item) => item['title'] != currentTitle).take(4).cast<Map<String, dynamic>>());
       }
     } catch (_) {}
 
     if (similarItems.isEmpty) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10.h),
-          child: Text(
-            "No similar trades found.",
-            style: TextStyle(color: Colors.white24, fontSize: 13.sp, fontWeight: FontWeight.w700),
-          ),
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          child: Text("No similar trades found.", style: TextStyle(color: Colors.white24, fontSize: 13.sp, fontWeight: FontWeight.w700)),
         ),
       );
     }
@@ -530,7 +951,6 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
           final lookingFor = item['lookingFor'].toString();
           final value = item['value'].toString();
           final imgUrl = item['image'].toString();
-          
           return GestureDetector(
             onTap: () {
               final detailsCtrl = Get.find<TradeDetailsController>();
@@ -538,31 +958,28 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
               detailsCtrl.currentImageIndex.value = 0;
             },
             child: Container(
-              width: 280.w,
-              margin: EdgeInsets.only(right: 16.w),
+              width: 270.w,
+              margin: EdgeInsets.only(right: 14.w),
               padding: EdgeInsets.all(16.r),
               decoration: BoxDecoration(color: const Color(0xFF161622), borderRadius: BorderRadius.circular(24.r)),
               child: Row(
                 children: [
                   Container(
-                    width: 70.w,
-                    height: 70.w,
+                    width: 64.w,
+                    height: 64.w,
                     clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
+                    decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(14.r)),
                     child: _buildDetailsProductImage(imgUrl),
                   ),
-                  SizedBox(width: 16.w),
+                  SizedBox(width: 14.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        SizedBox(height: 4.h),
-                        Text(lookingFor, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        SizedBox(height: 2.h),
+                        Text(title, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        SizedBox(height: 3.h),
+                        Text(lookingFor, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        SizedBox(height: 3.h),
                         Text(value, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 11.sp, fontWeight: FontWeight.w900)),
                       ],
                     ),
@@ -575,45 +992,31 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
       ),
     );
   }
+
   Widget _buildDetailsProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
     if (imgStr.isEmpty) {
-      return Image.network(
-        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-        fit: fit,
-      );
+      return Container(color: const Color(0xFF1A1A2E), child: Center(child: Icon(Icons.image_outlined, color: Colors.white12, size: 32.sp)));
     }
-    
     if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
       try {
-        final base64Content = imgStr.split('base64,').last;
-        final bytes = base64Decode(base64Content);
-        return Image.memory(
-          bytes,
-          fit: fit,
-          errorBuilder: (context, error, stackTrace) => Image.network(
-            "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-            fit: fit,
-          ),
-        );
+        final bytes = base64Decode(imgStr.split('base64,').last);
+        return Image.memory(bytes, fit: fit,
+          errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1A1A2E), child: Center(child: Icon(Icons.broken_image_outlined, color: Colors.white12, size: 32.sp))));
       } catch (_) {
-        return Image.network(
-          "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-          fit: fit,
-        );
+        return Container(color: const Color(0xFF1A1A2E), child: Center(child: Icon(Icons.broken_image_outlined, color: Colors.white12, size: 32.sp)));
       }
     }
-    
-    final cleanUrl = imgStr.startsWith('http')
-        ? imgStr
-        : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
-
-    return Image.network(
-      cleanUrl,
-      fit: fit,
-      errorBuilder: (context, error, stackTrace) => Image.network(
-        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-        fit: fit,
-      ),
-    );
+    final cleanUrl = imgStr.startsWith('http') ? imgStr : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+    return Image.network(cleanUrl, fit: fit,
+      loadingBuilder: (_, child, progress) => progress == null ? child : Container(color: const Color(0xFF1A1A2E), child: Center(child: SizedBox(width: 22.r, height: 22.r, child: CircularProgressIndicator(strokeWidth: 2, color: const Color(0xFF8B9BFF).withOpacity(0.4))))),
+      errorBuilder: (_, __, ___) => Container(color: const Color(0xFF1A1A2E), child: Center(child: Icon(Icons.image_not_supported_outlined, color: Colors.white12, size: 32.sp))));
   }
+}
+
+// Helper model for spec grid
+class _SpecItem {
+  final String label;
+  final String value;
+  final IconData icon;
+  const _SpecItem(this.label, this.value, this.icon);
 }

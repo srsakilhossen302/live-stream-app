@@ -180,75 +180,209 @@ class MakeOfferScreen extends GetView<MakeOfferController> {
                           ],
                         ),
                         
-                        // Bottom Card: Your Item Detail
-                        GestureDetector(
-                          onTap: () => _showProductSelectionBottomSheet(context),
-                          child: Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(20.r),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF161622),
-                              borderRadius: BorderRadius.circular(32.r),
-                              border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.1), width: 1),
-                            ),
-                            child: selectedProduct == null
-                                ? Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(height: 32.h),
-                                      Icon(Icons.add_photo_alternate_outlined, color: Colors.white24, size: 48.sp),
-                                      SizedBox(height: 16.h),
-                                      Text("Choose from your Listings", style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
-                                      SizedBox(height: 8.h),
-                                      Text("Tap to select a product to offer", style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
-                                      SizedBox(height: 32.h),
-                                    ],
-                                  )
-                                : Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: 320.h,
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          color: Colors.black,
-                                          borderRadius: BorderRadius.circular(24.r),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(24.r),
-                                          child: _buildProductImage(
-                                            selectedProduct['images'] != null && (selectedProduct['images'] as List).isNotEmpty
-                                                ? selectedProduct['images'][0].toString()
-                                                : "",
-                                          ),
-                                        ),
+                        // Tab Selector
+                        Container(
+                          margin: EdgeInsets.only(bottom: 20.h),
+                          height: 56.h,
+                          padding: EdgeInsets.all(4.r),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF161622),
+                            borderRadius: BorderRadius.circular(28.r),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => controller.isCustomOffer.value = false,
+                                  child: Obx(() => Container(
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: !controller.isCustomOffer.value ? const Color(0xFF282C36) : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(24.r),
+                                    ),
+                                    child: Text(
+                                      "MY LISTINGS",
+                                      style: TextStyle(
+                                        color: !controller.isCustomOffer.value ? Colors.white : Colors.white38,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w800,
                                       ),
-                                      SizedBox(height: 24.h),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(selectedProduct['title'] ?? 'Product', style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
-                                                SizedBox(height: 4.h),
-                                                Text(
-                                                  "${(selectedProduct['category'] ?? 'APPAREL').toString().toUpperCase()} • ${(selectedProduct['condition'] ?? 'BRAND NEW').toString().toUpperCase()}",
-                                                  style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          SizedBox(width: 12.w),
-                                          Text("\$${controller.userProductValue.toInt()}", style: TextStyle(color: const Color(0xFFBD8BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
-                                        ],
+                                    ),
+                                  )),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => controller.isCustomOffer.value = true,
+                                  child: Obx(() => Container(
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: controller.isCustomOffer.value ? const Color(0xFF282C36) : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(24.r),
+                                    ),
+                                    child: Text(
+                                      "CUSTOM OFFER",
+                                      style: TextStyle(
+                                        color: controller.isCustomOffer.value ? Colors.white : Colors.white38,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w800,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  )),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+
+                        Obx(() {
+                          if (controller.isCustomOffer.value) {
+                            return Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(24.r),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF161622),
+                                borderRadius: BorderRadius.circular(32.r),
+                                border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.1), width: 1),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("CUSTOM ITEM DETAILS", style: TextStyle(color: Colors.white70, fontSize: 13.sp, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                                  SizedBox(height: 20.h),
+                                  _buildCustomTextField(
+                                    controller: controller.customTitleController,
+                                    hintText: "Item Title (e.g. Nike Dunk High)",
+                                    labelText: "Item Title",
+                                    icon: Icons.title_rounded,
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  _buildCustomTextField(
+                                    controller: controller.customValueController,
+                                    hintText: "Estimated Value (e.g. 350)",
+                                    labelText: "Estimated Value",
+                                    icon: Icons.attach_money_rounded,
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (val) {
+                                      controller.customValue.value = double.tryParse(val) ?? 0.0;
+                                    },
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  _buildCustomDropdown(
+                                    label: "Category",
+                                    value: controller.customCategory,
+                                    items: controller.categoriesList,
+                                  ),
+                                  SizedBox(height: 16.h),
+                                  _buildCustomDropdown(
+                                    label: "Condition",
+                                    value: controller.customCondition,
+                                    items: controller.conditionsList,
+                                  ),
+                                  SizedBox(height: 24.h),
+                                  GestureDetector(
+                                    onTap: () => controller.pickCustomImage(),
+                                    child: Obx(() => Container(
+                                      height: 160.h,
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0B0B13),
+                                        borderRadius: BorderRadius.circular(20.r),
+                                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                                      ),
+                                      child: controller.customImageFile.value != null
+                                          ? ClipRRect(
+                                              borderRadius: BorderRadius.circular(20.r),
+                                              child: Image.file(
+                                                controller.customImageFile.value!,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            )
+                                          : Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(Icons.add_a_photo_rounded, color: const Color(0xFF8B9BFF), size: 32.sp),
+                                                SizedBox(height: 8.h),
+                                                Text("Upload Item Image", style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.bold)),
+                                                Text("Tap to pick from gallery", style: TextStyle(color: Colors.white38, fontSize: 11.sp)),
+                                              ],
+                                            ),
+                                    )),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return GestureDetector(
+                            onTap: () => _showProductSelectionBottomSheet(context),
+                            child: Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(20.r),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF161622),
+                                borderRadius: BorderRadius.circular(32.r),
+                                border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.1), width: 1),
+                              ),
+                              child: selectedProduct == null
+                                  ? Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(height: 32.h),
+                                        Icon(Icons.add_photo_alternate_outlined, color: Colors.white24, size: 48.sp),
+                                        SizedBox(height: 16.h),
+                                        Text("Choose from your Listings", style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                                        SizedBox(height: 8.h),
+                                        Text("Tap to select a product to offer", style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
+                                        SizedBox(height: 32.h),
+                                      ],
+                                    )
+                                  : Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          height: 320.h,
+                                          width: double.infinity,
+                                          decoration: BoxDecoration(
+                                            color: Colors.black,
+                                            borderRadius: BorderRadius.circular(24.r),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(24.r),
+                                            child: _buildProductImage(
+                                              selectedProduct['images'] != null && (selectedProduct['images'] as List).isNotEmpty
+                                                  ? selectedProduct['images'][0].toString()
+                                                  : "",
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(height: 24.h),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(selectedProduct['title'] ?? 'Product', style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
+                                                  SizedBox(height: 4.h),
+                                                  Text(
+                                                    "${(selectedProduct['category'] ?? 'APPAREL').toString().toUpperCase()} • ${(selectedProduct['condition'] ?? 'BRAND NEW').toString().toUpperCase()}",
+                                                    style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(width: 12.w),
+                                            Text("\$${controller.userProductValue.toInt()}", style: TextStyle(color: const Color(0xFFBD8BFF), fontSize: 24.sp, fontWeight: FontWeight.w900)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
                   ],
@@ -339,39 +473,71 @@ class MakeOfferScreen extends GetView<MakeOfferController> {
                 SizedBox(height: 48.h),
                 
                 // Final Send Offer Button
-                Container(
-                  width: double.infinity,
-                  height: 80.h,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(40.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF8B9BFF).withOpacity(0.35),
-                        blurRadius: 40.r,
-                        spreadRadius: -5.r,
-                        offset: const Offset(0, 20),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: (controller.isSubmitting.value || selectedProduct == null)
-                        ? null
-                        : () => controller.sendOffer(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B9BFF),
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40.r)),
-                      elevation: 0,
-                      disabledBackgroundColor: const Color(0xFF8B9BFF).withOpacity(0.3),
+                GestureDetector(
+                  onTap: (controller.isSubmitting.value || (!controller.isCustomOffer.value && selectedProduct == null))
+                      ? null
+                      : () => controller.sendOffer(),
+                  child: Container(
+                    width: double.infinity,
+                    height: 64.h,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(32.r),
+                      gradient: (controller.isSubmitting.value || (!controller.isCustomOffer.value && selectedProduct == null))
+                          ? null
+                          : const LinearGradient(
+                              colors: [Color(0xFF8B9BFF), Color(0xFFBD8BFF)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                      color: (controller.isSubmitting.value || (!controller.isCustomOffer.value && selectedProduct == null))
+                          ? Colors.white.withOpacity(0.05)
+                          : null,
+                      border: (controller.isSubmitting.value || (!controller.isCustomOffer.value && selectedProduct == null))
+                          ? Border.all(color: Colors.white.withOpacity(0.05), width: 1.5)
+                          : null,
+                      boxShadow: (controller.isSubmitting.value || (!controller.isCustomOffer.value && selectedProduct == null))
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: const Color(0xFF8B9BFF).withOpacity(0.4),
+                                blurRadius: 24.r,
+                                spreadRadius: 0,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                     ),
+                    alignment: Alignment.center,
                     child: controller.isSubmitting.value
-                        ? const Center(child: CircularProgressIndicator(color: Colors.black))
+                        ? SizedBox(
+                            height: 24.r,
+                            width: 24.r,
+                            child: const CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 2.5,
+                            ),
+                          )
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("SEND OFFER", style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                              SizedBox(width: 16.w),
-                              Icon(Icons.send_rounded, size: 22.sp),
+                              Text(
+                                "SEND OFFER",
+                                style: TextStyle(
+                                  color: (controller.isSubmitting.value || (!controller.isCustomOffer.value && selectedProduct == null))
+                                      ? Colors.white24
+                                      : Colors.black,
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                              SizedBox(width: 12.w),
+                              Icon(
+                                Icons.send_rounded,
+                                size: 18.sp,
+                                color: (controller.isSubmitting.value || (!controller.isCustomOffer.value && selectedProduct == null))
+                                    ? Colors.white24
+                                    : Colors.black,
+                              ),
                             ],
                           ),
                   ),
@@ -629,5 +795,74 @@ class MakeOfferScreen extends GetView<MakeOfferController> {
         Icon(Icons.north_east_rounded, color: Colors.white.withOpacity(0.05), size: 18.sp),
       ],
     );
+  }
+
+  Widget _buildCustomTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required String labelText,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    ValueChanged<String>? onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      onChanged: onChanged,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: const TextStyle(color: Colors.white38),
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.white24),
+        prefixIcon: Icon(icon, color: const Color(0xFF8B9BFF), size: 20.sp),
+        filled: true,
+        fillColor: const Color(0xFF0B0B13),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.r),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16.r),
+          borderSide: const BorderSide(color: Color(0xFF8B9BFF)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomDropdown({
+    required String label,
+    required RxString value,
+    required List<String> items,
+  }) {
+    return Obx(() => Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B0B13),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButtonFormField<String>(
+          value: value.value,
+          dropdownColor: const Color(0xFF11111A),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(color: Colors.white38),
+            border: InputBorder.none,
+          ),
+          style: const TextStyle(color: Colors.white),
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, style: TextStyle(fontSize: 14.sp)),
+            );
+          }).toList(),
+          onChanged: (val) {
+            if (val != null) value.value = val;
+          },
+        ),
+      ),
+    ));
   }
 }

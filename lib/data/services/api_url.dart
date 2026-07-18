@@ -14,6 +14,7 @@ class ApiUrl {
   // User
   static const String profile = "/users/profile";
   static const String users = "/users";
+  static const String switchRole = "/users/switch-role";
 
   // Products
   static const String products = "/products";
@@ -26,6 +27,8 @@ class ApiUrl {
 
   // Trades
   static const String tradeOffers = "/trades/offers";
+  static const String acceptTrade = "/trades/accept";
+  static const String declineTrade = "/trades/decline";
 
   // Category
   static const String category = "/category";

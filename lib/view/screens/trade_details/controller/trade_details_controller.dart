@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 
@@ -25,47 +26,40 @@ class TradeDetailsController extends GetxController {
   Future<void> buyProduct() async {
     isOrdering.value = true;
     try {
-      final buyerId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-      
-      final seller = product['sellerId'];
-      final sellerId = (seller is Map) ? (seller['_id'] ?? seller['id'] ?? "") : seller.toString();
       final productId = product['_id'] ?? product['id'] ?? "";
-      
       final double subtotal = double.tryParse(product['buyNowPrice']?.toString() ?? product['estValue']?.toString() ?? '250') ?? 250.0;
-      
+      final String productTitle = product['title'] ?? 'Product Purchase';
+
       final payload = {
-        "buyerId": buyerId,
-        "sellerId": sellerId,
-        "productId": productId,
-        "purchaseType": "buy_now",
-        "amountDetails": {
-          "itemSubtotal": subtotal,
-          "shipping": 15.0,
-          "taxes": 12.0,
-          "processingFee": 8.0,
-          "charityContribution": 0.0,
-          "totalPaid": subtotal + 35.0
-        },
-        "shippingAddress": {
-          "street": "123 Collectors Lane",
-          "city": "Metropolis",
-          "state": "NY",
-          "postalCode": "10001",
-          "country": "US"
+        "amount": subtotal,
+        "currency": "USD",
+        "productName": productTitle,
+        "metadata": {
+          "purchaseType": "buy_now",
+          "productId": productId
         }
       };
 
-      final response = await _apiClient.postData("/orders", payload);
+      final response = await _apiClient.postData("/payments/create-checkout-session", payload);
       if (response.statusCode == 200 || response.statusCode == 201) {
         final resBody = jsonDecode(response.body);
-        if (resBody['success'] == true) {
-          Get.snackbar("Success", "Order placed successfully!", snackPosition: SnackPosition.BOTTOM);
-          Get.offNamed('/purchases');
+        final success = resBody['success'] ?? false;
+        final data = resBody['data'];
+        
+        if (success && data is Map && data.containsKey('checkoutUrl')) {
+          final checkoutUrl = data['checkoutUrl'].toString();
+          final uri = Uri.parse(checkoutUrl);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+            Get.snackbar("Success", "Redirecting to Stripe checkout...", snackPosition: SnackPosition.BOTTOM);
+          } else {
+            Get.snackbar("Error", "Could not launch checkout screen.", snackPosition: SnackPosition.BOTTOM);
+          }
         } else {
-          Get.snackbar("Error", resBody['message'] ?? "Failed to place order", snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar("Error", resBody['message'] ?? "Failed to initiate payment session", snackPosition: SnackPosition.BOTTOM);
         }
       } else {
-        Get.snackbar("Error", "Order placement failed. Status code: ${response.statusCode}", snackPosition: SnackPosition.BOTTOM);
+        Get.snackbar("Error", "Failed to initiate payment. Status code: ${response.statusCode}", snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
       Get.snackbar("Error", "An unexpected error occurred: $e", snackPosition: SnackPosition.BOTTOM);

@@ -3,6 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'api_url.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import '../../core/app_route.dart';
 
 import '../helpers/shared_prefe.dart';
 
@@ -113,7 +117,7 @@ class ApiClient {
       );
 
       _logResponse('POST', url, response, startTime);
-      return response;
+      return await _checkAndRefreshToken(uri, response, () => postData(uri, body, headers: headers));
     } catch (e) {
       _logError('POST', url, e, startTime);
       rethrow;
@@ -171,7 +175,11 @@ class ApiClient {
       ).timeout(const Duration(seconds: 30));
 
       _logResponse('POST (Multipart)', url, response, startTime);
-      return response;
+      return await _checkAndRefreshToken(
+        uri,
+        response,
+        () => postMultipart(uri, fields, filePaths: filePaths, fieldName: fieldName, headers: headers),
+      );
     } catch (e) {
       _logError('POST (Multipart)', url, e, startTime);
       rethrow;
@@ -201,7 +209,7 @@ class ApiClient {
       );
 
       _logResponse('PATCH', url, response, startTime);
-      return response;
+      return await _checkAndRefreshToken(uri, response, () => patchData(uri, body, headers: headers));
     } catch (e) {
       _logError('PATCH', url, e, startTime);
       rethrow;
@@ -254,7 +262,11 @@ class ApiClient {
       ).timeout(const Duration(seconds: 30));
 
       _logResponse('PATCH (Multipart)', url, response, startTime);
-      return response;
+      return await _checkAndRefreshToken(
+        uri,
+        response,
+        () => patchMultipart(uri, fields, filePath: filePath, fieldName: fieldName, headers: headers),
+      );
     } catch (e) {
       _logError('PATCH (Multipart)', url, e, startTime);
       rethrow;
@@ -276,10 +288,161 @@ class ApiClient {
       final response = await http.get(url, headers: requestHeaders);
 
       _logResponse('GET', url, response, startTime);
-      return response;
+      return await _checkAndRefreshToken(uri, response, () => getData(uri, headers: headers));
     } catch (e) {
       _logError('GET', url, e, startTime);
       rethrow;
     }
+  }
+
+  // Interceptor to handle expired tokens and retry requests
+  Future<http.Response> _checkAndRefreshToken(
+    String uri,
+    http.Response response,
+    Future<http.Response> Function() retryAction,
+  ) async {
+    if (response.statusCode == 401 && uri != "/auth/refresh-token") {
+      final bodyStr = response.body;
+      final isExpired = bodyStr.contains("expired") || 
+                        bodyStr.contains("Expired") || 
+                        bodyStr.contains("Token") || 
+                        bodyStr.contains("unauthorized") ||
+                        bodyStr.contains("Unauthorized");
+      
+      if (isExpired) {
+        final success = await _refreshToken();
+        if (success) {
+          // Token refresh succeeded, retry request with new headers
+          return await retryAction();
+        } else {
+          // Refresh failed, log out user
+          await _logoutUser();
+        }
+      } else {
+        // Other 401 triggers logout
+        await _logoutUser();
+      }
+    } else if (response.statusCode == 403) {
+      try {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        final String message = body['message'] ?? "";
+        if (message.toLowerCase().contains("not verified") || 
+            message.toLowerCase().contains("admin approval") ||
+            message.toLowerCase().contains("seller account")) {
+          _showVerificationPendingDialog(message);
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print("Error parsing 403 response: $e");
+        }
+      }
+    }
+    return response;
+  }
+
+  // Calls refresh token endpoint to get new access token
+  Future<bool> _refreshToken() async {
+    final rToken = SharePrefsHelper.getString(SharePrefsHelper.refreshTokenKey);
+    if (rToken.isEmpty) return false;
+
+    try {
+      final url = Uri.parse('$baseUrl/auth/refresh-token');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      final body = jsonEncode({
+        'refreshToken': rToken,
+      });
+
+      if (kDebugMode) {
+        print("🔄 [API CLIENT] Session expired. Trying to refresh token...");
+      }
+
+      final response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resBody = jsonDecode(response.body);
+        final success = resBody['success'] == true;
+        if (success) {
+          final data = resBody['data'] ?? resBody;
+          final newAccessToken = data['accessToken'] ?? data['token'] ?? "";
+          final newRefreshToken = data['refreshToken'] ?? "";
+
+          if (newAccessToken.isNotEmpty) {
+            await SharePrefsHelper.setString(SharePrefsHelper.accessTokenKey, newAccessToken);
+            if (newRefreshToken.isNotEmpty) {
+              await SharePrefsHelper.setString(SharePrefsHelper.refreshTokenKey, newRefreshToken);
+            }
+            if (kDebugMode) {
+              print("✅ [API CLIENT] Token refresh successful. Saved to SharedPreferences.");
+            }
+            return true;
+          }
+        }
+      }
+      if (kDebugMode) {
+        print("❌ [API CLIENT] Token refresh failed: Status ${response.statusCode}");
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print("❌ [API CLIENT] Token refresh exception: $e");
+      }
+      return false;
+    }
+  }
+
+  // Clear preferences and navigate back to Login
+  Future<void> _logoutUser() async {
+    if (kDebugMode) {
+      print("🚨 [API CLIENT] Redirecting to Login screen...");
+    }
+    await SharePrefsHelper.clear();
+    Get.offAllNamed(AppRoute.login);
+    Get.snackbar(
+      "Session Expired",
+      "Your session has expired. Please log in again.",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFFFF6B35),
+      colorText: Colors.white,
+    );
+  }
+
+  void _showVerificationPendingDialog(String message) {
+    if (Get.isDialogOpen ?? false) return;
+    
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xFF11111A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+        title: Row(
+          children: [
+            Icon(
+              Icons.hourglass_empty_rounded,
+              color: const Color(0xFFFFB800),
+              size: 24.sp,
+            ),
+            SizedBox(width: 10.w),
+            Text(
+              "Verification Pending",
+              style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900),
+            ),
+          ],
+        ),
+        content: Text(
+          message.isNotEmpty ? message : "Your seller account is not verified yet. Please wait for admin approval.",
+          style: TextStyle(color: Colors.white70, fontSize: 14.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              "Got it",
+              style: TextStyle(color: const Color(0xFF8B9BFF), fontWeight: FontWeight.bold, fontSize: 14.sp),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

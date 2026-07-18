@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/app_route.dart';
@@ -26,6 +27,9 @@ class ProfileController extends GetxController {
   final RxString profileImageUrl = "".obs;
   final RxString coverPhotoUrl = "".obs;
   final RxBool isVerified = false.obs;
+  final RxString role = "user".obs;
+  final RxBool sellerVerified = false.obs; // Admin-approved seller status
+  final RxBool isSwitchingRole = false.obs;
   final RxDouble rating = 9.0.obs;
   final RxInt reviewsCount = 124.obs;
   final RxInt activeCount = 0.obs;
@@ -75,7 +79,24 @@ class ProfileController extends GetxController {
         }
 
         // Handle additional fields
-        isVerified.value = data['isVerified'] ?? false;
+        isVerified.value = data['isVerified'] ?? data['verified'] ?? false;
+
+        // Backend stores roles as an ARRAY (e.g. ["user","seller"]) per role_plan.txt
+        // But may also return a single string 'role'. Handle both.
+        final dynamic rolesRaw = data['roles'] ?? data['role'];
+        Get.log("🔍 [Profile] roles raw: $rolesRaw | sellerVerified raw: ${data['sellerVerified']}");
+        if (rolesRaw is List) {
+          // If any element in the array is 'seller', user is a seller
+          role.value = rolesRaw.any((r) => r.toString().toLowerCase() == 'seller') ? 'seller' : 'user';
+        } else if (rolesRaw is String) {
+          role.value = rolesRaw;
+        } else {
+          role.value = 'user';
+        }
+
+        // sellerVerified is the admin-approval flag (distinct from email verification)
+        sellerVerified.value = data['sellerVerified'] ?? false;
+        Get.log("✅ [Profile] Parsed role: ${role.value} | sellerVerified: ${sellerVerified.value}");
         if (data['rating'] != null) {
           rating.value = (data['rating'] as num).toDouble();
         }
@@ -200,5 +221,71 @@ class ProfileController extends GetxController {
   Future<void> logout() async {
     await SharePrefsHelper.clear();
     Get.offAllNamed(AppRoute.login);
+  }
+
+  Future<void> switchRole(String targetRole) async {
+    Get.log("🔄 [switchRole] Starting → role: $targetRole");
+    isSwitchingRole.value = true;
+    try {
+      Get.log("🔄 [switchRole] Calling PATCH ${ApiUrl.switchRole}");
+      final response = await _apiClient.patchData(
+        ApiUrl.switchRole,
+        {"role": targetRole},
+      );
+      Get.log("🔄 [switchRole] Status: ${response.statusCode} | Body: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Fetch updated profile to get new role + sellerVerified values
+        await fetchProfileData();
+
+        Get.snackbar(
+          targetRole == 'seller' ? "Application Submitted ✅" : "Switched to Buyer ✅",
+          targetRole == 'seller'
+              ? "Your seller application is under review. You'll be notified once approved."
+              : "You have successfully switched back to a Buyer account.",
+          backgroundColor: const Color(0xFF161622),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 4),
+          borderRadius: 16,
+          margin: const EdgeInsets.all(16),
+          icon: Icon(
+            targetRole == 'seller' ? Icons.hourglass_top_rounded : Icons.person_outline_rounded,
+            color: targetRole == 'seller' ? const Color(0xFFFFB800) : const Color(0xFF8B9BFF),
+          ),
+        );
+      } else {
+        String errMsg = "Role switch failed (${response.statusCode})";
+        try {
+          final data = jsonDecode(response.body);
+          errMsg = data['message'] ?? errMsg;
+        } catch (_) {}
+        Get.log("❌ [switchRole] Error: $errMsg");
+        Get.snackbar(
+          "Role Switch Failed",
+          errMsg,
+          backgroundColor: const Color(0xFF2A0A10),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          duration: const Duration(seconds: 5),
+          borderRadius: 16,
+          margin: const EdgeInsets.all(16),
+        );
+      }
+    } catch (e) {
+      Get.log("❌ [switchRole] Exception: $e");
+      Get.snackbar(
+        "Network Error",
+        "Could not switch role: $e",
+        backgroundColor: const Color(0xFF2A0A10),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 5),
+        borderRadius: 16,
+        margin: const EdgeInsets.all(16),
+      );
+    } finally {
+      isSwitchingRole.value = false;
+    }
   }
 }
