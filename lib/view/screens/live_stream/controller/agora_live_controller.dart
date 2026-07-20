@@ -25,6 +25,19 @@ class FloatingHeart {
   });
 }
 
+class FloatingEmoji {
+  final double id;
+  final String emoji;
+  final double scale;
+  final double angle;
+  FloatingEmoji({
+    required this.id,
+    required this.emoji,
+    required this.scale,
+    required this.angle,
+  });
+}
+
 const String agoraAppId = "040148b3e0a14154bc4eb74663dabf5f";
 
 class AgoraLiveController extends GetxController with WidgetsBindingObserver {
@@ -41,11 +54,21 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
   final RxBool isFollowingHost = false.obs;
   final RxString viewersCount = "64".obs;
 
+  // Analytics & Performance metrics
+  final Rx<DateTime?> streamStartTime = Rx<DateTime?>(null);
+  final RxInt totalBidsCount = 0.obs;
+  final RxDouble totalSalesRevenue = 0.0.obs;
+  final RxInt totalItemsSold = 0.obs;
+
+  // Audio mute for viewer
+  final RxBool isAudioMuted = false.obs;
+
   // Auction / product
   final RxString auctionItemId = "".obs;
   final RxString currentProductId = "".obs;
   final RxString currentProductTitle = "".obs;
   final RxString currentProductImage = "".obs;
+  final RxString currentProductCategory = "".obs;
   final RxDouble currentBidPrice = 0.0.obs;
   final RxDouble bidIncrement = 100.0.obs;
   final RxInt bidTimer = 60.obs;
@@ -87,6 +110,14 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
   int? _dataStreamId;
   final RxInt likeCount = 0.obs;
   final RxList<FloatingHeart> floatingHearts = <FloatingHeart>[].obs;
+  final RxList<FloatingEmoji> floatingEmojis = <FloatingEmoji>[].obs;
+
+  void toggleViewerAudio() {
+    isAudioMuted.toggle();
+    if (engine != null && !isHost.value) {
+      engine!.muteAllRemoteAudioStreams(isAudioMuted.value);
+    }
+  }
 
   void triggerFloatingHeart() {
     final double id = DateTime.now().microsecondsSinceEpoch.toDouble();
@@ -98,8 +129,8 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       Colors.redAccent,
     ];
     final randomColor = colors[id.toInt() % colors.length];
-    final randomAngle = (id.toInt() % 40 - 20) * (3.14159 / 180); // random angle between -20 and 20 degrees
-    final randomScale = 0.8 + (id.toInt() % 5) * 0.1; // scale between 0.8 and 1.2
+    final randomAngle = (id.toInt() % 40 - 20) * (3.14159 / 180);
+    final randomScale = 0.8 + (id.toInt() % 5) * 0.1;
     
     final heart = FloatingHeart(
       id: id,
@@ -109,11 +140,54 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     );
     
     floatingHearts.add(heart);
-    
-    // Auto remove after 1.5 seconds
     Future.delayed(const Duration(milliseconds: 1500), () {
       floatingHearts.removeWhere((h) => h.id == id);
     });
+  }
+
+  void triggerFloatingEmoji(String emojiStr) {
+    final double id = DateTime.now().microsecondsSinceEpoch.toDouble();
+    final randomAngle = (id.toInt() % 40 - 20) * (3.14159 / 180);
+    final randomScale = 1.0 + (id.toInt() % 4) * 0.15;
+    
+    final item = FloatingEmoji(
+      id: id,
+      emoji: emojiStr,
+      scale: randomScale,
+      angle: randomAngle,
+    );
+    
+    floatingEmojis.add(item);
+    Future.delayed(const Duration(milliseconds: 1600), () {
+      floatingEmojis.removeWhere((h) => h.id == id);
+    });
+  }
+
+  void sendHypeReaction(String emojiStr) {
+    triggerFloatingEmoji(emojiStr);
+
+    try {
+      final s = Get.find<SocketService>();
+      s.emitEvent("new message", {
+        "chat": streamId.value,
+        "chatId": streamId.value,
+        "content": emojiStr,
+        "isHypeReaction": true,
+        "reactionEmoji": emojiStr,
+        "isLiveStream": true,
+      });
+    } catch (_) {}
+
+    if (engine != null && _dataStreamId != null) {
+      try {
+        final payload = jsonEncode({"type": "hype_reaction", "emoji": emojiStr});
+        engine!.sendStreamMessage(
+          streamId: _dataStreamId!,
+          data: Uint8List.fromList(utf8.encode(payload)),
+          length: payload.length,
+        );
+      } catch (_) {}
+    }
   }
 
   Future<void> fetchProductReservePrice(String productId) async {
@@ -125,7 +199,16 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
         final data = body['data'] ?? body['product'] ?? body;
         if (data is Map) {
           reservePrice.value = double.tryParse(data['reservePrice']?.toString() ?? '0') ?? 0.0;
-          debugPrint("💰 [AgoraLive] Fetched reservePrice for product $productId: ${reservePrice.value}");
+          final cat = data['category'];
+          if (cat is Map) {
+            currentProductCategory.value = cat['name']?.toString() ?? cat['title']?.toString() ?? "";
+          } else if (cat != null) {
+            currentProductCategory.value = cat.toString();
+          }
+          if (currentProductCategory.value.isEmpty) {
+            currentProductCategory.value = data['categoryName']?.toString() ?? "Rare Collectibles";
+          }
+          debugPrint("💰 [AgoraLive] Fetched reservePrice for product $productId: ${reservePrice.value}, category: ${currentProductCategory.value}");
         }
       }
     } catch (e) {
@@ -339,6 +422,28 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
         return;
       }
 
+      // Handle Hype Reaction event
+      final isHype = msgMap['isHypeReaction'] == true || msgMap['type'] == 'hype_reaction';
+      if (isHype) {
+        final emojiStr = msgMap['reactionEmoji']?.toString() ?? msgMap['content']?.toString() ?? '🔥';
+        triggerFloatingEmoji(emojiStr);
+        return;
+      }
+
+      final isCustomOffer = msgMap['isCustomOffer'] == true || content.toString().contains('🤝 Sent Custom Offer');
+      final offerAmount = double.tryParse(msgMap['offerAmount']?.toString() ?? '0') ?? 0.0;
+      if (isCustomOffer) {
+        chatMessages.add({
+          "user": senderName.toString().startsWith('@') ? senderName.toString() : '@$senderName',
+          "msg": offerAmount > 0 ? "🤝 Sent Custom Offer: \$${offerAmount.toStringAsFixed(0)}" : content.toString(),
+          "role": msgMap['role']?.toString() ?? 'viewer',
+          "isCustomOffer": "true",
+          "offerAmount": offerAmount.toStringAsFixed(0),
+          "userAvatar": senderAvatar.toString(),
+        });
+        return;
+      }
+
       final isJoin = msgMap['isJoinEvent'] == true || content.toString().contains('joined this stream');
       final isBid = msgMap['isBid'] == true || content.toString().contains('🔨 Placed bid:');
       final bidAmount = double.tryParse(msgMap['bidAmount']?.toString() ?? '0') ?? 0.0;
@@ -457,6 +562,12 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       this.currentProductId.value = productId;
       await fetchProductReservePrice(productId);
       this.bidIncrement.value = 100.0; // default increment
+
+      // Init analytics
+      streamStartTime.value = DateTime.now();
+      totalBidsCount.value = 0;
+      totalSalesRevenue.value = 0.0;
+      totalItemsSold.value = 0;
 
       // 1) Create stream on backend
       final streamRes = await _apiClient.postData(ApiUrl.startStream, {
@@ -714,6 +825,159 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       } else { Get.snackbar("Bid Failed", "Server error (${res.statusCode})", snackPosition: SnackPosition.BOTTOM); }
     } catch (e) { debugPrint("Bid error: $e"); Get.snackbar("Error", "Could not place bid: $e", snackPosition: SnackPosition.BOTTOM); }
   }
+
+  // SEND CUSTOM OFFER
+  Future<void> sendCustomOffer({required double offerPrice, String message = ""}) async {
+    if (currentProductId.value.isEmpty && sellerId.value.isEmpty) {
+      Get.snackbar("Offer Failed", "No active item or seller info for offer.", snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    
+    final bidderId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
+    String usernameStr = "@buyer";
+    String avatarUrl = "";
+    try {
+      final p = Get.find<ProfileController>();
+      usernameStr = p.username.value.isNotEmpty ? p.username.value : "@${p.name.value.replaceAll(' ', '').toLowerCase()}";
+      avatarUrl = p.profileImageUrl.value;
+    } catch (_) {}
+
+    final msgText = "🤝 Sent Custom Offer: \$${offerPrice.toStringAsFixed(0)}";
+    chatMessages.add({
+      "user": usernameStr.startsWith("@") ? usernameStr : "@$usernameStr",
+      "msg": msgText,
+      "isCustomOffer": "true",
+      "offerAmount": offerPrice.toStringAsFixed(0),
+      "userAvatar": avatarUrl,
+      "role": "viewer",
+    });
+
+    try {
+      await _apiClient.postData(ApiUrl.tradeOffers, {
+        "productId": currentProductId.value,
+        "receiverId": sellerId.value,
+        "offerAmount": offerPrice,
+        "note": message,
+      });
+    } catch (e) {
+      debugPrint("⚠️ Trade offer API exception: $e");
+    }
+
+    try {
+      final s = Get.find<SocketService>();
+      s.emitEvent("new message", {
+        "chat": streamId.value,
+        "chatId": streamId.value,
+        "content": msgText,
+        "sender": {"_id": bidderId, "fullName": usernameStr, "avatar": avatarUrl},
+        "senderId": bidderId,
+        "role": "viewer",
+        "isCustomOffer": true,
+        "offerAmount": offerPrice,
+        "isLiveStream": true,
+      });
+    } catch (e) {
+      debugPrint("Socket offer broadcast failed: $e");
+    }
+
+    if (engine != null && _dataStreamId != null) {
+      try {
+        final payload = jsonEncode({
+          "type": "custom_offer",
+          "username": usernameStr,
+          "avatar": avatarUrl,
+          "amount": offerPrice,
+          "senderId": bidderId,
+          "message": message,
+        });
+        await engine!.sendStreamMessage(
+          streamId: _dataStreamId!,
+          data: Uint8List.fromList(utf8.encode(payload)),
+          length: payload.length,
+        );
+      } catch (e) {
+        debugPrint("Stream offer failed: $e");
+      }
+    }
+
+    if (Get.isBottomSheetOpen == true) Get.back();
+    Get.snackbar(
+      "Custom Offer Sent! 🤝",
+      "Your offer of \$${offerPrice.toStringAsFixed(0)} has been sent to the host!",
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFFBD8BFF),
+      colorText: Colors.white,
+    );
+  }
+
+  // ACCEPT CUSTOM OFFER (Host)
+  Future<void> acceptCustomOffer(Map<String, String> m) async {
+    final buyerName = m['user'] ?? 'Buyer';
+    final offerAmt = double.tryParse(m['offerAmount'] ?? '0') ?? 0.0;
+    
+    totalSalesRevenue.value += offerAmt;
+    totalItemsSold.value++;
+
+    final msgText = "🎉 Host ACCEPTED custom offer of \$${offerAmt.toStringAsFixed(0)} from $buyerName!";
+    chatMessages.add({
+      "user": "System",
+      "msg": msgText,
+      "role": "system",
+      "userAvatar": "",
+    });
+
+    try {
+      final s = Get.find<SocketService>();
+      s.emitEvent('new message', {
+        "chat": streamId.value,
+        "chatId": streamId.value,
+        "content": msgText,
+        "sender": {"_id": SharePrefsHelper.getString(SharePrefsHelper.userIdKey), "fullName": "Host"},
+        "isLiveStream": true,
+      });
+    } catch (_) {}
+
+    Get.snackbar(
+      "Offer Accepted! 🎉",
+      "You accepted the offer of \$${offerAmt.toStringAsFixed(0)} from $buyerName",
+      backgroundColor: const Color(0xFF22C55E),
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  // DECLINE CUSTOM OFFER (Host)
+  Future<void> declineCustomOffer(Map<String, String> m) async {
+    final buyerName = m['user'] ?? 'Buyer';
+    final msgText = "❌ Host declined custom offer from $buyerName.";
+
+    chatMessages.add({
+      "user": "System",
+      "msg": msgText,
+      "role": "system",
+      "userAvatar": "",
+    });
+
+    try {
+      final s = Get.find<SocketService>();
+      s.emitEvent('new message', {
+        "chat": streamId.value,
+        "chatId": streamId.value,
+        "content": msgText,
+        "sender": {"_id": SharePrefsHelper.getString(SharePrefsHelper.userIdKey), "fullName": "Host"},
+        "isLiveStream": true,
+      });
+    } catch (_) {}
+
+    Get.snackbar(
+      "Offer Declined",
+      "You declined the offer from $buyerName",
+      backgroundColor: Colors.redAccent,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   void _handleIncomingStreamMessage(Map<String, dynamic> payload) {
     final type = payload['type'];
     final avatar = payload['avatar'] ?? '';
@@ -731,6 +995,20 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
         "user": senderName,
         "msg": msg,
         "role": role,
+        "userAvatar": avatar,
+      });
+    } else if (type == 'custom_offer') {
+      final username = payload['username'] ?? '';
+      final amount = double.tryParse(payload['amount']?.toString() ?? '0') ?? 0.0;
+      final msgText = "🤝 Sent Custom Offer: \$${amount.toStringAsFixed(0)}";
+      final senderName = username.toString().startsWith('@') ? username : '@$username';
+      if (chatMessages.any((m) => m['user'] == senderName && m['msg'] == msgText)) return;
+
+      chatMessages.add({
+        "user": senderName,
+        "msg": msgText,
+        "isCustomOffer": "true",
+        "offerAmount": amount.toStringAsFixed(0),
         "userAvatar": avatar,
       });
     } else if (type == 'bid') {

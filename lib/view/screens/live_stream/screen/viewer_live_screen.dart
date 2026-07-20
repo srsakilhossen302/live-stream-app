@@ -276,6 +276,22 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
               ),
             ),
 
+            // ── Floating Emojis Overlay
+            Positioned(
+              right: 20.w,
+              bottom: 100.h,
+              child: SizedBox(
+                width: 100.w,
+                height: 350.h,
+                child: Obx(() => Stack(
+                  clipBehavior: Clip.none,
+                  children: ctrl.floatingEmojis.map((emojiItem) {
+                    return _buildAnimatedEmoji(emojiItem);
+                  }).toList(),
+                )),
+              ),
+            ),
+
             // ── Results Calculating Loader Overlay
             Obx(() {
               if (ctrl.isCalculatingResult.value) {
@@ -997,6 +1013,59 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
       );
     }
 
+    if (m['isCustomOffer'] == 'true') {
+      final offerAmt = m['offerAmount'] ?? '0';
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A1B4E).withOpacity(0.85),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: const Color(0xFFBD8BFF).withOpacity(0.5), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFBD8BFF).withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 12.r,
+              backgroundImage: avatarImg,
+            ),
+            SizedBox(width: 8.w),
+            Icon(Icons.handshake_rounded, color: const Color(0xFFBD8BFF), size: 16.sp),
+            SizedBox(width: 6.w),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: "$user ",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "sent Offer: \$$offerAmt",
+                    style: TextStyle(
+                      color: const Color(0xFFBD8BFF),
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final isHost = role == 'host';
     if (isHost) {
       return Container(
@@ -1120,13 +1189,15 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
   }
 
   Widget _buildProductCard() {
-    return Container(
-      padding: EdgeInsets.all(12.r),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: Colors.white10, width: 0.5),
-      ),
+    return GestureDetector(
+      onTap: () => _showProductInspectionSheet(),
+      child: Container(
+        padding: EdgeInsets.all(12.r),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: Colors.white10, width: 0.5),
+        ),
       child: Row(
         children: [
           Stack(
@@ -1193,9 +1264,15 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                 SizedBox(height: 4.h),
                 Row(
                   children: [
+                    Obx(() {
+                      final cat = ctrl.currentProductCategory.value;
+                      if (cat.isEmpty) return const SizedBox.shrink();
+                      return Padding(
+                        padding: EdgeInsets.only(right: 4.w),
+                        child: _buildBadgeTag(cat.toUpperCase()),
+                      );
+                    }),
                     _buildBadgeTag("FREE SHIPPING"),
-                    SizedBox(width: 4.w),
-                    _buildBadgeTag("TAXES"),
                   ],
                 ),
                 SizedBox(height: 6.h),
@@ -1226,8 +1303,9 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBadgeTag(String label) {
     return Container(
@@ -1247,6 +1325,46 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Mute Audio Toggle
+        Obx(() => GestureDetector(
+          onTap: ctrl.toggleViewerAudio,
+          child: Container(
+            padding: EdgeInsets.all(10.r),
+            decoration: BoxDecoration(
+              color: ctrl.isAudioMuted.value ? Colors.red.withOpacity(0.8) : Colors.black.withOpacity(0.35),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              ctrl.isAudioMuted.value ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+              color: Colors.white,
+              size: 20.sp,
+            ),
+          ),
+        )),
+        SizedBox(height: 12.h),
+
+        // Hype Reactions Bar
+        Container(
+          padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 4.w),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.35),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Column(
+            children: ['🔥', '👏', '🎉', '💎'].map((emoji) {
+              return GestureDetector(
+                onTap: () => ctrl.sendHypeReaction(emoji),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 3.h),
+                  child: Text(emoji, style: TextStyle(fontSize: 18.sp)),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        SizedBox(height: 12.h),
+
         Obx(() {
           final count = ctrl.likeCount.value;
           final label = count >= 1000
@@ -1281,23 +1399,7 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
             ),
           );
         }),
-        SizedBox(height: 16.h),
-        GestureDetector(
-          onTap: () => Get.snackbar("Notification", "Notifications enabled for this live stream", snackPosition: SnackPosition.BOTTOM),
-          child: Container(
-            padding: EdgeInsets.all(12.r),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.35),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.notifications_none_rounded,
-              color: Colors.white,
-              size: 24.sp,
-            ),
-          ),
-        ),
-        SizedBox(height: 16.h),
+        SizedBox(height: 12.h),
         GestureDetector(
           onTap: () => Get.snackbar("Share", "Link copied to clipboard!", snackPosition: SnackPosition.BOTTOM),
           child: Container(
@@ -1309,7 +1411,7 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
             child: Icon(
               Icons.share_rounded,
               color: Colors.white,
-              size: 24.sp,
+              size: 20.sp,
             ),
           ),
         ),
@@ -1353,6 +1455,40 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                     _chatController.clear();
                   },
                   child: Icon(Icons.send_rounded, color: Colors.white54, size: 18.sp),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(width: 8.w),
+
+        // Custom Offer Button
+        GestureDetector(
+          onTap: () => _showCustomOfferSheet(),
+          child: Container(
+            height: 48.r,
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF8B9BFF), Color(0xFFBD8BFF)],
+              ),
+              borderRadius: BorderRadius.circular(24.r),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFBD8BFF).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.handshake_rounded, color: Colors.white, size: 16.sp),
+                SizedBox(width: 4.w),
+                Text(
+                  "Offer",
+                  style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
                 ),
               ],
             ),
@@ -1548,6 +1684,310 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                 ),
                 child: Text("Confirm Bid", style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
               ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  void _showCustomOfferSheet() {
+    final offerAmountCtrl = TextEditingController();
+    final noteCtrl = TextEditingController();
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF11111A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 20.h),
+                decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2.r)),
+              ),
+            ),
+            Row(
+              children: [
+                Icon(Icons.handshake_rounded, color: const Color(0xFFBD8BFF), size: 24.sp),
+                SizedBox(width: 8.w),
+                Text("Make a Custom Offer", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
+              ],
+            ),
+            SizedBox(height: 4.h),
+            Obx(() => Text(
+              "Send a direct offer to the host for ${ctrl.currentProductTitle.value.isEmpty ? 'this item' : ctrl.currentProductTitle.value}",
+              style: TextStyle(color: Colors.white38, fontSize: 12.sp),
+            )),
+            SizedBox(height: 20.h),
+
+            // Quick offer chips based on current price
+            Obx(() {
+              final base = ctrl.currentBidPrice.value;
+              final suggestions = [base * 0.9, base, base * 1.15].where((a) => a > 0).toList();
+              return Row(
+                children: suggestions.map((amt) {
+                  return GestureDetector(
+                    onTap: () {
+                      offerAmountCtrl.text = amt.toStringAsFixed(0);
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(right: 10.w),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1E2C),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: const Color(0xFFBD8BFF).withOpacity(0.3)),
+                      ),
+                      child: Text("\$${amt.toStringAsFixed(0)}",
+                          style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800)),
+                    ),
+                  );
+                }).toList(),
+              );
+            }),
+
+            SizedBox(height: 16.h),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF161622),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: TextField(
+                controller: offerAmountCtrl,
+                keyboardType: TextInputType.number,
+                style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900),
+                decoration: InputDecoration(
+                  hintText: "Enter offer amount",
+                  hintStyle: TextStyle(color: Colors.white24, fontSize: 16.sp),
+                  border: InputBorder.none,
+                  prefixText: "\$",
+                  prefixStyle: TextStyle(color: const Color(0xFFBD8BFF), fontSize: 18.sp, fontWeight: FontWeight.w900),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF161622),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: TextField(
+                controller: noteCtrl,
+                style: TextStyle(color: Colors.white, fontSize: 13.sp),
+                decoration: InputDecoration(
+                  hintText: "Add note for host (optional)",
+                  hintStyle: TextStyle(color: Colors.white24, fontSize: 13.sp),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 12.h),
+                ),
+              ),
+            ),
+            SizedBox(height: 24.h),
+            GestureDetector(
+              onTap: () {
+                final text = offerAmountCtrl.text.trim();
+                if (text.isEmpty) {
+                  Get.snackbar("Error", "Please enter an offer amount.", snackPosition: SnackPosition.BOTTOM);
+                  return;
+                }
+                final cleanText = text.replaceAll('\$', '').replaceAll(',', '');
+                final amount = double.tryParse(cleanText);
+                if (amount == null || amount <= 0) {
+                  Get.snackbar("Error", "Invalid offer amount.", snackPosition: SnackPosition.BOTTOM);
+                  return;
+                }
+                ctrl.sendCustomOffer(offerPrice: amount, message: noteCtrl.text.trim());
+              },
+              child: Container(
+                width: double.infinity,
+                height: 54.h,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFF8B9BFF), Color(0xFFBD8BFF)]),
+                  borderRadius: BorderRadius.circular(27.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFBD8BFF).withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text("Send Custom Offer", style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildAnimatedEmoji(FloatingEmoji item) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(item.id),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1600),
+      builder: (context, value, child) {
+        final double opacity = value < 0.2
+            ? (value / 0.2)
+            : (value > 0.7 ? (1.0 - value) / 0.3 : 1.0);
+        final double translationY = -320.h * value;
+        final double translationX = 35.w * math.sin(value * math.pi) * item.angle;
+        return Positioned(
+          bottom: 0,
+          right: 35.w + translationX,
+          child: Transform.translate(
+            offset: Offset(0, translationY),
+            child: Transform.scale(
+              scale: item.scale * (value < 0.2 ? value / 0.2 : 1.0),
+              child: Opacity(
+                opacity: opacity.clamp(0.0, 1.0),
+                child: Text(
+                  item.emoji,
+                  style: TextStyle(fontSize: 28.sp),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showProductInspectionSheet() {
+    final title = ctrl.currentProductTitle.value.isEmpty ? "Auction Item" : ctrl.currentProductTitle.value;
+    final img = ctrl.currentProductImage.value;
+    final cat = ctrl.currentProductCategory.value.isEmpty ? "Rare Collectibles" : ctrl.currentProductCategory.value;
+
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF11111A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                margin: EdgeInsets.only(bottom: 20.h),
+                decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2.r)),
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B9BFF).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    cat.toUpperCase(),
+                    style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.verified_rounded, color: const Color(0xFF22C55E), size: 18.sp),
+                SizedBox(width: 4.w),
+                Text("Verified Authentic", style: TextStyle(color: Colors.white60, fontSize: 11.sp, fontWeight: FontWeight.w700)),
+              ],
+            ),
+            SizedBox(height: 16.h),
+            Center(
+              child: Container(
+                width: 140.r,
+                height: 140.r,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: img.isEmpty
+                    ? Icon(Icons.image, color: Colors.white24, size: 48.sp)
+                    : Image.network(
+                        img.startsWith('http') ? img : "${ApiUrl.imageBaseUrl}$img",
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 48.sp),
+                      ),
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Text(title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
+            SizedBox(height: 6.h),
+            Row(
+              children: [
+                Text("Current Highest Bid: ", style: TextStyle(color: Colors.white60, fontSize: 13.sp)),
+                Obx(() => Text("\$${ctrl.currentBidPrice.value.toStringAsFixed(0)}",
+                    style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 18.sp, fontWeight: FontWeight.w900))),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              "Authentic item inspected by host. Guaranteed original condition, fast insured shipping included.",
+              style: TextStyle(color: Colors.white54, fontSize: 12.sp, height: 1.4),
+            ),
+            SizedBox(height: 24.h),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.back();
+                      final nextBid = ctrl.currentBidPrice.value + ctrl.bidIncrement.value;
+                      ctrl.placeBid(nextBid);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B9BFF),
+                      foregroundColor: const Color(0xFF0F0B1E),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                    ),
+                    child: Obx(() => Text(
+                      "Place Bid (\$${(ctrl.currentBidPrice.value + ctrl.bidIncrement.value).toStringAsFixed(0)})",
+                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+                    )),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.back();
+                      _showCustomOfferSheet();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFBD8BFF),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+                    ),
+                    child: Text(
+                      "Make Offer",
+                      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

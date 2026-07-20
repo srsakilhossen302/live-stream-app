@@ -8,6 +8,7 @@ import '../model/purchase_model.dart';
 import '../../main/controller/main_controller.dart';
 import '../../../../global/widgets/custom_bottom_navbar.dart';
 import '../../../../global/widgets/custom_shimmer.dart';
+import '../../../../global/widgets/custom_empty_state.dart';
 
 class PurchasesScreen extends GetView<PurchasesController> {
   const PurchasesScreen({super.key});
@@ -15,7 +16,6 @@ class PurchasesScreen extends GetView<PurchasesController> {
   @override
   Widget build(BuildContext context) {
     Get.put(PurchasesController());
-    final mainController = Get.find<MainController>();
     return CustomBackground(
       bottomNavigationBar: const CustomBottomNavbar(),
       child: SafeArea(
@@ -108,15 +108,11 @@ class PurchasesScreen extends GetView<PurchasesController> {
                 }
 
                 if (controller.filteredPurchases.isEmpty) {
-                  return Center(
-                    child: Text(
-                      "No purchases found.",
-                      style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  return CustomEmptyState(
+                    icon: Icons.shopping_bag_outlined,
+                    title: "No Purchases Found",
+                    description: "You haven't purchased any items in this category yet.",
+                    onRetry: () => controller.fetchPurchases(),
                   );
                 }
 

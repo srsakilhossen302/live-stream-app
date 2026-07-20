@@ -133,6 +133,27 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                           ),
                         );
                       }),
+                      SizedBox(width: 8.w),
+                      // LIKE counter badge
+                      Obx(() => Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF528E).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20.r),
+                          border: Border.all(color: const Color(0xFFFF528E).withOpacity(0.4), width: 1),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.favorite_rounded, color: const Color(0xFFFF528E), size: 12.sp),
+                            SizedBox(width: 4.w),
+                            Text(
+                              "${ctrl.likeCount.value}",
+                              style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900),
+                            ),
+                          ],
+                        ),
+                      )),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: Obx(() => Text(
@@ -230,6 +251,22 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Obx(() {
+                                    final cat = ctrl.currentProductCategory.value;
+                                    if (cat.isEmpty) return const SizedBox.shrink();
+                                    return Container(
+                                      margin: EdgeInsets.only(bottom: 2.h),
+                                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF8B9BFF).withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4.r),
+                                      ),
+                                      child: Text(
+                                        cat.toUpperCase(),
+                                        style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 8.sp, fontWeight: FontWeight.w900),
+                                      ),
+                                    );
+                                  }),
                                   Obx(() => Text(
                                     ctrl.currentProductTitle.value.isEmpty ? "Auction Item" : ctrl.currentProductTitle.value,
                                     style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900),
@@ -827,6 +864,101 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
       );
     }
 
+    if (m['isCustomOffer'] == 'true') {
+      final offerAmt = m['offerAmount'] ?? '0';
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A1B4E).withOpacity(0.9),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: const Color(0xFFBD8BFF).withOpacity(0.5), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFBD8BFF).withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 12.r,
+                  backgroundImage: avatarImg,
+                ),
+                SizedBox(width: 8.w),
+                Icon(Icons.handshake_rounded, color: const Color(0xFFBD8BFF), size: 16.sp),
+                SizedBox(width: 6.w),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "$user ",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      TextSpan(
+                        text: "sent Offer: \$$offerAmt",
+                        style: TextStyle(
+                          color: const Color(0xFFBD8BFF),
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () => ctrl.acceptCustomOffer(m),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Text(
+                      "Accept \$$offerAmt",
+                      style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                GestureDetector(
+                  onTap: () => ctrl.declineCustomOffer(m),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
+                    ),
+                    child: Text(
+                      "Decline",
+                      style: TextStyle(color: Colors.white70, fontSize: 10.sp, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     final isHost = role == 'host';
     if (isHost) {
       return Container(
@@ -1008,55 +1140,115 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
   }
 
   void _showEndStreamDialog(AgoraLiveController ctrl) {
+    final startTime = ctrl.streamStartTime.value ?? DateTime.now();
+    final diff = DateTime.now().difference(startTime);
+    final hours = diff.inHours.toString().padLeft(2, '0');
+    final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
+    final durationStr = hours != "00" ? "$hours:$minutes:$seconds" : "$minutes:$seconds";
+
     Get.dialog(
       Dialog(
-        backgroundColor: const Color(0xFF161622),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
-        child: Padding(
+        backgroundColor: Colors.transparent,
+        child: Container(
           padding: EdgeInsets.all(24.r),
+          decoration: BoxDecoration(
+            color: const Color(0xFF141422),
+            borderRadius: BorderRadius.circular(28.r),
+            border: Border.all(color: Colors.white12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 25,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.stop_circle_outlined, color: Colors.red, size: 48.sp),
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B9BFF).withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.analytics_rounded, color: const Color(0xFF8B9BFF), size: 36.sp),
+              ),
               SizedBox(height: 16.h),
-              Text("End Stream?",
-                  style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
-              SizedBox(height: 8.h),
-              Text("This will end your live stream for all viewers.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white60, fontSize: 13.sp)),
+              Text(
+                "End Live Session?",
+                style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900),
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                "Here is your live session performance summary:",
+                style: TextStyle(color: Colors.white54, fontSize: 12.sp),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20.h),
+
+              // Metrics Grid
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _metricTile("⏱️ Duration", durationStr),
+                        _metricTile("👥 Viewers", ctrl.remoteJoined.value ? "1" : "0"),
+                      ],
+                    ),
+                    SizedBox(height: 16.h),
+                    Divider(color: Colors.white10, height: 1.h),
+                    SizedBox(height: 16.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _metricTile("🔨 Total Bids", "${ctrl.totalBidsCount.value}"),
+                        _metricTile("💰 Revenue", "\$${ctrl.totalSalesRevenue.value.toStringAsFixed(0)}"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               SizedBox(height: 24.h),
+
               Row(
                 children: [
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () => Get.back(),
-                      child: Container(
-                        height: 48.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.white10,
-                          borderRadius: BorderRadius.circular(24.r),
-                        ),
-                        child: Text("Cancel", style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                    child: TextButton(
+                      onPressed: () => Get.back(),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                      ),
+                      child: Text(
+                        "Continue",
+                        style: TextStyle(color: Colors.white54, fontSize: 13.sp, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
                   SizedBox(width: 12.w),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () {
+                    child: ElevatedButton(
+                      onPressed: () async {
                         Get.back();
-                        ctrl.endStream();
+                        await ctrl.endStream();
                       },
-                      child: Container(
-                        height: 48.h,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(24.r),
-                        ),
-                        child: Text("End Stream", style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                      ),
+                      child: Text(
+                        "End & Exit",
+                        style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w900),
                       ),
                     ),
                   ),
@@ -1066,6 +1258,16 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _metricTile(String title, String value) {
+    return Column(
+      children: [
+        Text(title, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w600)),
+        SizedBox(height: 4.h),
+        Text(value, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 16.sp, fontWeight: FontWeight.w900)),
+      ],
     );
   }
 }

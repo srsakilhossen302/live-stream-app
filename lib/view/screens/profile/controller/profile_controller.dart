@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/app_route.dart';
@@ -21,17 +19,20 @@ class ProfileController extends GetxController {
 
   // Profile data
   final RxBool isLoading = false.obs;
-  final RxString name = "User Name".obs;
-  final RxString username = "@username".obs;
-  final RxString description = "Bio description...".obs;
+  final RxBool hasError = false.obs;
+  final RxString errorMessage = "".obs;
+  final RxString userId = "".obs;
+  final RxString name = "".obs;
+  final RxString username = "".obs;
+  final RxString description = "".obs;
   final RxString profileImageUrl = "".obs;
   final RxString coverPhotoUrl = "".obs;
   final RxBool isVerified = false.obs;
   final RxString role = "user".obs;
   final RxBool sellerVerified = false.obs; // Admin-approved seller status
   final RxBool isSwitchingRole = false.obs;
-  final RxDouble rating = 9.0.obs;
-  final RxInt reviewsCount = 124.obs;
+  final RxDouble rating = 0.0.obs;
+  final RxInt reviewsCount = 0.obs;
   final RxInt activeCount = 0.obs;
   final RxInt soldCount = 0.obs;
   final RxInt totalTrades = 0.obs;
@@ -60,15 +61,17 @@ class ProfileController extends GetxController {
 
   Future<void> fetchProfileData() async {
     isLoading.value = true;
+    hasError.value = false;
+    errorMessage.value = "";
     try {
       final response = await _apiClient.getData(ApiUrl.profile);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body)['data'];
 
-        final String fn = data['fullName'] ?? "User Name";
-        name.value = fn;
+        final String fn = data['fullName'] ?? "";
+        name.value = fn.isNotEmpty ? fn : "User";
         final String un = data['username'] ?? fn.replaceAll(' ', '').toLowerCase();
-        username.value = "@$un";
+        username.value = un.isNotEmpty ? "@$un" : "";
         description.value = data['description'] ?? "No bio added yet.";
 
         // Handle profile image
@@ -120,17 +123,24 @@ class ProfileController extends GetxController {
         if (data['rating'] != null && rating.value == 0.0) {
           rating.value = (data['rating'] as num).toDouble();
         }
-        reviewsCount.value = data['reviewsCount'] ?? 124;
+        reviewsCount.value = data['reviewsCount'] ?? 0;
 
         // Fetch products listed by this user and activity logs
-        final userId = data['id'] ?? data['_id'] ?? SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-        if (userId != null && userId.isNotEmpty) {
-          await fetchUserListings(userId);
-          await fetchActivityData(userId);
+        final rawUserId = (data['id'] ?? data['_id'] ?? SharePrefsHelper.getString(SharePrefsHelper.userIdKey))?.toString() ?? "";
+        if (rawUserId.isNotEmpty) {
+          userId.value = rawUserId;
+          SharePrefsHelper.setString(SharePrefsHelper.userIdKey, rawUserId);
+          await fetchUserListings(rawUserId);
+          await fetchActivityData(rawUserId);
         }
+      } else {
+        hasError.value = true;
+        errorMessage.value = "Failed to load profile details (${response.statusCode}).";
       }
     } catch (e) {
       Get.log("Error fetching profile: $e");
+      hasError.value = true;
+      errorMessage.value = "Unable to connect. Please check your internet connection.";
     } finally {
       isLoading.value = false;
     }
@@ -247,11 +257,11 @@ class ProfileController extends GetxController {
   void changeTab(int index) {
     selectedTab.value = index;
     if (index == 1) {
-      final userId = user.value.id.isNotEmpty 
-          ? user.value.id 
+      final currentUserId = userId.value.isNotEmpty 
+          ? userId.value 
           : SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-      if (userId.isNotEmpty) {
-        fetchPurchases(userId);
+      if (currentUserId.isNotEmpty) {
+        fetchPurchases(currentUserId);
         fetchNotifications();
       }
     }
@@ -259,12 +269,12 @@ class ProfileController extends GetxController {
 
   void changeActivityFilter(int index) {
     selectedActivityFilter.value = index;
-    final userId = user.value.id.isNotEmpty 
-        ? user.value.id 
+    final currentUserId = userId.value.isNotEmpty 
+        ? userId.value 
         : SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-    if (userId.isNotEmpty) {
+    if (currentUserId.isNotEmpty) {
       if (index == 1) {
-        fetchPurchases(userId);
+        fetchPurchases(currentUserId);
       } else {
         fetchNotifications();
       }

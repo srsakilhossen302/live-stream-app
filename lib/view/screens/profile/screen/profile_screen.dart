@@ -9,6 +9,7 @@ import '../../../../global/widgets/custom_background.dart';
 import '../controller/profile_controller.dart';
 import '../../../../data/services/api_url.dart';
 import '../../../../global/widgets/custom_shimmer.dart';
+import '../../../../global/widgets/custom_empty_state.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
   const ProfileScreen({super.key});
@@ -48,39 +49,51 @@ class ProfileScreen extends GetView<ProfileController> {
                   physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics(),
                   ),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 8.h),
+                  child: Obx(() {
+                    if (controller.hasError.value && controller.name.value.isEmpty) {
+                      return Padding(
+                        padding: EdgeInsets.only(top: 80.h),
+                        child: CustomEmptyState(
+                          icon: Icons.wifi_off_rounded,
+                          title: "Failed to Load Profile",
+                          description: controller.errorMessage.value.isNotEmpty
+                              ? controller.errorMessage.value
+                              : "Could not fetch profile details. Please check your internet connection.",
+                          onRetry: () => controller.fetchProfileData(),
+                        ),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        SizedBox(height: 8.h),
 
-                      // Profile Info — Facebook-style cover
-                      _buildProfileHeader(),
+                        // Profile Info — Facebook-style cover
+                        _buildProfileHeader(),
 
-                      SizedBox(height: 24.h),
+                        SizedBox(height: 24.h),
 
-                      // Stats Row
-                      _buildStatsRow(),
+                        // Stats Row
+                        _buildStatsRow(),
 
-                      SizedBox(height: 32.h),
+                        SizedBox(height: 32.h),
 
-                      // Tabs
-                      _buildTabBar(),
+                        // Tabs
+                        _buildTabBar(),
 
-                      SizedBox(height: 24.h),
+                        SizedBox(height: 24.h),
 
-                      // Content Section
-                      Obx(() {
-                        if (controller.selectedTab.value == 1) {
-                          return _buildActivityTab();
-                        } else if (controller.selectedTab.value == 2) {
-                          return _buildSettingsTab();
-                        } else {
-                          return _buildListingsGrid();
-                        }
-                      }),
+                        // Content Section
+                        if (controller.selectedTab.value == 1)
+                          _buildActivityTab()
+                        else if (controller.selectedTab.value == 2)
+                          _buildSettingsTab()
+                        else
+                          _buildListingsGrid(),
 
-                      SizedBox(height: 120.h),
-                    ],
-                  ),
+                        SizedBox(height: 120.h),
+                      ],
+                    );
+                  }),
                 ),
               ),
             ),
@@ -95,7 +108,7 @@ class ProfileScreen extends GetView<ProfileController> {
       final coverUrl = controller.coverPhotoUrl.value;
       final profileUrl = controller.profileImageUrl.value;
 
-      if (controller.isLoading.value && controller.name.value == "User Name") {
+      if (controller.isLoading.value && controller.name.value.isEmpty) {
         return _buildProfileHeaderShimmer();
       }
 
@@ -551,18 +564,10 @@ class ProfileScreen extends GetView<ProfileController> {
       }
       
       if (controller.userListings.isEmpty) {
-        return SizedBox(
-          height: 200.h,
-          child: Center(
-            child: Text(
-              "No listings posted yet.",
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+        return CustomEmptyState(
+          icon: Icons.inventory_2_outlined,
+          title: "No Listings Found",
+          description: "You haven't posted any items for sale or trade yet.",
         );
       }
 

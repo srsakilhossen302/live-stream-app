@@ -9,6 +9,7 @@ import '../../../../data/services/api_url.dart';
 import '../controller/my_trades_controller.dart';
 import '../model/my_trade_model.dart';
 import '../../../../global/widgets/custom_shimmer.dart';
+import '../../../../global/widgets/custom_empty_state.dart';
 
 class MyTradesScreen extends GetView<MyTradesController> {
   const MyTradesScreen({super.key});
@@ -61,17 +62,13 @@ class MyTradesScreen extends GetView<MyTradesController> {
                       }
 
                       if (controller.filteredTrades.isEmpty) {
-                        return SizedBox(
-                          height: 300.h,
-                          child: Center(
-                            child: Text(
-                              "No trades found.",
-                              style: TextStyle(
-                                color: Colors.white38,
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                        return Padding(
+                          padding: EdgeInsets.only(top: 40.h),
+                          child: CustomEmptyState(
+                            icon: Icons.swap_horiz_rounded,
+                            title: "No Trades Found",
+                            description: "You don't have any trade offers or requests in this filter yet.",
+                            onRetry: () => controller.fetchTrades(),
                           ),
                         );
                       }

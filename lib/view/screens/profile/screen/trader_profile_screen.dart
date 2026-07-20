@@ -31,9 +31,9 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
                 SizedBox(height: 32.h),
                 Obx(() => _buildProfileHeader()),
                 SizedBox(height: 32.h),
-                Obx(() => _buildStatsRow()),
+                _buildStatsRow(),
                 SizedBox(height: 32.h),
-                Obx(() => _buildActionButtons()),
+                _buildActionButtons(),
                 SizedBox(height: 40.h),
                 Obx(() => _buildTabs()),
                 SizedBox(height: 24.h),
@@ -207,18 +207,17 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
           ],
         ),
 
-        Obx(() => controller.traderEmail.value.isNotEmpty
-            ? Padding(
-                padding: EdgeInsets.only(top: 8.h),
-                child: Text(
-                  controller.traderEmail.value,
-                  style: TextStyle(
-                      color: const Color(0xFF8B9BFF),
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w700),
-                ),
-              )
-            : const SizedBox.shrink()),
+        if (controller.traderEmail.value.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.only(top: 8.h),
+            child: Text(
+              controller.traderEmail.value,
+              style: TextStyle(
+                  color: const Color(0xFF8B9BFF),
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w700),
+            ),
+          ),
 
         SizedBox(height: 14.h),
 

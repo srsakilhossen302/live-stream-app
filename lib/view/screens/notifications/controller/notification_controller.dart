@@ -14,16 +14,7 @@ class NotificationController extends GetxController {
 
   final notifications = <NotificationModel>[].obs;
 
-  final recommended = <RecommendedItemModel>[
-    const RecommendedItemModel(
-      id: 'r1',
-      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop',
-      tag: 'TRENDING NOW',
-      title: 'Etheric Sculptures Series',
-      description: 'Based on your activity in Trades, you might like this upcoming drop by Studio Void.',
-      actionLabel: 'Explore Collection',
-    ),
-  ].obs;
+  final recommended = <RecommendedItemModel>[].obs;
 
   @override
   void onInit() {

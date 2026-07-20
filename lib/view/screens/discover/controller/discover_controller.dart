@@ -20,21 +20,9 @@ class DiscoverController extends GetxController {
   final featuredLiveItems = <Map<String, dynamic>>[].obs;
   final featuredTrades = <Map<String, dynamic>>[].obs;
   final tradeMarketItems = <Map<String, dynamic>>[].obs;
-
-  final topSellers = [
-    {
-      "rank": "01",
-      "name": "EliteVault",
-      "rating": "99% Positive",
-      "image": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200",
-    },
-    {
-      "rank": "02",
-      "name": "SoleConnect",
-      "rating": "98% Positive",
-      "image": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200",
-    },
-  ].obs;
+  final topSellers = <Map<String, dynamic>>[].obs;
+  final RxBool hasError = false.obs;
+  final RxString errorMessage = "".obs;
 
   final trendingTags = ["#jordan1", "#charizard-psa10", "#rolex-daytona", "#grail-sneakers", "#luxury-trading"].obs;
 
@@ -250,7 +238,7 @@ class DiscoverController extends GetxController {
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           }
           if (imageUrl.isEmpty) {
-            imageUrl = "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500";
+            imageUrl = "";
           }
           
           return <String, dynamic>{
@@ -277,7 +265,7 @@ class DiscoverController extends GetxController {
                 : "${ApiUrl.imageBaseUrl}${imagePath.startsWith('/') ? imagePath : '/$imagePath'}";
           }
           if (imageUrl.isEmpty) {
-            imageUrl = "https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1000";
+            imageUrl = "";
           }
           
           return <String, dynamic>{
