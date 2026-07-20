@@ -244,6 +244,10 @@ class SocketService extends GetxService {
     }
   }
 
+  void emit(String event, [dynamic data]) {
+    emitEvent(event, data);
+  }
+
   void disconnectSocket() {
     socket?.disconnect();
     socket = null;

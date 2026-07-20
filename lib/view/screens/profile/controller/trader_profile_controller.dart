@@ -14,6 +14,7 @@ class TraderProfileController extends GetxController {
 
   final traderId = ''.obs;
   final traderName = ''.obs;
+  final traderUsername = ''.obs;
   final traderEmail = ''.obs;
   final traderAvatar = ''.obs;
   final traderBio = ''.obs;
@@ -61,10 +62,17 @@ class TraderProfileController extends GetxController {
     traderId.value = args['id'] ?? args['_id'] ?? '';
 
     // Prefill from navigation args immediately (instant render)
-    traderName.value = args['name'] ?? args['fullName'] ?? '';
+    final dynamic navSeller = args['sellerId'] ?? args['seller'] ?? args['user'];
+    final String initialName = (args['name'] ?? args['fullName'] ?? (navSeller is Map ? navSeller['fullName'] : '') ?? '').toString();
+    traderName.value = initialName.replaceAll('@', '').trim();
+    traderUsername.value = (args['username'] ?? '').toString().replaceAll('@', '').trim();
     traderBio.value = args['bio'] ?? args['description'] ?? '';
     traderAvatar.value = args['avatar'] ?? args['image'] ?? '';
-    traderEmail.value = args['email'] ?? '';
+
+    final String initialEmail = (args['email'] ?? (navSeller is Map ? navSeller['email'] : '') ?? '').toString();
+    if (initialEmail.isNotEmpty) {
+      traderEmail.value = initialEmail;
+    }
 
     if (traderId.value.isNotEmpty) {
       _loadAll();
@@ -96,8 +104,12 @@ class TraderProfileController extends GetxController {
         final body = jsonDecode(response.body);
         final data = body['data'] ?? body;
 
-        traderName.value =
-            data['fullName'] ?? data['name'] ?? traderName.value;
+        final String rawName = (data['fullName'] ?? data['name'] ?? traderName.value).toString();
+        traderName.value = rawName.replaceAll('@', '').trim();
+
+        final String rawUser = (data['username'] ?? traderUsername.value).toString();
+        traderUsername.value = rawUser.replaceAll('@', '').trim();
+
         traderBio.value =
             data['bio'] ?? data['description'] ?? traderBio.value;
         traderAvatar.value = data['avatar'] ??
@@ -105,8 +117,18 @@ class TraderProfileController extends GetxController {
             data['image'] ??
             traderAvatar.value;
         traderRole.value = data['role'] ?? '';
-        traderEmail.value = data['email'] ?? '';
-        isVerified.value = data['isVerified'] == true;
+        
+        final dynamic rawEmail = data['email'] ??
+            (data['user'] is Map ? data['user']['email'] : null) ??
+            (data['authId'] is Map ? data['authId']['email'] : null) ??
+            (data['userId'] is Map ? data['userId']['email'] : null) ??
+            (data['sellerId'] is Map ? data['sellerId']['email'] : null);
+        if (rawEmail != null && rawEmail.toString().isNotEmpty) {
+          traderEmail.value = rawEmail.toString();
+        }
+        Get.log("🔍 [TraderProfile] fetched email: '${traderEmail.value}' for user: ${traderId.value}");
+        
+        isVerified.value = data['isVerified'] == true || data['verified'] == true;
 
         // Member since
         final createdAt = data['createdAt'] ?? '';
@@ -184,6 +206,17 @@ class TraderProfileController extends GetxController {
             body['data'] ?? body['products'] ?? body['result'] ?? [];
         products.value =
             rawList.map((e) => Map<String, dynamic>.from(e)).toList();
+        
+        for (var item in rawList) {
+          if (item is Map && item['sellerId'] is Map && item['sellerId']['email'] != null) {
+            final em = item['sellerId']['email'].toString();
+            if (em.isNotEmpty) {
+              traderEmail.value = em;
+              Get.log("✅ [TraderProfile] Extracted email from product sellerId: $em");
+              break;
+            }
+          }
+        }
         Get.log('✅ [TraderProfile] Products: ${products.length}');
       }
     } catch (e) {
@@ -336,10 +369,18 @@ class TraderProfileController extends GetxController {
   // ─── COMPUTED GETTERS ────────────────────────────────────────────────────────
 
   String get displayName {
-    final n = traderName.value;
-    if (n.isEmpty) return '@Unknown';
-    return n.startsWith('@') ? n : '@$n';
+    final clean = traderName.value.replaceAll('@', '').trim();
+    return clean.isNotEmpty ? clean : 'Trader';
   }
+
+  String get displayUsername {
+    final clean = traderUsername.value.replaceAll('@', '').trim();
+    if (clean.isNotEmpty) return '@$clean';
+    final nameClean = traderName.value.replaceAll('@', '').replaceAll(' ', '').toLowerCase().trim();
+    return nameClean.isNotEmpty ? '@$nameClean' : '';
+  }
+
+  String get displayEmail => traderEmail.value;
 
   String get displayBio {
     final b = traderBio.value;

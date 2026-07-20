@@ -112,6 +112,8 @@ class ProfileScreen extends GetView<ProfileController> {
         return _buildProfileHeaderShimmer();
       }
 
+      final displayUsername = controller.username.value.replaceAll('@', '');
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -119,12 +121,11 @@ class ProfileScreen extends GetView<ProfileController> {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              // Cover image / placeholder
               GestureDetector(
                 onTap: () => _showImagePickerSheet(isCover: true),
                 child: Container(
                   width: double.infinity,
-                  height: 180.h,
+                  height: 190.h,
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: const Color(0xFF11111E),
@@ -166,46 +167,49 @@ class ProfileScreen extends GetView<ProfileController> {
                         ),
                 ),
               ),
-              // Edit cover button (top-right)
-              if (coverUrl.isNotEmpty)
-                Positioned(
-                  top: 12.h,
-                  right: 12.w,
-                  child: GestureDetector(
-                    onTap: () => _showImagePickerSheet(isCover: true),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 8.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.55),
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.camera_alt_outlined,
+
+              // Edit cover floating button
+              Positioned(
+                top: 14.h,
+                right: 14.w,
+                child: GestureDetector(
+                  onTap: () => _showImagePickerSheet(isCover: true),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 14.w,
+                      vertical: 7.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(color: Colors.white.withOpacity(0.15)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.camera_alt_rounded,
+                          color: const Color(0xFF8B9BFF),
+                          size: 14.sp,
+                        ),
+                        SizedBox(width: 6.w),
+                        Text(
+                          "Edit Cover",
+                          style: TextStyle(
                             color: Colors.white,
-                            size: 16.sp,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w800,
                           ),
-                          SizedBox(width: 6.w),
-                          Text(
-                            "Edit Cover",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+              ),
+
               // Avatar overlapping the bottom edge of the cover
               Positioned(
-                bottom: -48.h,
+                bottom: -44.h,
                 left: 20.w,
                 child: GestureDetector(
                   onTap: () => _showImagePickerSheet(isCover: false),
@@ -215,46 +219,38 @@ class ProfileScreen extends GetView<ProfileController> {
                         padding: EdgeInsets.all(3.r),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF0D0D1A),
-                            width: 4,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF8B9BFF), Color(0xFF22C55E)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 16.r,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(48.r),
-                          child: profileUrl.isNotEmpty
-                              ? SizedBox(
-                                  width: 96.r,
-                                  height: 96.r,
-                                  child: _buildProfileProductImage(profileUrl),
-                                )
-                              : CircleAvatar(
-                                  radius: 48.r,
-                                  backgroundColor: Colors.white10,
-                                  child: Icon(
+                        child: CircleAvatar(
+                          radius: 44.r,
+                          backgroundColor: const Color(0xFF0D0D1A),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(44.r),
+                            child: profileUrl.isNotEmpty
+                                ? SizedBox(
+                                    width: 88.r,
+                                    height: 88.r,
+                                    child: _buildProfileProductImage(profileUrl),
+                                  )
+                                : Icon(
                                     Icons.person,
                                     color: Colors.white24,
-                                    size: 40.sp,
+                                    size: 44.sp,
                                   ),
-                                ),
+                          ),
                         ),
                       ),
-                      // Positioned(
-                      //   bottom: 4.h,
-                      //   right: 4.w,
-                      //   child: Container(
-                      //     padding: EdgeInsets.all(6.r),
-                      //     decoration: const BoxDecoration(
-                      //       color: Color(0xFF8B9BFF),
-                      //       shape: BoxShape.circle,
-                      //     ),
-                      //     child: Icon(
-                      //       Icons.camera_alt,
-                      //       color: Colors.black,
-                      //       size: 13.sp,
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -262,128 +258,142 @@ class ProfileScreen extends GetView<ProfileController> {
             ],
           ),
 
-          // Space so content doesn't collide with the overlapping avatar
-          SizedBox(height: 56.h),
+          SizedBox(height: 52.h),
 
-          // Name, handle, bio
+          // Name, Username, Verified Badge, Rating, Bio
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Name + Verified Badge Row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          controller.name.value,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.w900,
-                          ),
+                    Flexible(
+                      child: Text(
+                        controller.name.value.isNotEmpty ? controller.name.value : "User",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
                         ),
-                        SizedBox(height: 3.h),
-                        Text(
-                          controller.username.value,
-                          style: TextStyle(
-                            color: Colors.white38,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    // Verified badge
-                    Obx(() {
-                      if (!controller.isVerified.value) return const SizedBox.shrink();
-                      return Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 6.h,
-                        ),
+                    if (controller.isVerified.value || controller.sellerVerified.value) ...[
+                      SizedBox(width: 8.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF8B9BFF).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color: const Color(0xFF8B9BFF).withOpacity(0.3),
-                          ),
+                          color: const Color(0xFF22C55E).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: const Color(0xFF22C55E).withOpacity(0.3)),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.verified,
-                              color: const Color(0xFF8B9BFF),
-                              size: 14.sp,
-                            ),
-                            SizedBox(width: 5.w),
+                            Icon(Icons.verified_rounded, color: const Color(0xFF22C55E), size: 13.sp),
+                            SizedBox(width: 4.w),
                             Text(
                               "Verified",
                               style: TextStyle(
-                                color: const Color(0xFF8B9BFF),
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF22C55E),
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }),
+                      ),
+                    ],
                   ],
                 ),
-                SizedBox(height: 12.h),
-                Text(
-                  controller.description.value,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5,
+                
+                if (displayUsername.isNotEmpty) ...[
+                  SizedBox(height: 3.h),
+                  Text(
+                    "@$displayUsername",
+                    style: TextStyle(
+                      color: const Color(0xFF8B9BFF).withOpacity(0.85),
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                SizedBox(height: 16.h),
-                // Rating pill
-                Obx(() => Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 14.w,
-                    vertical: 8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF161622),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                ],
+
+                if (controller.email.value.isNotEmpty) ...[
+                  SizedBox(height: 4.h),
+                  Row(
                     children: [
-                      Icon(
-                        Icons.stars,
-                        color: const Color(0xFFFF8BFF),
-                        size: 16.sp,
-                      ),
-                      SizedBox(width: 6.w),
+                      Icon(Icons.email_outlined, color: Colors.white38, size: 13.sp),
+                      SizedBox(width: 5.w),
                       Text(
-                        "${controller.rating.value.toStringAsFixed(1)}/10",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        "${controller.reviewsCount.value} REVIEWS",
+                        controller.email.value,
                         style: TextStyle(
                           color: Colors.white38,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                )),
+                ],
+
+                if (controller.description.value.isNotEmpty) ...[
+                  SizedBox(height: 8.h),
+                  Text(
+                    controller.description.value,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+
+                SizedBox(height: 14.h),
+
+                // Rating & Reviews Pill
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161626),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star_rounded, color: const Color(0xFFFFB800), size: 16.sp),
+                      SizedBox(width: 5.w),
+                      Text(
+                        controller.rating.value > 0
+                            ? controller.rating.value.toStringAsFixed(1)
+                            : "5.0",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: Text("•", style: TextStyle(color: Colors.white24, fontSize: 12.sp)),
+                      ),
+                      Text(
+                        "${controller.reviewsCount.value} Reviews",
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -479,40 +489,58 @@ class ProfileScreen extends GetView<ProfileController> {
 
   Widget _buildStatsRow() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 40.w),
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141422),
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
       child: Obx(() => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem("ACTIVE", "${controller.activeCount.value}", const Color(0xFF8B9BFF)),
-          Container(height: 30.h, width: 1, color: Colors.white10),
-          _buildStatItem("SOLD ITEM", "${controller.soldCount.value}", const Color(0xFFFF8BFF)),
+          _buildStatItem("ACTIVE", "${controller.activeCount.value}", const Color(0xFF8B9BFF), Icons.storefront_rounded),
+          Container(height: 32.h, width: 1, color: Colors.white10),
+          _buildStatItem("SOLD", "${controller.soldCount.value}", const Color(0xFF22C55E), Icons.shopping_bag_rounded, onTap: () => Get.toNamed(AppRoute.soldItems)),
+          Container(height: 32.h, width: 1, color: Colors.white10),
+          _buildStatItem("TRADES", "${controller.totalTrades.value}", const Color(0xFFFF8BFF), Icons.swap_horizontal_circle_rounded, onTap: () => Get.toNamed('/my_trades')),
         ],
       )),
     );
   }
 
-  Widget _buildStatItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white38,
-            fontSize: 11.sp,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1,
+  Widget _buildStatItem(String label, String value, Color color, IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color.withOpacity(0.8), size: 14.sp),
+              SizedBox(width: 4.w),
+              Text(
+                value,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
-        ),
-        SizedBox(height: 8.h),
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w900,
+          SizedBox(height: 4.h),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -924,6 +952,12 @@ class ProfileScreen extends GetView<ProfileController> {
             title: "My Trades",
             showArrow: true,
             onTap: () => Get.toNamed('/my_trades'),
+          ),
+          _buildSettingsTile(
+            svgPath: "assets/icons/My Purchase.svg",
+            title: "Sold Items",
+            showArrow: true,
+            onTap: () => Get.toNamed(AppRoute.soldItems),
           ),
         ]),
         SizedBox(height: 32.h),

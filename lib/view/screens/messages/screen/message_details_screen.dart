@@ -186,7 +186,7 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
         final name = controller.partnerName.value;
         final avatarUrl = (avatar.isNotEmpty && !avatar.startsWith('http') && !avatar.startsWith('data:image/'))
             ? "${ApiUrl.imageBaseUrl}${avatar.startsWith('/') ? avatar : '/$avatar'}"
-            : avatar.isNotEmpty ? avatar : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop";
+            : avatar;
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -202,34 +202,53 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
           },
           child: Row(
             children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 18.r,
-                    backgroundImage: NetworkImage(avatarUrl),
+              Container(
+                width: 38.r,
+                height: 38.r,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF28283E),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.3), width: 1.5),
+                ),
+                child: ClipOval(
+                  child: Builder(
+                    builder: (context) {
+                      if (avatarUrl.isEmpty) {
+                        return Icon(Icons.person_rounded, color: Colors.white54, size: 22.sp);
+                      }
+                      if (avatarUrl.startsWith('data:image/') && avatarUrl.contains('base64,')) {
+                        try {
+                          final bytes = base64Decode(avatarUrl.split('base64,').last);
+                          return Image.memory(
+                            bytes,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(Icons.person_rounded, color: Colors.white54, size: 22.sp),
+                          );
+                        } catch (_) {
+                          return Icon(Icons.person_rounded, color: Colors.white54, size: 22.sp);
+                        }
+                      }
+                      return Image.network(
+                        avatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.person_rounded, color: Colors.white54, size: 22.sp),
+                      );
+                    },
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 10.r,
-                      height: 10.r,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF8BFF),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               SizedBox(width: 12.w),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w900)),
-                  Text("ACTIVE NOW", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 10.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-                ],
+              Flexible(
+                child: Text(
+                  (name.isNotEmpty && name.toLowerCase() != 'user') ? name : "Chat",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
             ],
           ),

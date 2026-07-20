@@ -42,15 +42,26 @@ class MessageDetailsController extends GetxController {
     super.onInit();
     final args = Get.arguments as Map<String, dynamic>? ?? {};
     chatId.value = args['chatId'] ?? '';
-    partnerName.value = args['name'] ?? 'User';
+    
+    final String initialName = (args['name'] ?? args['fullName'] ?? '').toString();
+    if (initialName.isNotEmpty && initialName.toLowerCase() != 'user') {
+      partnerName.value = initialName.replaceAll('@', '').trim();
+    } else {
+      partnerName.value = '';
+    }
+
     partnerAvatar.value = args['avatar'] ?? '';
-    partnerId.value = args['participantId'] ?? '';
+    partnerId.value = args['participantId'] ?? args['partnerId'] ?? args['userId'] ?? args['sellerId'] ?? '';
 
     // Populate order info if passed from a purchase flow
     final order = args['order'];
     if (order != null && order is Map) {
       orderData.value = Map<String, dynamic>.from(order);
       hasOrder.value = true;
+    }
+
+    if (partnerId.value.isNotEmpty) {
+      fetchPartnerDetails(partnerId.value);
     }
 
     if (chatId.value.isNotEmpty) {
@@ -61,6 +72,74 @@ class MessageDetailsController extends GetxController {
     } else {
       _loadMockMessages();
     }
+  }
+
+  Future<void> fetchPartnerDetails(String userId) async {
+    if (userId.isEmpty) return;
+    try {
+      final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+      
+      // 1. Try trade offers endpoint (200 OK with sender/receiver details)
+      final tradeRes = await _apiClient.getData('${ApiUrl.tradeOffers}?userId=$currentUserId&type=sent');
+      if (tradeRes.statusCode == 200) {
+        final List tradeList = jsonDecode(tradeRes.body)['data'] ?? [];
+        for (var offer in tradeList) {
+          if (offer is Map) {
+            final rec = offer['receiverId'];
+            final sen = offer['senderId'];
+            if (rec is Map && (rec['_id'] == userId || rec['id'] == userId)) {
+              final String fn = (rec['fullName'] ?? rec['name'] ?? rec['username'] ?? '').toString();
+              if (fn.isNotEmpty) {
+                partnerName.value = fn.replaceAll('@', '').trim();
+                partnerAvatar.value = (rec['avatar'] ?? rec['profileImage'] ?? rec['image'] ?? rec['profile'] ?? '').toString();
+                return;
+              }
+            }
+            if (sen is Map && (sen['_id'] == userId || sen['id'] == userId)) {
+              final String fn = (sen['fullName'] ?? sen['name'] ?? sen['username'] ?? '').toString();
+              if (fn.isNotEmpty) {
+                partnerName.value = fn.replaceAll('@', '').trim();
+                partnerAvatar.value = (sen['avatar'] ?? sen['profileImage'] ?? sen['image'] ?? sen['profile'] ?? '').toString();
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Try products endpoint (200 OK with sellerId details)
+      final prodRes = await _apiClient.getData('${ApiUrl.products}?sellerId=$userId&limit=1');
+      if (prodRes.statusCode == 200) {
+        final List prodList = jsonDecode(prodRes.body)['data'] ?? jsonDecode(prodRes.body)['products'] ?? [];
+        if (prodList.isNotEmpty && prodList.first is Map) {
+          final seller = prodList.first['sellerId'];
+          if (seller is Map) {
+            final String fn = (seller['fullName'] ?? seller['name'] ?? seller['username'] ?? '').toString();
+            final String av = (seller['profile'] ?? seller['profileImage'] ?? seller['avatar'] ?? seller['image'] ?? '').toString();
+            if (fn.isNotEmpty) {
+              partnerName.value = fn.replaceAll('@', '').trim();
+              if (av.isNotEmpty) partnerAvatar.value = av;
+              return;
+            }
+          }
+        }
+      }
+
+      // 3. Fallback to /users/:id
+      final response = await _apiClient.getData('${ApiUrl.users}/$userId');
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final data = body['data'] ?? body;
+        final String fn = (data['fullName'] ?? data['name'] ?? data['username'] ?? '').toString();
+        if (fn.isNotEmpty) {
+          partnerName.value = fn.replaceAll('@', '').trim();
+        }
+        final String av = (data['avatar'] ?? data['profileImage'] ?? data['image'] ?? data['profile'] ?? '').toString();
+        if (av.isNotEmpty) {
+          partnerAvatar.value = av;
+        }
+      }
+    } catch (_) {}
   }
 
   // ─── SOCKET ────────────────────────────────────────────────────────────────
@@ -225,6 +304,11 @@ class MessageDetailsController extends GetxController {
     }
   }
 
+  void _loadMockMessages() {
+    isLoading.value = false;
+    messages.clear();
+  }
+
   // ─── FETCH (initial full load) ──────────────────────────────────────────────
 
   Future<void> fetchMessages() async {
@@ -277,48 +361,15 @@ class MessageDetailsController extends GetxController {
         // Oldest first → newest at BOTTOM
         messages.assignAll(parsedList);
       } else {
-        _loadMockMessages();
+        messages.clear();
       }
     } catch (e) {
       Get.log('❌ [MessageCtrl] fetchMessages error: $e');
-      _loadMockMessages();
+      messages.clear();
     } finally {
       isLoading.value = false;
       _scrollToBottom();
     }
-  }
-
-  // ─── MOCK ───────────────────────────────────────────────────────────────────
-
-  void _loadMockMessages() {
-    messages.assignAll([
-      {'isDate': true, 'message': 'YESTERDAY'},
-      {
-        'isMe': false,
-        'message': "Hey! I just saw your bid win. I'll get the pack ready for shipping first thing tomorrow morning.",
-        'time': '10:42 PM',
-      },
-      {
-        'isMe': true,
-        'message': "Perfect, thanks! Please ensure it's packed in a hard sleeve. It's for my personal vault.",
-        'time': '10:45 PM',
-        'isRead': true,
-      },
-      {'isDate': true, 'message': 'TODAY'},
-      {
-        'isMe': false,
-        'message': "Just dropped it off! Tracking should update in a few hours.",
-        'time': '11:15 AM',
-      },
-      {
-        'isMe': true,
-        'message': "That's awesome. Truly appreciate the extra care!",
-        'time': '11:20 AM',
-        'isRead': true,
-      },
-    ]);
-    isLoading.value = false;
-    _scrollToBottom();
   }
 
   // ─── SEND ───────────────────────────────────────────────────────────────────
@@ -339,49 +390,50 @@ class MessageDetailsController extends GetxController {
 
     try {
       if (chatId.value.isEmpty || chatId.value.startsWith('mock_')) {
-        _runMockReply();
-        return;
-      }
-
-      final response = await _apiClient.postData(ApiUrl.message, {
-        'chatId': chatId.value,
-        'text': msgText,
-      });
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final resBody = jsonDecode(response.body);
-        final messageData = resBody['data'];
-        if (messageData != null) {
-          final msgId = messageData['_id'] ?? messageData['id'] ?? '';
-          if (msgId.isNotEmpty) {
-            _sentMessageIds.add(msgId);
-            _knownMessageIds.add(msgId); // prevent polling from re-adding
-          }
-          // Emit to socket so the OTHER user gets it instantly
-          try {
-            final socketService = Get.find<SocketService>();
-            socketService.emitEvent('new message', messageData);
-          } catch (e) {
-            Get.log('❌ [MessageCtrl] Socket emit error: $e');
+        // Create chat room dynamically via API
+        final createChatRes = await _apiClient.postData(ApiUrl.chat, {
+          'receiverId': partnerId.value,
+          'participants': [partnerId.value],
+        });
+        if (createChatRes.statusCode == 200 || createChatRes.statusCode == 201) {
+          final resBody = jsonDecode(createChatRes.body);
+          final chatData = resBody['data'] ?? resBody;
+          if (chatData is Map) {
+            chatId.value = (chatData['_id'] ?? chatData['id'] ?? '').toString();
+            _setupSocketListener();
+            _startPolling();
           }
         }
-      } else {
-        Get.snackbar('Error', 'Failed to send message');
+      }
+
+      if (chatId.value.isNotEmpty && !chatId.value.startsWith('mock_')) {
+        final response = await _apiClient.postData(ApiUrl.message, {
+          'chatId': chatId.value,
+          'text': msgText,
+        });
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          final resBody = jsonDecode(response.body);
+          final messageData = resBody['data'];
+          if (messageData != null) {
+            final msgId = messageData['_id'] ?? messageData['id'] ?? '';
+            if (msgId.isNotEmpty) {
+              _sentMessageIds.add(msgId);
+              _knownMessageIds.add(msgId); // prevent polling from re-adding
+            }
+            // Emit to socket so the OTHER user gets it instantly
+            try {
+              final socketService = Get.find<SocketService>();
+              socketService.emitEvent('new message', messageData);
+            } catch (e) {
+              Get.log('❌ [MessageCtrl] Socket emit error: $e');
+            }
+          }
+        }
       }
     } catch (e) {
       Get.log('❌ [MessageCtrl] sendMessage error: $e');
     }
-  }
-
-  void _runMockReply() {
-    Future.delayed(const Duration(seconds: 1), () {
-      messages.add({
-        'isMe': false,
-        'message': "Got it! Let me know if there's anything else. Enjoy your cards! 🎴✨",
-        'time': 'Now',
-      });
-      _scrollToBottom();
-    });
   }
 
   // ─── HELPERS ────────────────────────────────────────────────────────────────

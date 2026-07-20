@@ -18,12 +18,15 @@ class ApiUrl {
 
   // Products
   static const String products = "/products";
+  static const String product = "/products";
 
   // Notifications
   static const String myNotifications = "/notifications/my";
 
   // Orders
   static const String userOrders = "/orders/user";
+  static const String orders = "/orders";
+  static const String orderJourney = "/orders/journey";
 
   // Trades
   static const String tradeOffers = "/trades/offers";
@@ -32,6 +35,7 @@ class ApiUrl {
 
   // Category
   static const String category = "/category";
+  static const String popularCategories = "/category/popular-categories";
 
   // Auctions / Live Streams
   static const String liveStreams = "/auctions/streams";

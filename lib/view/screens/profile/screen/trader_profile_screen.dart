@@ -7,6 +7,7 @@ import '../../../../global/widgets/custom_background.dart';
 import '../../messages/controller/messages_controller.dart';
 import '../controller/trader_profile_controller.dart';
 import '../../../../data/services/api_url.dart';
+import '../../../../global/widgets/custom_shimmer.dart';
 
 class TraderProfileScreen extends GetView<TraderProfileController> {
   const TraderProfileScreen({super.key});
@@ -177,17 +178,81 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
         ),
         SizedBox(height: 16.h),
 
-        // Name
-        Text(
-          controller.displayName,
-          style: TextStyle(
-              color: Colors.white,
-              fontSize: 26.sp,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5),
+        // Name + Verified Badge Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                controller.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5),
+              ),
+            ),
+            if (controller.isVerified.value) ...[
+              SizedBox(width: 8.w),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF22C55E).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: const Color(0xFF22C55E).withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.verified_rounded, color: const Color(0xFF22C55E), size: 12.sp),
+                    SizedBox(width: 4.w),
+                    Text(
+                      "Verified",
+                      style: TextStyle(
+                        color: const Color(0xFF22C55E),
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
 
-        SizedBox(height: 6.h),
+        if (controller.displayUsername.isNotEmpty) ...[
+          SizedBox(height: 3.h),
+          Text(
+            controller.displayUsername,
+            style: TextStyle(
+                color: const Color(0xFF8B9BFF),
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w800),
+          ),
+        ],
+
+        if (controller.displayEmail.isNotEmpty) ...[
+          SizedBox(height: 5.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.email_outlined, color: Colors.white38, size: 13.sp),
+              SizedBox(width: 6.w),
+              Text(
+                controller.displayEmail,
+                style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ],
+
+        SizedBox(height: 10.h),
 
         // Role + Member Since row
         Row(
@@ -207,18 +272,6 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
           ],
         ),
 
-        if (controller.traderEmail.value.isNotEmpty)
-          Padding(
-            padding: EdgeInsets.only(top: 8.h),
-            child: Text(
-              controller.traderEmail.value,
-              style: TextStyle(
-                  color: const Color(0xFF8B9BFF),
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w700),
-            ),
-          ),
-
         SizedBox(height: 14.h),
 
         // Bio
@@ -231,42 +284,50 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
                 color: Colors.white60,
                 fontSize: 13.sp,
                 fontWeight: FontWeight.w500,
-                height: 1.6),
+                height: 1.5),
           ),
         ),
 
-        // Rating stars row
-        if (controller.rating.value > 0) ...[
-          SizedBox(height: 14.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        SizedBox(height: 16.h),
+
+        // Rating & Reviews Pill
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161626),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: Colors.white.withOpacity(0.06)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              ...List.generate(5, (i) {
-                final full = i < controller.rating.value.floor();
-                final half = !full &&
-                    i < controller.rating.value &&
-                    controller.rating.value - i >= 0.5;
-                return Icon(
-                  full
-                      ? Icons.star_rounded
-                      : half
-                          ? Icons.star_half_rounded
-                          : Icons.star_border_rounded,
-                  color: const Color(0xFFFFD700),
-                  size: 18.sp,
-                );
-              }),
-              SizedBox(width: 8.w),
+              Icon(Icons.star_rounded, color: const Color(0xFFFFB800), size: 16.sp),
+              SizedBox(width: 6.w),
               Text(
-                '${controller.ratingDisplay} (${controller.reviewCount.value} reviews)',
+                controller.rating.value > 0
+                    ? controller.rating.value.toStringAsFixed(1)
+                    : "5.0",
                 style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700),
+                  color: Colors.white,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                child: Text("•", style: TextStyle(color: Colors.white24, fontSize: 12.sp)),
+              ),
+              Text(
+                "${controller.reviewCount.value} Reviews",
+                style: TextStyle(
+                  color: Colors.white60,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
-        ],
+        ),
       ],
     );
   }
@@ -971,17 +1032,15 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
 
   Widget _shimmerBox(double height, double width,
       {bool circle = false, double margin = 0}) {
-    return Container(
-      width: width,
-      height: height,
-      margin: EdgeInsets.symmetric(
-          horizontal: margin, vertical: margin > 0 ? 6.h : 0),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2C),
-        borderRadius:
-            circle ? null : BorderRadius.circular(12.r),
-        shape: circle ? BoxShape.circle : BoxShape.rectangle,
-      ),
+    if (circle) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: margin, vertical: margin > 0 ? 6.h : 0),
+        child: CustomShimmer.circular(width: width, height: height),
+      );
+    }
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: margin, vertical: margin > 0 ? 6.h : 0),
+      child: CustomShimmer.rectangular(height: height, width: width),
     );
   }
 

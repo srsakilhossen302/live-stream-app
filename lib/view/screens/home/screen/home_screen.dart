@@ -23,8 +23,7 @@ class HomeScreen extends GetView<HomeController> {
           color: const Color(0xFF8B9BFF),
           backgroundColor: const Color(0xFF1E1E2C),
           onRefresh: () async {
-            await controller.fetchProfileData();
-            await controller.fetchLiveStreams();
+            await controller.refreshHome();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -141,44 +140,46 @@ class HomeScreen extends GetView<HomeController> {
               // Category Chips
               SizedBox(
                 height: 48.h,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: controller.categories.length,
-                  itemBuilder: (context, index) {
-                    return Obx(() {
-                      final isSelected =
-                          controller.selectedCategoryIndex.value == index;
-                      return GestureDetector(
-                        onTap: () => controller.onCategorySelected(index),
-                        child: Container(
-                          margin: EdgeInsets.only(right: 12.w),
-                          padding: EdgeInsets.symmetric(horizontal: 28.w),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF8B9BFF)
-                                : const Color(0xFF1E1E2C).withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(30.r),
-                            border: Border.all(
+                child: Obx(
+                  () => ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: controller.categories.length,
+                    itemBuilder: (context, index) {
+                      return Obx(() {
+                        final isSelected =
+                            controller.selectedCategoryIndex.value == index;
+                        return GestureDetector(
+                          onTap: () => controller.onCategorySelected(index),
+                          child: Container(
+                            margin: EdgeInsets.only(right: 12.w),
+                            padding: EdgeInsets.symmetric(horizontal: 28.w),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
                               color: isSelected
-                                  ? Colors.transparent
-                                  : Colors.white.withOpacity(0.05),
+                                  ? const Color(0xFF8B9BFF)
+                                  : const Color(0xFF1E1E2C).withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(30.r),
+                              border: Border.all(
+                                color: isSelected
+                                    ? Colors.transparent
+                                    : Colors.white.withOpacity(0.05),
+                              ),
+                            ),
+                            child: Text(
+                              controller.categories[index],
+                              style: TextStyle(
+                                color: isSelected
+                                    ? const Color(0xFF0F0B1E)
+                                    : Colors.white60,
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                          child: Text(
-                            controller.categories[index],
-                            style: TextStyle(
-                              color: isSelected
-                                  ? const Color(0xFF0F0B1E)
-                                  : Colors.white60,
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      );
-                    });
-                  },
+                        );
+                      });
+                    },
+                  ),
                 ),
               ),
 

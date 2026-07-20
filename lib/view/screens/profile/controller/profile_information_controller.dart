@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
+import 'profile_controller.dart';
 
 class ProfileInformationController extends GetxController {
   final ApiClient _apiClient = Get.find<ApiClient>();
@@ -34,7 +35,7 @@ class ProfileInformationController extends GetxController {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body)['data'];
         fullNameController.text = data['fullName'] ?? "";
-        usernameController.text = data['username'] ?? "";
+        usernameController.text = (data['username'] ?? "").replaceAll('@', '');
         emailController.text = data['email'] ?? "";
         phoneController.text = data['phone'] ?? "";
         bioController.text = data['description'] ?? "";
@@ -73,7 +74,12 @@ class ProfileInformationController extends GetxController {
 
   Future<void> pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source);
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
       if (image != null) {
         selectedImage.value = File(image.path);
       }
@@ -92,10 +98,25 @@ class ProfileInformationController extends GetxController {
     try {
       final Map<String, String> fields = {
         "fullName": fullNameController.text.trim(),
-        "username": usernameController.text.trim(),
         "description": bioController.text.trim(),
         "phone": phoneController.text.trim(),
       };
+
+      final cleanUsername = usernameController.text.replaceAll('@', '').replaceAll(' ', '').trim();
+      if (cleanUsername.isNotEmpty) {
+        if (cleanUsername.length < 3 || cleanUsername.length > 20) {
+          Get.snackbar(
+            "Invalid Username",
+            "Username must be between 3 and 20 characters.",
+            backgroundColor: Colors.red.withOpacity(0.8),
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          isSaving.value = false;
+          return;
+        }
+        fields["username"] = cleanUsername;
+      }
 
       final response = await _apiClient.patchMultipart(
         ApiUrl.profile,
@@ -108,11 +129,16 @@ class ProfileInformationController extends GetxController {
         Get.snackbar(
           "Success",
           "Profile updated successfully!",
-          backgroundColor: Colors.green.withOpacity(0.8),
+          backgroundColor: const Color(0xFF22C55E),
           colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
         );
-        fetchProfileData(); // Refresh data
+        await fetchProfileData();
+        if (Get.isRegistered<ProfileController>()) {
+          Get.find<ProfileController>().fetchProfileData();
+        }
         selectedImage.value = null;
+        Get.back();
       } else {
         String errorMessage = "Failed to update profile";
         try {

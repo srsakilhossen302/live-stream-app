@@ -21,7 +21,12 @@ class PurchaseModel {
   final double? processingFee;
   final double? buyerContribution;
   final double? totalPaid;
-  final int trackingStep; // 1=Order Placed, 2=Processing, 3=Shipped, 4=Out for Delivery, 5=Delivered
+  final int trackingStep;
+  final String? buyerName;
+  final String? buyerAvatar;
+  final String? buyerId;
+  final Map<String, dynamic>? shippingAddress;
+  final String? rawOrderId;
 
   PurchaseModel({
     required this.id,
@@ -42,5 +47,10 @@ class PurchaseModel {
     this.buyerContribution,
     this.totalPaid,
     this.trackingStep = 1,
+    this.buyerName,
+    this.buyerAvatar,
+    this.buyerId,
+    this.shippingAddress,
+    this.rawOrderId,
   });
 }

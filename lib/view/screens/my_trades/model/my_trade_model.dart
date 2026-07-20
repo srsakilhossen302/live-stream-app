@@ -11,6 +11,8 @@ class MyTradeModel {
   final MyTradeStatus status;
   final String? rawObjectId;
   final bool? isUserSender;
+  final String? traderId;
+  final String? chatId;
 
   MyTradeModel({
     required this.tradeId,
@@ -23,5 +25,7 @@ class MyTradeModel {
     required this.status,
     this.rawObjectId,
     this.isUserSender,
+    this.traderId,
+    this.chatId,
   });
 }

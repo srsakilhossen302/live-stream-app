@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../controller/messages_controller.dart';
 import '../../../../global/widgets/custom_shimmer.dart';
+import '../../../../data/services/api_url.dart';
 
 class MessagesScreen extends GetView<MessagesController> {
   const MessagesScreen({super.key});
@@ -269,6 +271,48 @@ class MessagesScreen extends GetView<MessagesController> {
     );
   }
 
+  Widget _buildUserAvatar(String avatarUrl, double size) {
+    final String resolvedUrl = (avatarUrl.isNotEmpty && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:image/'))
+        ? "${ApiUrl.imageBaseUrl}${avatarUrl.startsWith('/') ? avatarUrl : '/$avatarUrl'}"
+        : avatarUrl;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: const Color(0xFF28283E),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.3), width: 1.5),
+      ),
+      child: ClipOval(
+        child: Builder(
+          builder: (context) {
+            if (resolvedUrl.isEmpty) {
+              return Icon(Icons.person_rounded, color: Colors.white54, size: size * 0.55);
+            }
+            if (resolvedUrl.startsWith('data:image/') && resolvedUrl.contains('base64,')) {
+              try {
+                final bytes = base64Decode(resolvedUrl.split('base64,').last);
+                return Image.memory(
+                  bytes,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Icon(Icons.person_rounded, color: Colors.white54, size: size * 0.55),
+                );
+              } catch (_) {
+                return Icon(Icons.person_rounded, color: Colors.white54, size: size * 0.55);
+              }
+            }
+            return Image.network(
+              resolvedUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Icon(Icons.person_rounded, color: Colors.white54, size: size * 0.55),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildUpdateCard({required String name, required String message, required String time, required String avatar, List<String> tags = const [], bool hasNew = false}) {
     return InkWell(
       onTap: () => Get.toNamed(AppRoute.messageDetails),
@@ -285,7 +329,7 @@ class MessagesScreen extends GetView<MessagesController> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(radius: 24.r, backgroundImage: NetworkImage(avatar)),
+                _buildUserAvatar(avatar, 48.r),
                 SizedBox(width: 16.w),
                 Expanded(
                   child: Column(
@@ -353,7 +397,7 @@ class MessagesScreen extends GetView<MessagesController> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(radius: 28.r, backgroundImage: NetworkImage(avatar)),
+            _buildUserAvatar(avatar, 56.r),
             SizedBox(width: 16.w),
             Expanded(
               child: Column(

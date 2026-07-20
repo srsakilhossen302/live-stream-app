@@ -18,12 +18,82 @@ class HomeController extends GetxController {
   final RxList<Map<String, dynamic>> products = <Map<String, dynamic>>[].obs;
   final RxBool isProductsLoading = false.obs;
 
+  // Dynamic Category Items & Titles List
+  final RxList<HomeCategoryItem> categoriesList = <HomeCategoryItem>[
+    HomeCategoryItem(id: "", name: "All"),
+  ].obs;
+
+  final RxList<String> categories = <String>[
+    "All",
+    "Collectibles",
+    "Streetwear",
+    "Sneakers",
+    "Watches",
+    "Art",
+  ].obs;
+
   @override
   void onInit() {
     super.onInit();
     fetchProfileData();
     fetchLiveStreams();
-    fetchProducts();
+    fetchCategories().then((_) {
+      fetchProducts();
+    });
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      Get.log("🔄 [Home] Fetching categories from API: ${ApiUrl.category}");
+      var response = await _apiClient.getData(ApiUrl.category);
+
+      if (response.statusCode != 200) {
+        Get.log("🔄 [Home] Primary category endpoint failed (${response.statusCode}), trying fallback: ${ApiUrl.popularCategories}");
+        response = await _apiClient.getData(ApiUrl.popularCategories);
+      }
+
+      if (response.statusCode == 200) {
+        final resBody = jsonDecode(response.body);
+        List data = [];
+        if (resBody['data'] is List) {
+          data = resBody['data'];
+        } else if (resBody['categories'] is List) {
+          data = resBody['categories'];
+        }
+
+        if (data.isNotEmpty) {
+          final List<HomeCategoryItem> fetched = [
+            HomeCategoryItem(id: "", name: "All"),
+          ];
+
+          for (var item in data) {
+            if (item is Map) {
+              final String id = (item['_id'] ?? item['id'] ?? '').toString();
+              final String name = (item['name'] ?? item['title'] ?? '').toString();
+              final String image = (item['image'] ?? '').toString();
+              final String icon = (item['icon'] ?? '').toString();
+
+              if (name.isNotEmpty) {
+                fetched.add(HomeCategoryItem(
+                  id: id,
+                  name: name,
+                  image: image,
+                  icon: icon,
+                ));
+              }
+            }
+          }
+
+          categoriesList.assignAll(fetched);
+          categories.assignAll(fetched.map((c) => c.name).toList());
+          Get.log("✅ [Home] Successfully loaded ${categoriesList.length} categories from API");
+        }
+      } else {
+        Get.log("⚠️ [Home] Category fetch status: ${response.statusCode}");
+      }
+    } catch (e) {
+      Get.log("❌ [Home] Error fetching categories: $e");
+    }
   }
 
   Future<void> fetchProfileData() async {
@@ -112,37 +182,82 @@ class HomeController extends GetxController {
     }
   }
 
-  // Fetch Products based on selected category
+  // Fetch Products based on selected category & active status
   Future<void> fetchProducts() async {
     isProductsLoading.value = true;
     try {
-      final category = categories[selectedCategoryIndex.value];
-      String url = ApiUrl.products;
-      if (category != "All") {
-        url = "${ApiUrl.products}?category=${Uri.encodeComponent(category)}";
+      final int idx = selectedCategoryIndex.value;
+      final selectedCat = (idx >= 0 && idx < categoriesList.length)
+          ? categoriesList[idx]
+          : HomeCategoryItem(id: "", name: "All");
+
+      String url;
+      const String statusQuery = "status=active";
+
+      if (selectedCat.id.isNotEmpty) {
+        url = "${ApiUrl.product}?category=${selectedCat.id}&$statusQuery";
+      } else if (selectedCat.name.isNotEmpty && selectedCat.name != "All") {
+        url = "${ApiUrl.product}?category=${Uri.encodeComponent(selectedCat.name)}&$statusQuery";
+      } else {
+        url = "${ApiUrl.product}?$statusQuery";
       }
 
-      final response = await _apiClient.getData(url);
+      Get.log("🔄 [Home] Fetching products from: $url");
+      var response = await _apiClient.getData(url);
+
+      if (response.statusCode != 200) {
+        String fallbackUrl;
+        if (selectedCat.id.isNotEmpty) {
+          fallbackUrl = "${ApiUrl.products}?category=${selectedCat.id}&$statusQuery";
+        } else if (selectedCat.name.isNotEmpty && selectedCat.name != "All") {
+          fallbackUrl = "${ApiUrl.products}?category=${Uri.encodeComponent(selectedCat.name)}&$statusQuery";
+        } else {
+          fallbackUrl = "${ApiUrl.products}?$statusQuery";
+        }
+        Get.log("🔄 [Home] /product query failed (${response.statusCode}), trying fallback: $fallbackUrl");
+        response = await _apiClient.getData(fallbackUrl);
+      }
+
+      if (response.statusCode != 200) {
+        String noStatusUrl = selectedCat.id.isNotEmpty
+            ? "${ApiUrl.products}?category=${selectedCat.id}"
+            : (selectedCat.name != "All" ? "${ApiUrl.products}?category=${Uri.encodeComponent(selectedCat.name)}" : ApiUrl.products);
+        Get.log("🔄 [Home] Active status query failed, trying standard endpoint: $noStatusUrl");
+        response = await _apiClient.getData(noStatusUrl);
+      }
+
       if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body)['data'] ?? [];
-        products.value = data.map((e) => Map<String, dynamic>.from(e)).toList();
-        Get.log("✅ [Home] Loaded ${products.length} products for category: $category");
+        final resBody = jsonDecode(response.body);
+        List rawList = [];
+
+        if (resBody['data'] is List) {
+          rawList = resBody['data'];
+        } else if (resBody['data'] is Map) {
+          final dataMap = resBody['data'];
+          if (dataMap['doc'] is List) {
+            rawList = dataMap['doc'];
+          } else if (dataMap['products'] is List) {
+            rawList = dataMap['products'];
+          } else if (dataMap['result'] is List) {
+            rawList = dataMap['result'];
+          }
+        } else if (resBody['products'] is List) {
+          rawList = resBody['products'];
+        }
+
+        products.value = rawList.map((e) => Map<String, dynamic>.from(e)).toList();
+        Get.log("✅ [Home] Loaded ${products.length} products for category: ${selectedCat.name}");
+      } else {
+        Get.log("⚠️ [Home] Failed to fetch products. Status: ${response.statusCode}");
+        products.clear();
       }
     } catch (e) {
       Get.log("❌ [Home] Error fetching products: $e");
+      products.clear();
     } finally {
       isProductsLoading.value = false;
     }
   }
-
-  final List<String> categories = [
-    "All",
-    "Collectibles",
-    "Streetwear",
-    "Sneakers",
-    "Watches",
-    "Art",
-  ];
 
   void onCategorySelected(int index) {
     selectedCategoryIndex.value = index;
@@ -153,9 +268,24 @@ class HomeController extends GetxController {
     await Future.wait([
       fetchProfileData(),
       fetchLiveStreams(),
-      fetchProducts(),
+      fetchCategories(),
     ]);
+    await fetchProducts();
   }
+}
+
+class HomeCategoryItem {
+  final String id;
+  final String name;
+  final String image;
+  final String icon;
+
+  HomeCategoryItem({
+    required this.id,
+    required this.name,
+    this.image = "",
+    this.icon = "",
+  });
 }
 
 class LiveItemModel {

@@ -38,49 +38,82 @@ class MessagesController extends GetxController {
 
         if (chatsList.isNotEmpty) {
           final List<Map<String, dynamic>> parsedRooms = [];
+          final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+
           for (var room in chatsList) {
             final participants = room['participants'] as List? ?? [];
-            final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-            final otherParticipant = participants.firstWhere(
-              (p) => p['_id'] != currentUserId,
-              orElse: () => participants.isNotEmpty ? participants.first : null,
-            );
-
+            
+            dynamic otherParticipant;
+            for (var p in participants) {
+              final pid = (p is Map ? (p['_id'] ?? p['id']) : p).toString();
+              if (pid.isNotEmpty && pid != currentUserId) {
+                otherParticipant = p;
+                break;
+              }
+            }
+            otherParticipant ??= (participants.isNotEmpty ? participants.first : null);
             if (otherParticipant == null) continue;
 
-            final rawName = otherParticipant['fullName'] ?? otherParticipant['name'] ?? otherParticipant['username'];
-            final String name = (rawName != null && rawName.toString().trim().isNotEmpty) ? rawName.toString() : "User";
+            String otherId = "";
+            Map<String, dynamic>? pMap;
+            if (otherParticipant is Map) {
+              pMap = Map<String, dynamic>.from(otherParticipant);
+              otherId = (pMap['_id'] ?? pMap['id'] ?? '').toString();
+            } else {
+              otherId = otherParticipant.toString();
+            }
+
+            final dynamic rawName = pMap?['fullName'] ?? pMap?['name'] ?? pMap?['username'] ?? (pMap?['user'] is Map ? pMap!['user']['fullName'] : null);
+            String name = (rawName != null && rawName.toString().trim().isNotEmpty && rawName.toString().trim().toLowerCase() != 'user') 
+                ? rawName.toString() 
+                : "";
+
+            final dynamic rawAvatar = pMap?['profile'] ?? 
+                pMap?['profileImage'] ?? 
+                pMap?['avatar'] ?? 
+                pMap?['image'] ??
+                (pMap?['user'] is Map ? pMap!['user']['profile'] : null);
+            final String avatar = rawAvatar != null ? rawAvatar.toString() : "";
+            
+            String imageUrl = "";
+            if (avatar.isNotEmpty) {
+              imageUrl = (avatar.startsWith('http') || avatar.startsWith('data:image/'))
+                  ? avatar
+                  : "${ApiUrl.imageBaseUrl}${avatar.startsWith('/') ? avatar : '/$avatar'}";
+            }
+
             final lastMsg = room['lastMessage'] != null 
                 ? (room['lastMessage']['text'] ?? "Sent a message") 
                 : "No messages yet";
             final time = room['updatedAt'] ?? "";
-            final avatar = otherParticipant['profile'] ?? otherParticipant['image'] ?? "";
-            
-            String imageUrl = "";
-            if (avatar.isNotEmpty) {
-              imageUrl = avatar.startsWith('http')
-                  ? avatar
-                  : "${ApiUrl.imageBaseUrl}${avatar.startsWith('/') ? avatar : '/$avatar'}";
-            } else {
-              imageUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200";
-            }
 
             final isOrder = room['orderId'] != null || room['order'] != null;
             final isTrade = room['tradeId'] != null || room['trade'] != null || room['swap'] != null;
 
             parsedRooms.add({
               "id": room['_id'],
-              "name": name.startsWith('@') ? name.substring(1) : name,
+              "name": name.replaceAll('@', '').trim(),
               "message": lastMsg,
               "time": _formatTime(time),
               "avatar": imageUrl,
               "isSpecial": room['unreadCount'] != null && (room['unreadCount'] as num) > 0 || room['isUnread'] == true,
               "isOrder": isOrder,
               "isTrade": isTrade,
-              "participantId": otherParticipant['_id'] ?? otherParticipant['id'] ?? "",
+              "participantId": otherId,
             });
           }
+
           chatRooms.assignAll(parsedRooms);
+
+          // Asynchronously fetch real user profile for rooms missing real names
+          for (int i = 0; i < parsedRooms.length; i++) {
+            final room = parsedRooms[i];
+            final pId = room['participantId']?.toString() ?? "";
+            final curName = room['name']?.toString() ?? "";
+            if (pId.isNotEmpty && (curName.isEmpty || curName.toLowerCase() == 'user')) {
+              _fetchAndSetParticipantInfo(pId, i);
+            }
+          }
         } else {
           // Genuinely empty chat rooms from server database
           chatRooms.clear();
@@ -93,6 +126,84 @@ class MessagesController extends GetxController {
       _loadMockChatRooms();
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _fetchAndSetParticipantInfo(String pId, int index) async {
+    if (pId.isEmpty) return;
+    try {
+      final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+      
+      // 1. Try trade offers endpoint (200 OK with sender/receiver details)
+      final tradeRes = await _apiClient.getData('${ApiUrl.tradeOffers}?userId=$currentUserId&type=sent');
+      if (tradeRes.statusCode == 200) {
+        final List tradeList = jsonDecode(tradeRes.body)['data'] ?? [];
+        for (var offer in tradeList) {
+          if (offer is Map) {
+            final rec = offer['receiverId'];
+            final sen = offer['senderId'];
+            if (rec is Map && (rec['_id'] == pId || rec['id'] == pId)) {
+              final String name = (rec['fullName'] ?? rec['name'] ?? rec['username'] ?? '').toString();
+              if (name.isNotEmpty) {
+                _applyParticipantNameAndAvatar(index, name, (rec['avatar'] ?? rec['profileImage'] ?? rec['image'] ?? rec['profile'] ?? '').toString());
+                return;
+              }
+            }
+            if (sen is Map && (sen['_id'] == pId || sen['id'] == pId)) {
+              final String name = (sen['fullName'] ?? sen['name'] ?? sen['username'] ?? '').toString();
+              if (name.isNotEmpty) {
+                _applyParticipantNameAndAvatar(index, name, (sen['avatar'] ?? sen['profileImage'] ?? sen['image'] ?? sen['profile'] ?? '').toString());
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Try products endpoint (200 OK with sellerId details)
+      final prodRes = await _apiClient.getData('${ApiUrl.products}?sellerId=$pId&limit=1');
+      if (prodRes.statusCode == 200) {
+        final List prodList = jsonDecode(prodRes.body)['data'] ?? jsonDecode(prodRes.body)['products'] ?? [];
+        if (prodList.isNotEmpty && prodList.first is Map) {
+          final seller = prodList.first['sellerId'];
+          if (seller is Map) {
+            final String name = (seller['fullName'] ?? seller['name'] ?? seller['username'] ?? '').toString();
+            final String av = (seller['profile'] ?? seller['profileImage'] ?? seller['avatar'] ?? seller['image'] ?? '').toString();
+            if (name.isNotEmpty) {
+              _applyParticipantNameAndAvatar(index, name, av);
+              return;
+            }
+          }
+        }
+      }
+
+      // 3. Fallback to /users/:id
+      final response = await _apiClient.getData('${ApiUrl.users}/$pId');
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final data = body['data'] ?? body;
+        final String fn = (data['fullName'] ?? data['name'] ?? data['username'] ?? '').toString();
+        final String av = (data['avatar'] ?? data['profileImage'] ?? data['image'] ?? data['profile'] ?? '').toString();
+        _applyParticipantNameAndAvatar(index, fn, av);
+      }
+    } catch (e) {
+      Get.log("❌ [_fetchAndSetParticipantInfo] Error: $e");
+    }
+  }
+
+  void _applyParticipantNameAndAvatar(int index, String name, String avatar) {
+    if (index < chatRooms.length) {
+      final current = Map<String, dynamic>.from(chatRooms[index]);
+      if (name.isNotEmpty && name.toLowerCase() != 'user') {
+        current['name'] = name.replaceAll('@', '').trim();
+      }
+      if (avatar.isNotEmpty) {
+        current['avatar'] = (avatar.startsWith('http') || avatar.startsWith('data:image/'))
+            ? avatar
+            : "${ApiUrl.imageBaseUrl}${avatar.startsWith('/') ? avatar : '/$avatar'}";
+      }
+      chatRooms[index] = current;
+      chatRooms.refresh();
     }
   }
 

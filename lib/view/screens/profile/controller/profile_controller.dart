@@ -24,6 +24,7 @@ class ProfileController extends GetxController {
   final RxString userId = "".obs;
   final RxString name = "".obs;
   final RxString username = "".obs;
+  final RxString email = "".obs;
   final RxString description = "".obs;
   final RxString profileImageUrl = "".obs;
   final RxString coverPhotoUrl = "".obs;
@@ -72,6 +73,7 @@ class ProfileController extends GetxController {
         name.value = fn.isNotEmpty ? fn : "User";
         final String un = data['username'] ?? fn.replaceAll(' ', '').toLowerCase();
         username.value = un.isNotEmpty ? "@$un" : "";
+        email.value = data['email'] ?? "";
         description.value = data['description'] ?? "No bio added yet.";
 
         // Handle profile image
@@ -214,7 +216,12 @@ class ProfileController extends GetxController {
 
   Future<void> updateImage(ImageSource source, {required bool isCover}) async {
     try {
-      final XFile? image = await _picker.pickImage(source: source);
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: isCover ? 1920 : 1080,
+        maxHeight: isCover ? 1080 : 1080,
+        imageQuality: 85,
+      );
       if (image != null) {
         isLoading.value = true;
 

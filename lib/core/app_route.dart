@@ -28,6 +28,7 @@ import '../view/screens/purchases/screen/purchases_screen.dart';
 import '../view/screens/my_trades/screen/my_trades_screen.dart';
 import '../view/screens/trade_details/screen/make_offer_screen.dart';
 import '../view/screens/discover/screen/all_live_shows_screen.dart';
+import '../view/screens/sold_items/screen/sold_items_screen.dart';
 
 class AppRoute {
   static final routeStream = StreamController<String>.broadcast();
@@ -59,6 +60,7 @@ class AppRoute {
   static const String notifications = "/notifications";
   static const String newOffer = "/new_offer";
   static const String allLiveShows = "/all_live_shows";
+  static const String soldItems = "/sold_items";
 
   static List<GetPage> routes = [
     GetPage(name: forgotPassword, page: () => const ForgotPasswordScreen()),
@@ -92,5 +94,6 @@ class AppRoute {
     GetPage(name: notifications, page: () => const NotificationsScreen()),
     GetPage(name: newOffer, page: () => const TradeOfferScreen()),
     GetPage(name: allLiveShows, page: () => const AllLiveShowsScreen()),
+    GetPage(name: soldItems, page: () => const SoldItemsScreen()),
   ];
 }

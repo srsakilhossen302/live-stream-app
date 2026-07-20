@@ -35,10 +35,7 @@ class MyTradesScreen extends GetView<MyTradesController> {
                     "My Trades",
                     style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
                   ),
-                  GestureDetector(
-                    onTap: () => Get.toNamed(AppRoute.notifications),
-                    child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26.sp),
-                  ),
+                  SizedBox(width: 24.sp),
                 ],
               ),
             ),
@@ -46,39 +43,46 @@ class MyTradesScreen extends GetView<MyTradesController> {
             const Divider(color: Colors.white10, thickness: 1),
             
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    SizedBox(height: 24.h),
-                    _buildFilters(),
-                    SizedBox(height: 32.h),
-                    Obx(() {
-                      if (controller.isLoading.value) {
+              child: RefreshIndicator(
+                color: const Color(0xFF8B9BFF),
+                backgroundColor: const Color(0xFF161622),
+                onRefresh: () async {
+                  await controller.fetchTrades();
+                },
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 24.h),
+                      _buildFilters(),
+                      SizedBox(height: 32.h),
+                      Obx(() {
+                        if (controller.isLoading.value) {
+                          return Column(
+                            children: List.generate(3, (index) => _buildTradeCardShimmer()),
+                          );
+                        }
+
+                        if (controller.filteredTrades.isEmpty) {
+                          return Padding(
+                            padding: EdgeInsets.only(top: 40.h),
+                            child: CustomEmptyState(
+                              icon: Icons.swap_horiz_rounded,
+                              title: "No Trades Found",
+                              description: "You don't have any trade offers or requests in this filter yet.",
+                              onRetry: () => controller.fetchTrades(),
+                            ),
+                          );
+                        }
+
                         return Column(
-                          children: List.generate(3, (index) => _buildTradeCardShimmer()),
+                          children: controller.filteredTrades.map((trade) => _buildMyTradeCard(trade)).toList(),
                         );
-                      }
-
-                      if (controller.filteredTrades.isEmpty) {
-                        return Padding(
-                          padding: EdgeInsets.only(top: 40.h),
-                          child: CustomEmptyState(
-                            icon: Icons.swap_horiz_rounded,
-                            title: "No Trades Found",
-                            description: "You don't have any trade offers or requests in this filter yet.",
-                            onRetry: () => controller.fetchTrades(),
-                          ),
-                        );
-                      }
-
-                      return Column(
-                        children: controller.filteredTrades.map((trade) => _buildMyTradeCard(trade)).toList(),
-                      );
-                    }),
-                    SizedBox(height: 50.h),
-                  ],
+                      }),
+                      SizedBox(height: 50.h),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -162,7 +166,7 @@ class MyTradesScreen extends GetView<MyTradesController> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "TRADE ID: #${trade.tradeId}",
+                "TRADE ID: ${trade.tradeId.startsWith('#') ? trade.tradeId : '#${trade.tradeId}'}",
                 style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 11.sp, fontWeight: FontWeight.w900, letterSpacing: 1),
               ),
               Container(
@@ -208,7 +212,7 @@ class MyTradesScreen extends GetView<MyTradesController> {
                                 : null,
                           ),
                           SizedBox(width: 10.w),
-                          Text(trade.traderName, style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800)),
+                          Text(trade.traderName.replaceAll('@', ''), style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w800)),
                         ],
                       ),
                     ],
@@ -230,23 +234,7 @@ class MyTradesScreen extends GetView<MyTradesController> {
               const Color(0xFF8B9BFF),
               Colors.black,
               fullWidth: true,
-              onTap: () {
-                final productMap = {
-                  "title": trade.title,
-                  "description": "Completed Barter Trade Deal. Swapped items successfully. Status: COMPLETED",
-                  "category": "BARTER",
-                  "condition": "Completed Deal",
-                  "estValue": "N/A",
-                  "images": [trade.item1Image, trade.item2Image],
-                  "sellerId": {
-                    "fullName": trade.traderName,
-                    "image": trade.traderAvatar,
-                    "rating": "4.9",
-                    "address": "Verified Trader"
-                  }
-                };
-                Get.toNamed('/trade_details', arguments: productMap);
-              },
+              onTap: () => _showTradeReceiptModal(trade),
             ),
             SizedBox(height: 24.h),
             Container(
@@ -293,7 +281,7 @@ class MyTradesScreen extends GetView<MyTradesController> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text("Trader", style: TextStyle(color: Colors.white24, fontSize: 12.sp, fontWeight: FontWeight.w800)),
-                      Text(trade.traderName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
+                      Text(trade.traderName.replaceAll('@', ''), style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900)),
                     ],
                   ),
                 ),
@@ -392,9 +380,10 @@ class MyTradesScreen extends GetView<MyTradesController> {
                   onTap: () => Get.toNamed(
                     AppRoute.messageDetails,
                     arguments: {
-                      "chatId": "mock_room_1",
-                      "name": trade.traderName.startsWith('@') ? trade.traderName : "@${trade.traderName}",
-                      "avatar": trade.traderAvatar,
+                      "chatId": trade.chatId ?? "",
+                      "participantId": trade.traderId ?? "",
+                      "name": trade.traderName.replaceAll('@', '').trim(),
+                      "avatar": trade.traderAvatar ?? "",
                     },
                   ),
                   child: Container(
@@ -437,11 +426,20 @@ class MyTradesScreen extends GetView<MyTradesController> {
   }
 
   Widget _buildTradeProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
-    if (imgStr.isEmpty) {
-      return Image.network(
-        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-        fit: fit,
+    Widget buildPlaceholder() {
+      return Container(
+        color: Colors.white.withOpacity(0.06),
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.inventory_2_rounded,
+          color: const Color(0xFF8B9BFF).withOpacity(0.5),
+          size: 28.sp,
+        ),
       );
+    }
+
+    if (imgStr.isEmpty) {
+      return buildPlaceholder();
     }
     
     if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
@@ -451,16 +449,10 @@ class MyTradesScreen extends GetView<MyTradesController> {
         return Image.memory(
           bytes,
           fit: fit,
-          errorBuilder: (context, error, stackTrace) => Image.network(
-            "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-            fit: fit,
-          ),
+          errorBuilder: (_, __, ___) => buildPlaceholder(),
         );
       } catch (_) {
-        return Image.network(
-          "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-          fit: fit,
-        );
+        return buildPlaceholder();
       }
     }
     
@@ -471,10 +463,7 @@ class MyTradesScreen extends GetView<MyTradesController> {
     return Image.network(
       cleanUrl,
       fit: fit,
-      errorBuilder: (context, error, stackTrace) => Image.network(
-        "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?q=80&w=500",
-        fit: fit,
-      ),
+      errorBuilder: (_, __, ___) => buildPlaceholder(),
     );
   }
 
@@ -538,6 +527,182 @@ class MyTradesScreen extends GetView<MyTradesController> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showTradeReceiptModal(MyTradeModel trade) {
+    final cleanTrader = trade.traderName.replaceAll('@', '');
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141422),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  margin: EdgeInsets.only(bottom: 20.h),
+                  decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2.r)),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B9BFF).withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.receipt_long_rounded, color: const Color(0xFF8B9BFF), size: 32.sp),
+              ),
+              SizedBox(height: 12.h),
+              Text("TRADE RECEIPT", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              SizedBox(height: 4.h),
+              Text(trade.tradeId, style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 12.sp, fontWeight: FontWeight.w800)),
+              SizedBox(height: 20.h),
+              Container(
+                padding: EdgeInsets.all(20.r),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(24.r),
+                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle_rounded, color: const Color(0xFF22C55E), size: 16.sp),
+                            SizedBox(width: 6.w),
+                            Text("COMPLETED", style: TextStyle(color: const Color(0xFF22C55E), fontSize: 11.sp, fontWeight: FontWeight.w900)),
+                          ],
+                        ),
+                        Text(trade.date ?? "Recently", style: TextStyle(color: Colors.white54, fontSize: 11.sp, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                    SizedBox(height: 16.h),
+                    Divider(color: Colors.white10, height: 1.h),
+                    SizedBox(height: 16.h),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 16.r,
+                          backgroundColor: Colors.white10,
+                          backgroundImage: (trade.traderAvatar != null && trade.traderAvatar!.isNotEmpty)
+                              ? NetworkImage(trade.traderAvatar!)
+                              : null,
+                          child: (trade.traderAvatar == null || trade.traderAvatar!.isEmpty)
+                              ? Icon(Icons.person, color: Colors.white24, size: 16.sp)
+                              : null,
+                        ),
+                        SizedBox(width: 10.w),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("TRADER PARTNER", style: TextStyle(color: Colors.white24, fontSize: 9.sp, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
+                            Text(cleanTrader, style: TextStyle(color: Colors.white, fontSize: 13.sp, fontWeight: FontWeight.w800)),
+                          ],
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                          decoration: BoxDecoration(color: const Color(0xFF22C55E).withOpacity(0.15), borderRadius: BorderRadius.circular(8.r)),
+                          child: Row(
+                            children: [
+                              Icon(Icons.verified, color: const Color(0xFF22C55E), size: 12.sp),
+                              SizedBox(width: 4.w),
+                              Text("VERIFIED", style: TextStyle(color: const Color(0xFF22C55E), fontSize: 9.sp, fontWeight: FontWeight.w900)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16.h),
+                    Divider(color: Colors.white10, height: 1.h),
+                    SizedBox(height: 16.h),
+                    Text(trade.title, style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
+                    SizedBox(height: 16.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildTradeItemImage(trade.item1Image, small: true),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 14.w),
+                          child: SvgPicture.asset(
+                            "assets/icons/Container1.svg",
+                            width: 18.w,
+                            colorFilter: const ColorFilter.mode(Color(0xFF8B9BFF), BlendMode.srcIn),
+                          ),
+                        ),
+                        _buildTradeItemImage(trade.item2Image, small: true),
+                      ],
+                    ),
+                    SizedBox(height: 20.h),
+                    Divider(color: Colors.white10, height: 1.h),
+                    SizedBox(height: 16.h),
+                    _receiptRow("Trade Protection Fee", "\$0.00"),
+                    SizedBox(height: 8.h),
+                    _receiptRow("Shipping & Insurance", "Included"),
+                    SizedBox(height: 8.h),
+                    _receiptRow("Platform Tax", "\$0.00"),
+                    SizedBox(height: 12.h),
+                    Divider(color: Colors.white10, height: 1.h),
+                    SizedBox(height: 12.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("TOTAL NET VALUE", style: TextStyle(color: Colors.white70, fontSize: 12.sp, fontWeight: FontWeight.w900)),
+                        Text("\$0.00 (SWAP)", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.shield_outlined, color: const Color(0xFF22C55E), size: 16.sp),
+                  SizedBox(width: 6.w),
+                  Text("Protected by Culture Cards Swap Guarantee", style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w600)),
+                ],
+              ),
+              SizedBox(height: 24.h),
+              GestureDetector(
+                onTap: () => Get.back(),
+                child: Container(
+                  width: double.infinity,
+                  height: 52.h,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B9BFF),
+                    borderRadius: BorderRadius.circular(26.r),
+                  ),
+                  child: Text("Close Receipt", style: TextStyle(color: Colors.black, fontSize: 15.sp, fontWeight: FontWeight.w900)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _receiptRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w600)),
+        Text(value, style: TextStyle(color: Colors.white70, fontSize: 11.sp, fontWeight: FontWeight.w800)),
+      ],
     );
   }
 }
