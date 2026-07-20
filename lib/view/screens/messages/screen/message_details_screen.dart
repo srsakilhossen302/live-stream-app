@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -145,9 +146,14 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
 
                       final bool isMe = msg['isMe'] == true;
                       final bool isRead = msg['isRead'] == true;
+                      final String messageText = msg['message'] ?? '';
+
+                      if (messageText.contains("Proposed a new trade swap offer:")) {
+                        return _buildTradeOfferBubble(msg);
+                      }
 
                       return _buildMessageBubble(
-                        message: msg['message'] ?? '',
+                        message: messageText,
                         time: msg['time'] ?? 'Now',
                         isMe: isMe,
                         isRead: isRead,
@@ -348,6 +354,506 @@ class MessageDetailsScreen extends GetView<MessageDetailsController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTradeOfferBubble(Map<String, dynamic> msg) {
+    return Obx(() {
+      final bool isMe = msg['isMe'] == true;
+      final String text = msg['message'] ?? '';
+      final String time = msg['time'] ?? 'Now';
+
+      // Parse items
+      final pattern = RegExp(r'Proposed a new trade swap offer:\s*(.*?)\s+for\s+(.*)', caseSensitive: false);
+      final match = pattern.firstMatch(text);
+      
+      String offeredTitle = "Offered Item";
+      String requestedTitle = "Requested Item";
+      if (match != null) {
+        offeredTitle = match.group(1)?.trim() ?? "";
+        requestedTitle = match.group(2)?.trim() ?? "";
+        if (requestedTitle.endsWith('.')) {
+          requestedTitle = requestedTitle.substring(0, requestedTitle.length - 1).trim();
+        }
+      }
+
+      Get.log("🔍 [TradeBubble] Parsed text: '$text'");
+      Get.log("🔍 [TradeBubble] Parsed Offered: '$offeredTitle', Requested: '$requestedTitle'");
+      Get.log("🔍 [TradeBubble] Total trades in memory: ${controller.associatedTrades.length}");
+
+      // Look up trade details
+      Map<String, dynamic>? tradeDetail;
+      for (var trade in controller.associatedTrades) {
+        final senderProduct = trade['senderProductId'] ?? {};
+        final receiverProduct = trade['receiverProductId'] ?? {};
+
+        final String sTitle = (senderProduct['title'] ?? '').toString().trim();
+        final String rTitle = (receiverProduct['title'] ?? '').toString().trim();
+        
+        Get.log("   - Checking trade: senderProdTitle='$sTitle', receiverProdTitle='$rTitle'");
+
+        if (sTitle.toLowerCase() == offeredTitle.toLowerCase() &&
+            rTitle.toLowerCase() == requestedTitle.toLowerCase()) {
+          tradeDetail = Map<String, dynamic>.from(trade);
+          Get.log("   - Match found! Trade ID: ${tradeDetail['_id']}");
+          break;
+        }
+      }
+
+      // Get image URLs and cash supplement
+      String offeredImg = "";
+      String requestedImg = "";
+      double cash = 0.0;
+      double offeredValue = 0.0;
+      double requestedValue = 0.0;
+      String status = "pending";
+      String tradeId = "";
+
+      if (tradeDetail != null) {
+        tradeId = tradeDetail['_id']?.toString() ?? "";
+        status = tradeDetail['status']?.toString().toLowerCase() ?? "pending";
+        cash = double.tryParse(tradeDetail['cashSupplement']?.toString() ?? '0') ?? 0.0;
+
+        final senderProduct = tradeDetail['senderProductId'] ?? {};
+        final receiverProduct = tradeDetail['receiverProductId'] ?? {};
+
+        offeredValue = double.tryParse(senderProduct['estValue']?.toString() ?? '0') ?? 0.0;
+        requestedValue = double.tryParse(receiverProduct['estValue']?.toString() ?? '0') ?? 0.0;
+
+        final senderImages = senderProduct['images'];
+        if (senderImages != null && senderImages is List && senderImages.isNotEmpty) {
+          offeredImg = senderImages[0].toString();
+        }
+
+        final receiverImages = receiverProduct['images'];
+        if (receiverImages != null && receiverImages is List && receiverImages.isNotEmpty) {
+          requestedImg = receiverImages[0].toString();
+        }
+      }
+
+      Get.log("🔍 [TradeBubble] Resolved OfferedImg: '$offeredImg'");
+      Get.log("🔍 [TradeBubble] Resolved RequestedImg: '$requestedImg'");
+
+      // Color scheme
+      final Color cardBg = const Color(0xFF161622);
+      final Color borderColor = const Color(0xFF8B9BFF).withOpacity(0.15);
+
+      return Align(
+        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          margin: EdgeInsets.only(bottom: 16.h),
+          width: 0.82.sw,
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(color: borderColor, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF8B9BFF).withOpacity(0.05),
+                blurRadius: 16.r,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header Badge
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E2C),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(22.r),
+                    topRight: Radius.circular(22.r),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.swap_horizontal_circle_outlined, color: const Color(0xFF8B9BFF), size: 18.sp),
+                        SizedBox(width: 8.w),
+                        Text(
+                          "TRADE PROPOSAL",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: status == "pending"
+                            ? const Color(0xFF8B9BFF).withOpacity(0.1)
+                            : (status == "accepted" || status == "completed"
+                                ? const Color(0xFF22C55E).withOpacity(0.1)
+                                : const Color(0xFFFF4B4B).withOpacity(0.1)),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        status.toUpperCase(),
+                        style: TextStyle(
+                          color: status == "pending"
+                              ? const Color(0xFF8B9BFF)
+                              : (status == "accepted" || status == "completed"
+                                  ? const Color(0xFF22C55E)
+                                  : const Color(0xFFFF4B4B)),
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Main Swap comparison
+              Padding(
+                padding: EdgeInsets.all(16.r),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        // Offered Item (Sender)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isMe ? "YOU OFFER" : "THEY OFFER",
+                                style: TextStyle(color: Colors.white38, fontSize: 9.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                              ),
+                              SizedBox(height: 8.h),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12.r),
+                                child: _buildProductImage(offeredImg, height: 90.h, width: double.infinity),
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                offeredTitle,
+                                style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (offeredValue > 0) ...[
+                                SizedBox(height: 2.h),
+                                Text(
+                                  "Est. \$${offeredValue.toInt()}",
+                                  style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // Swap Icon
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10.w),
+                          child: Container(
+                            padding: EdgeInsets.all(8.r),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E1E2C),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white.withOpacity(0.05)),
+                            ),
+                            child: Icon(Icons.sync_alt_rounded, color: const Color(0xFF8B9BFF), size: 16.sp),
+                          ),
+                        ),
+
+                        // Requested Item (Receiver)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isMe ? "YOU RECEIVE" : "THEY REQUEST",
+                                style: TextStyle(color: Colors.white38, fontSize: 9.sp, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                              ),
+                              SizedBox(height: 8.h),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12.r),
+                                child: _buildProductImage(requestedImg, height: 90.h, width: double.infinity),
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                requestedTitle,
+                                style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w900),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (requestedValue > 0) ...[
+                                SizedBox(height: 2.h),
+                                Text(
+                                  "Est. \$${requestedValue.toInt()}",
+                                  style: TextStyle(color: Colors.white38, fontSize: 10.sp, fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Cash supplement if > 0
+                    if (cash > 0) ...[
+                      SizedBox(height: 16.h),
+                      Container(
+                        padding: EdgeInsets.all(12.r),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B9BFF).withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_card_rounded, color: const Color(0xFF8B9BFF), size: 16.sp),
+                            SizedBox(width: 8.w),
+                            Text(
+                              isMe 
+                                  ? "+ \$${cash.toInt()} Cash Supplement Offered" 
+                                  : "+ \$${cash.toInt()} Cash Supplement Included",
+                              style: TextStyle(
+                                color: const Color(0xFF8B9BFF),
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Action buttons — only when status is pending, and tradeId is available
+              if (status == "pending" && tradeId.isNotEmpty) ...[
+                if (!isMe) ...[
+                  // Receiver's view: Accept / Decline buttons
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => controller.handleDeclineTrade(tradeId),
+                            child: Container(
+                              height: 44.h,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(22.r),
+                                border: Border.all(color: Colors.white.withOpacity(0.05)),
+                              ),
+                              child: Text(
+                                "Decline",
+                                style: TextStyle(color: const Color(0xFFFF4B4B), fontSize: 12.sp, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => controller.handleAcceptTrade(tradeId),
+                            child: Container(
+                              height: 44.h,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF8B9BFF), Color(0xFFBD8BFF)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(22.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF8B9BFF).withOpacity(0.2),
+                                    blurRadius: 8.r,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                "Accept Offer",
+                                style: TextStyle(color: Colors.black, fontSize: 12.sp, fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Sender's view: "Waiting for response" text
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                    child: Center(
+                      child: Text(
+                        "Waiting for trader's response...",
+                        style: TextStyle(color: Colors.white38, fontSize: 11.sp, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ),
+                ],
+              ] else if (status == "accepted" && tradeId.isNotEmpty) ...[
+                // Accepted but pending completion status
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                  child: Builder(
+                    builder: (context) {
+                      if (isMe) {
+                        // Sender (Buyer) who proposed the offer can complete/pay
+                        return GestureDetector(
+                          onTap: () => controller.completeTradeOffer(tradeId),
+                          child: Container(
+                            height: 44.h,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF8B9BFF), Color(0xFFBD8BFF)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(22.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8B9BFF).withOpacity(0.2),
+                                  blurRadius: 8.r,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  cash > 0 ? Icons.payment_rounded : Icons.check_circle_rounded,
+                                  color: Colors.black,
+                                  size: 16.sp,
+                                ),
+                                SizedBox(width: 8.w),
+                                Text(
+                                  cash > 0 ? "Pay & Complete" : "Complete Swap",
+                                  style: TextStyle(color: Colors.black, fontSize: 12.sp, fontWeight: FontWeight.w900),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        // Receiver (Seller) who accepted the offer sees "Accepted" status
+                        return Container(
+                          height: 44.h,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E).withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(22.r),
+                            border: Border.all(color: const Color(0xFF22C55E).withOpacity(0.3), width: 1),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle_outline_rounded, color: const Color(0xFF22C55E), size: 16.sp),
+                              SizedBox(width: 8.w),
+                              Text(
+                                "Accepted",
+                                style: TextStyle(color: const Color(0xFF22C55E), fontSize: 12.sp, fontWeight: FontWeight.w900),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ] else if (status != "pending" && status != "accepted" && tradeId.isNotEmpty) ...[
+                // Status feedback message (Decline or Completed)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                  child: Center(
+                    child: Text(
+                      status == "completed"
+                          ? "Trade Completed Successfully! ✅"
+                          : "Trade Proposal Declined",
+                      style: TextStyle(
+                        color: status == "completed" ? const Color(0xFF22C55E) : const Color(0xFFFF4B4B),
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              
+              // Time details footer
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(time, style: TextStyle(color: Colors.white24, fontSize: 9.sp, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildProductImage(String imgStr, {double? height, double? width, BoxFit fit = BoxFit.cover}) {
+    if (imgStr.isEmpty) {
+      return Container(
+        height: height,
+        width: width,
+        color: Colors.black26,
+        child: const Center(child: Icon(Icons.image, color: Colors.white24)),
+      );
+    }
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final bytes = base64Decode(imgStr.split('base64,').last);
+        return Image.memory(
+          bytes,
+          height: height,
+          width: width,
+          fit: fit,
+          errorBuilder: (_, __, ___) => Container(
+            height: height,
+            width: width,
+            color: Colors.black26,
+            child: const Center(child: Icon(Icons.broken_image_outlined, color: Colors.white24)),
+          ),
+        );
+      } catch (_) {
+        return Container(
+          height: height,
+          width: width,
+          color: Colors.black26,
+          child: const Center(child: Icon(Icons.broken_image_outlined, color: Colors.white24)),
+        );
+      }
+    }
+    final cleanUrl = imgStr.startsWith('http') ? imgStr : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+    return Image.network(
+      cleanUrl,
+      height: height,
+      width: width,
+      fit: fit,
+      errorBuilder: (_, __, ___) => Container(
+        height: height,
+        width: width,
+        color: Colors.black26,
+        child: const Center(child: Icon(Icons.image_not_supported_outlined, color: Colors.white24)),
       ),
     );
   }

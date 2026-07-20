@@ -49,4 +49,10 @@ class ApiUrl {
 
   // Favourites
   static const String favourite = "/favourite";
+
+  // Payments & Checkout
+  static const String createPaymentIntent = "/payment/create-payment-intent";
+  static const String createCheckoutSession = "/payment/create-checkout-session";
+  static const String paymentCheckoutSession = "/payment/create-checkout-session";
+  static const String subscriptionCheckoutSession = "/subscription/checkout-session";
 }

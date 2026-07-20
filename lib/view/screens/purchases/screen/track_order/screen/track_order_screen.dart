@@ -3,15 +3,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../../../global/widgets/custom_background.dart';
 import '../../../../../../global/widgets/custom_bottom_navbar.dart';
-import '../../../model/purchase_model.dart';
 import '../../../../../../data/services/api_url.dart';
+import '../controller/track_order_controller.dart';
 
 class TrackOrderScreen extends StatelessWidget {
   const TrackOrderScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final PurchaseModel order = Get.arguments;
+    final controller = Get.put(TrackOrderController());
+
     return CustomBackground(
       child: SafeArea(
         child: Stack(
@@ -31,10 +32,12 @@ class TrackOrderScreen extends StatelessWidget {
                           child: Icon(Icons.close, color: Colors.white, size: 24.sp),
                         ),
                       ),
-                      Text(
-                        "Order ${order.id}",
+                      Obx(() => Text(
+                        "Order ${controller.displayOrderId}",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
-                      ),
+                      )),
                     ],
                   ),
                 ),
@@ -42,48 +45,54 @@ class TrackOrderScreen extends StatelessWidget {
                 const Divider(color: Colors.white10, thickness: 1),
                 
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 24.h),
-                        // Map Section
-                        _buildMapSection(order),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Status Card
-                        _buildStatusCard(order),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Journey Updates
-                        Text("JOURNEY UPDATES", style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-                        SizedBox(height: 24.h),
-                        _buildJourneyTimeline(),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Order Summary Card
-                        _buildOrderSummaryCard(order),
-                        
-                        SizedBox(height: 32.h),
-                        
-                        // Action Buttons
-                        Row(
-                          children: [
-                            Expanded(child: _buildButton("View Receipt", const Color(0xFF8B9BFF), Colors.black)),
-                            SizedBox(width: 16.w),
-                            Expanded(child: _buildButton("Contact Seller", const Color(0xFF1E1E2C).withOpacity(0.9), Colors.white)),
-                          ],
-                        ),
-                        
-                        SizedBox(height: 40.h),
-                      ],
-                    ),
-                  ),
+                  child: Obx(() {
+                    if (controller.isLoading.value) {
+                      return const Center(child: CircularProgressIndicator(color: Color(0xFF8B9BFF)));
+                    }
+
+                    return SingleChildScrollView(
+                      padding: EdgeInsets.only(left: 24.w, right: 24.w, bottom: 120.h),
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 24.h),
+                          // Map Section
+                          _buildMapSection(controller),
+                          
+                          SizedBox(height: 32.h),
+                          
+                          // Status Card
+                          _buildStatusCard(controller),
+                          
+                          SizedBox(height: 32.h),
+                          
+                          // Journey Updates
+                          Text("JOURNEY UPDATES", style: TextStyle(color: Colors.white54, fontSize: 12.sp, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                          SizedBox(height: 24.h),
+                          _buildJourneyTimeline(controller),
+                          
+                          SizedBox(height: 32.h),
+                          
+                          // Order Summary Card
+                          _buildOrderSummaryCard(controller),
+                          
+                          SizedBox(height: 32.h),
+                          
+                          // Action Buttons
+                          Row(
+                            children: [
+                              Expanded(child: _buildButton("View Receipt", const Color(0xFF8B9BFF), Colors.black)),
+                              SizedBox(width: 16.w),
+                              Expanded(child: _buildButton("Contact Seller", const Color(0xFF1E1E2C).withOpacity(0.9), Colors.white)),
+                            ],
+                          ),
+                          
+                          SizedBox(height: 40.h),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -99,7 +108,7 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMapSection(PurchaseModel order) {
+  Widget _buildMapSection(TrackOrderController controller) {
     return Container(
       height: 240.h,
       width: double.infinity,
@@ -137,7 +146,7 @@ class TrackOrderScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 12.h),
                 Text(
-                  order.location ?? "Jersey City Distribution\nCenter",
+                  "Jersey City Distribution\nCenter",
                   style: TextStyle(color: Colors.white, fontSize: 22.sp, fontWeight: FontWeight.w900, height: 1.2),
                 ),
               ],
@@ -163,7 +172,10 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusCard(PurchaseModel order) {
+  Widget _buildStatusCard(TrackOrderController controller) {
+    final rawStatus = controller.deliveryStatus;
+    final statusText = rawStatus.replaceAll('_', ' ').capitalizeFirst ?? rawStatus;
+
     return Container(
       padding: EdgeInsets.all(28.r),
       decoration: BoxDecoration(
@@ -181,8 +193,7 @@ class TrackOrderScreen extends StatelessWidget {
                 children: [
                   Text("STATUS", style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800)),
                   Text(
-                    order.status == OrderStatus.inTransit ? "In Transit" : 
-                    order.status == OrderStatus.delivered ? "Delivered" : "Processing",
+                    statusText,
                     style: TextStyle(color: const Color(0xFFAC8AFF), fontSize: 24.sp, fontWeight: FontWeight.w900),
                   ),
                 ],
@@ -191,7 +202,7 @@ class TrackOrderScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text("EST. DELIVERY", style: TextStyle(color: Colors.white24, fontSize: 11.sp, fontWeight: FontWeight.w800)),
-                  Text(order.estimatedDelivery ?? "Apr 23, 2026", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
+                  Text(controller.estimatedDelivery, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
                 ],
               ),
             ],
@@ -234,33 +245,34 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildJourneyTimeline() {
+  Widget _buildJourneyTimeline(TrackOrderController controller) {
+    final updates = controller.journeyUpdates;
     return Column(
-      children: [
-        _timelineItem(
-          icon: Icons.local_shipping_rounded,
-          title: "In Transit: Arrived at Jersey City",
-          subtitle: "Arrived at Jersey City, NJ facility",
-          time: "Today 10:25 AM",
-          isActive: true,
-          isFirst: true,
-        ),
-        _timelineItem(
-          icon: Icons.inventory_2_rounded,
-          title: "Shipped",
-          subtitle: "Package left origin facility",
-          time: "Apr 21",
-          isActive: false,
-        ),
-        _timelineItem(
-          icon: Icons.check_circle_outline_rounded,
-          title: "Order Confirmed",
-          subtitle: "Seller accepted your order",
-          time: "Apr 21",
-          isActive: false,
-          isLast: true,
-        ),
-      ],
+      children: List.generate(updates.length, (index) {
+        final item = updates[index];
+        final title = item['status']?.toString() ?? item['title']?.toString() ?? 'Update';
+        final description = item['description']?.toString() ?? item['text']?.toString() ?? '';
+        final time = item['timestamp']?.toString() ?? item['time']?.toString() ?? '';
+        final isFirst = index == 0;
+        final isLast = index == updates.length - 1;
+
+        IconData icon = Icons.local_shipping_rounded;
+        if (title.toLowerCase().contains('shipped')) {
+          icon = Icons.inventory_2_rounded;
+        } else if (title.toLowerCase().contains('confirm') || title.toLowerCase().contains('order')) {
+          icon = Icons.check_circle_outline_rounded;
+        }
+
+        return _timelineItem(
+          icon: icon,
+          title: title,
+          subtitle: description,
+          time: time,
+          isActive: isFirst,
+          isFirst: isFirst,
+          isLast: isLast,
+        );
+      }),
     );
   }
 
@@ -322,7 +334,12 @@ class TrackOrderScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderSummaryCard(PurchaseModel order) {
+  Widget _buildOrderSummaryCard(TrackOrderController controller) {
+    final rawImg = controller.productImage;
+    final String imgUrl = (rawImg.isNotEmpty && !rawImg.startsWith('http') && !rawImg.startsWith('data:image/'))
+        ? "${ApiUrl.imageBaseUrl}${rawImg.startsWith('/') ? rawImg : '/$rawImg'}"
+        : rawImg;
+
     return Container(
       padding: EdgeInsets.all(28.r),
       decoration: BoxDecoration(
@@ -333,37 +350,30 @@ class TrackOrderScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Builder(builder: (context) {
-                final String rawImg = order.image;
-                final String imgUrl = (rawImg.isNotEmpty && !rawImg.startsWith('http') && !rawImg.startsWith('data:image/'))
-                    ? "${ApiUrl.imageBaseUrl}${rawImg.startsWith('/') ? rawImg : '/$rawImg'}"
-                    : rawImg;
-
-                return Container(
-                  width: 70.w,
-                  height: 70.w,
-                  decoration: BoxDecoration(
-                    color: Colors.black26,
-                    borderRadius: BorderRadius.circular(16.r),
-                    image: imgUrl.isNotEmpty
-                        ? DecorationImage(image: NetworkImage(imgUrl), fit: BoxFit.cover)
-                        : null,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10.r),
-                    ],
-                  ),
-                  child: imgUrl.isEmpty
-                      ? const Center(child: Icon(Icons.image, color: Colors.white24))
+              Container(
+                width: 70.w,
+                height: 70.w,
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(16.r),
+                  image: imgUrl.isNotEmpty
+                      ? DecorationImage(image: NetworkImage(imgUrl), fit: BoxFit.cover)
                       : null,
-                );
-              }),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10.r),
+                  ],
+                ),
+                child: imgUrl.isEmpty
+                    ? const Center(child: Icon(Icons.image, color: Colors.white24))
+                    : null,
+              ),
               SizedBox(width: 20.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(order.id, style: TextStyle(color: const Color(0xFFAC8AFF), fontSize: 11.sp, fontWeight: FontWeight.w800)),
-                    Text(order.title, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
+                    Text(controller.displayOrderId, style: TextStyle(color: const Color(0xFFAC8AFF), fontSize: 11.sp, fontWeight: FontWeight.w800)),
+                    Text(controller.productTitle, style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ),
@@ -372,17 +382,17 @@ class TrackOrderScreen extends StatelessWidget {
           SizedBox(height: 28.h),
           const Divider(color: Colors.white10, thickness: 1),
           SizedBox(height: 24.h),
-          _summaryRow("Item", "\$${order.itemPrice?.toStringAsFixed(2) ?? "115.00"}"),
-          _summaryRow("Shipping", "\$${order.shippingPrice?.toStringAsFixed(2) ?? "15.00"}"),
-          _summaryRow("Taxes", "\$${order.taxes?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Processing Fee", "\$${order.processingFee?.toStringAsFixed(2) ?? "0.00"}"),
-          _summaryRow("Buyer Contribution", "\$${order.buyerContribution?.toStringAsFixed(2) ?? "0.05"}", isHighlight: true),
+          _summaryRow("Item", "\$${controller.itemSubtotal.toStringAsFixed(2)}"),
+          _summaryRow("Shipping", "\$${controller.shipping.toStringAsFixed(2)}"),
+          _summaryRow("Taxes", "\$${controller.taxes.toStringAsFixed(2)}"),
+          _summaryRow("Processing Fee", "\$${controller.processingFee.toStringAsFixed(2)}"),
+          _summaryRow("Buyer Contribution", "\$${controller.charityContribution.toStringAsFixed(2)}", isHighlight: true),
           SizedBox(height: 24.h),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("TOTAL PAID", style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.w900)),
-              Text("\$${order.totalPaid?.toStringAsFixed(2) ?? "130.05"}", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 26.sp, fontWeight: FontWeight.w900)),
+              Text("\$${controller.totalPaid.toStringAsFixed(2)}", style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 26.sp, fontWeight: FontWeight.w900)),
             ],
           ),
           SizedBox(height: 28.h),

@@ -16,8 +16,10 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
   Widget build(BuildContext context) {
     final detailsController = Get.put(TradeDetailsController());
     if (Get.arguments != null && Get.arguments is Map) {
-      detailsController.product.assignAll(Map<String, dynamic>.from(Get.arguments));
-      detailsController.currentImageIndex.value = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        detailsController.product.assignAll(Map<String, dynamic>.from(Get.arguments));
+        detailsController.currentImageIndex.value = 0;
+      });
     }
     return CustomBackground(
       child: Scaffold(
@@ -70,6 +72,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                 'images', 'estValue', 'buyNowPrice', 'allowTrade', 'lookingFor',
                 'minValue', 'maxValue', 'targetCategory', 'sellerId', 'isSold',
                 'status', 'createdAt', 'updatedAt', '__v', 'rating', 'reviewsCount',
+                'isFeatured', 'is_featured', 'featured',
               };
               product.forEach((key, value) {
                 if (!knownKeys.contains(key) && value != null && value.toString().trim().isNotEmpty) {

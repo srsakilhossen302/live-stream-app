@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
@@ -176,14 +178,87 @@ class MyTradesController extends GetxController {
         final data = body['data'];
         
         if (success) {
-          if (data is Map && data.containsKey('checkoutUrl')) {
-            final checkoutUrl = data['checkoutUrl'].toString();
+          // 1. Native Stripe PaymentSheet Handler
+          if (data is Map && data.containsKey('clientSecret')) {
+            final clientSecret = data['clientSecret']?.toString() ?? '';
+            final ephemeralKey = data['ephemeralKey']?.toString() ?? '';
+            final customerId = data['customer']?.toString() ?? '';
+
+            if (clientSecret.isNotEmpty) {
+              try {
+                final pubKey = data['publishableKey'] ?? data['stripePublishableKey'] ?? data['pk'];
+                if (pubKey != null && pubKey.toString().isNotEmpty) {
+                  Stripe.publishableKey = pubKey.toString();
+                  await Stripe.instance.applySettings();
+                }
+
+                await Stripe.instance.initPaymentSheet(
+                  paymentSheetParameters: SetupPaymentSheetParameters(
+                    paymentIntentClientSecret: clientSecret,
+                    customerEphemeralKeySecret: ephemeralKey.isNotEmpty ? ephemeralKey : null,
+                    customerId: customerId.isNotEmpty ? customerId : null,
+                    merchantDisplayName: 'Culture Cards LLC',
+                    style: ThemeMode.dark,
+                    appearance: const PaymentSheetAppearance(
+                      colors: PaymentSheetAppearanceColors(
+                        primary: Color(0xFF8B9BFF),
+                        background: Color(0xFF161622),
+                        componentBackground: Color(0xFF1E1E2C),
+                        componentText: Colors.white,
+                        primaryText: Colors.white,
+                        secondaryText: Colors.white70,
+                      ),
+                    ),
+                  ),
+                );
+
+                await Stripe.instance.presentPaymentSheet();
+                Get.snackbar("Success", "Payment completed & trade finalized! ✅", snackPosition: SnackPosition.BOTTOM);
+                await fetchTrades();
+                return;
+              } on StripeException catch (e) {
+                Get.log("⚠️ Stripe Exception: ${e.error.localizedMessage}");
+                Get.snackbar("Stripe Payment", e.error.localizedMessage ?? "Payment was cancelled.", snackPosition: SnackPosition.BOTTOM);
+                return;
+              } catch (e) {
+                Get.log("❌ Stripe Error: $e");
+                Get.snackbar("Stripe Error", "$e", snackPosition: SnackPosition.BOTTOM);
+                return;
+              }
+            }
+          }
+
+          // 2. Fallback Checkout URL Handler
+          String? checkoutUrl;
+          if (data is Map) {
+            checkoutUrl = (data['url'] ?? data['checkoutUrl'] ?? data['paymentUrl'] ?? data['redirectUrl'] ?? data['sessionUrl'])?.toString();
+          } else if (data is String && data.startsWith('http')) {
+            checkoutUrl = data;
+          } else if (body['url'] != null) {
+            checkoutUrl = body['url'].toString();
+          }
+
+          if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
             final uri = Uri.parse(checkoutUrl);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            bool launched = false;
+            try {
+              launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+            } catch (_) {}
+            if (!launched) {
+              try {
+                launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+              } catch (_) {}
+            }
+            if (!launched) {
+              try {
+                launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } catch (_) {}
+            }
+
+            if (launched) {
               Get.snackbar("Success", "Redirecting to Stripe checkout...", snackPosition: SnackPosition.BOTTOM);
             } else {
-              Get.snackbar("Error", "Could not launch Stripe payment.", snackPosition: SnackPosition.BOTTOM);
+              Get.snackbar("Error", "Could not open Stripe checkout page.", snackPosition: SnackPosition.BOTTOM);
             }
           } else {
             Get.snackbar("Success", "Trade completed successfully!", snackPosition: SnackPosition.BOTTOM);

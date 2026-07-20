@@ -267,12 +267,13 @@ class MakeOfferScreen extends GetView<MakeOfferController> {
                                       controller.customValue.value = double.tryParse(val) ?? 0.0;
                                     },
                                   ),
-                                  SizedBox(height: 16.h),
-                                  _buildCustomDropdown(
+                                  Obx(() => _buildCustomDropdown(
                                     label: "Category",
                                     value: controller.customCategory,
-                                    items: controller.categoriesList,
-                                  ),
+                                    items: controller.categories.isNotEmpty
+                                        ? controller.categories
+                                        : controller.categoriesList,
+                                  )),
                                   SizedBox(height: 16.h),
                                   _buildCustomDropdown(
                                     label: "Condition",

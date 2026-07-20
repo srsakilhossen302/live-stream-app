@@ -707,9 +707,25 @@ class ProfileScreen extends GetView<ProfileController> {
                 if (isPurchases) {
                   svgPath = "assets/icons/Purchase Made.svg";
                   title = "Purchase Made";
-                  final product = item['productId'];
-                  final productTitle = (product is Map) ? (product['title'] ?? 'Item') : 'Item';
-                  subtitle = "You bought $productTitle";
+                  final product = item['productId'] ?? item['product'] ?? item['item'];
+                  String productTitle = 'Item';
+                  if (product is Map) {
+                    productTitle = product['title'] ?? product['name'] ?? 'Item';
+                  } else if (item['productName'] != null) {
+                    productTitle = item['productName'].toString();
+                  } else if (item['title'] != null) {
+                    productTitle = item['title'].toString();
+                  }
+                  
+                  final amountDetails = item['amountDetails'];
+                  dynamic amount;
+                  if (amountDetails is Map) {
+                    amount = amountDetails['totalPaid'] ?? amountDetails['itemSubtotal'];
+                  }
+                  amount ??= (item['totalAmount'] ?? item['amount'] ?? item['price']);
+
+                  final amountText = amount != null ? " (\$${amount})" : "";
+                  subtitle = "You bought $productTitle$amountText";
                   timeAgo = item['createdAt'] != null 
                       ? _formatTimestamp(item['createdAt'].toString())
                       : "Recently";
@@ -736,6 +752,10 @@ class ProfileScreen extends GetView<ProfileController> {
                   time: timeAgo,
                   isFirst: index == 0,
                   isLast: index == currentList.length - 1,
+                  onTap: () {
+                    final itemId = item['_id'] ?? item['id'] ?? item['orderId'] ?? item;
+                    Get.toNamed(AppRoute.trackOrder, arguments: itemId);
+                  },
                 );
               }),
             ),
@@ -769,86 +789,91 @@ class ProfileScreen extends GetView<ProfileController> {
     required String time,
     bool isFirst = false,
     bool isLast = false,
+    VoidCallback? onTap,
   }) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Timeline Line & Icon
-          Column(
-            children: [
-              Container(
-                width: 48.r,
-                height: 48.r,
-                padding: EdgeInsets.all(12.r),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF161622),
-                  shape: BoxShape.circle,
-                ),
-                child: svgPath != null
-                    ? SvgPicture.asset(
-                        svgPath,
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFFFF8BFF),
-                          BlendMode.srcIn,
-                        ),
-                      )
-                    : Icon(icon, color: const Color(0xFFFF8BFF), size: 22.sp),
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2.w,
-                    margin: EdgeInsets.symmetric(vertical: 4.h),
-                    color: Colors.white.withOpacity(0.05),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Timeline Line & Icon
+            Column(
+              children: [
+                Container(
+                  width: 48.r,
+                  height: 48.r,
+                  padding: EdgeInsets.all(12.r),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF161622),
+                    shape: BoxShape.circle,
                   ),
+                  child: svgPath != null
+                      ? SvgPicture.asset(
+                          svgPath,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFFFF8BFF),
+                            BlendMode.srcIn,
+                          ),
+                        )
+                      : Icon(icon, color: const Color(0xFFFF8BFF), size: 22.sp),
                 ),
-            ],
-          ),
-          SizedBox(width: 20.w),
-
-          // Content
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: 32.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        time,
-                        style: TextStyle(
-                          color: Colors.white24,
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2.w,
+                      margin: EdgeInsets.symmetric(vertical: 4.h),
+                      color: Colors.white.withOpacity(0.05),
                     ),
                   ),
-                ],
+              ],
+            ),
+            SizedBox(width: 20.w),
+
+            // Content
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 32.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          time,
+                          style: TextStyle(
+                            color: Colors.white24,
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 6.h),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

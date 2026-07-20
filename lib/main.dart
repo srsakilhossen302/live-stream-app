@@ -1,13 +1,23 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'core/app_route.dart';
 import 'core/dependency.dart';
 import 'data/helpers/shared_prefe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Stripe publishable key safely
+  try {
+    Stripe.publishableKey = 'pk_test_51RcvK8GdOsJASBMC9aDK1onP8kTVwAxve4385Mr09r2Edd1fxcbSWD1y5DCclahZ7MHa0hf1eBnsnq16bWavPRY400W2WfumAa';
+    Stripe.instance.applySettings();
+  } catch (e) {
+    debugPrint("Stripe init error: $e");
+  }
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -53,6 +63,11 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.dark,
             useMaterial3: true,
             fontFamily: 'Inter',
+            textSelectionTheme: const TextSelectionThemeData(
+              cursorColor: Color(0xFF8B9BFF),
+              selectionColor: Color(0x668B9BFF),
+              selectionHandleColor: Color(0xFF8B9BFF),
+            ),
           ),
           initialRoute: initialRoute,
           getPages: AppRoute.routes,

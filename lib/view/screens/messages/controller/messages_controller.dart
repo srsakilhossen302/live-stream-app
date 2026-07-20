@@ -48,7 +48,8 @@ class MessagesController extends GetxController {
 
             if (otherParticipant == null) continue;
 
-            final name = otherParticipant['fullName'] ?? otherParticipant['name'] ?? "User";
+            final rawName = otherParticipant['fullName'] ?? otherParticipant['name'] ?? otherParticipant['username'];
+            final String name = (rawName != null && rawName.toString().trim().isNotEmpty) ? rawName.toString() : "User";
             final lastMsg = room['lastMessage'] != null 
                 ? (room['lastMessage']['text'] ?? "Sent a message") 
                 : "No messages yet";

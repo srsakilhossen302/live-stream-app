@@ -34,6 +34,10 @@ class ProfileController extends GetxController {
   final RxInt reviewsCount = 124.obs;
   final RxInt activeCount = 0.obs;
   final RxInt soldCount = 0.obs;
+  final RxInt totalTrades = 0.obs;
+  final RxInt positivePercent = 0.obs;
+  final RxInt followersCount = 0.obs;
+  final RxInt followingCount = 0.obs;
 
   // User listings
   final RxList<dynamic> userListings = <dynamic>[].obs;
@@ -47,6 +51,11 @@ class ProfileController extends GetxController {
   void onInit() {
     super.onInit();
     fetchProfileData();
+    final userId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+    if (userId.isNotEmpty) {
+      fetchPurchases(userId);
+      fetchNotifications();
+    }
   }
 
   Future<void> fetchProfileData() async {
@@ -97,7 +106,18 @@ class ProfileController extends GetxController {
         // sellerVerified is the admin-approval flag (distinct from email verification)
         sellerVerified.value = data['sellerVerified'] ?? false;
         Get.log("✅ [Profile] Parsed role: ${role.value} | sellerVerified: ${sellerVerified.value}");
-        if (data['rating'] != null) {
+
+        // Stats block per culturecardsllc-server integration guide
+        final stats = data['stats'] ?? {};
+        if (stats is Map) {
+          if (stats['trades'] != null) totalTrades.value = (stats['trades'] as num).toInt();
+          if (stats['rating'] != null) rating.value = (stats['rating'] as num).toDouble();
+          if (stats['positive'] != null) positivePercent.value = (stats['positive'] as num).toInt();
+          if (stats['followers'] != null) followersCount.value = (stats['followers'] as num).toInt();
+          if (stats['following'] != null) followingCount.value = (stats['following'] as num).toInt();
+        }
+
+        if (data['rating'] != null && rating.value == 0.0) {
           rating.value = (data['rating'] as num).toDouble();
         }
         reviewsCount.value = data['reviewsCount'] ?? 124;
@@ -157,14 +177,28 @@ class ProfileController extends GetxController {
   }
 
   Future<void> fetchPurchases(String userId) async {
+    isActivityLoading.value = true;
     try {
       final response = await _apiClient.getData("${ApiUrl.userOrders}?userId=$userId&role=buyer");
       if (response.statusCode == 200) {
-        final list = jsonDecode(response.body)['data'] as List;
-        purchasesList.assignAll(list);
+        final body = jsonDecode(response.body);
+        final rawData = body['data'];
+        List items = [];
+        if (rawData is List) {
+          items = rawData;
+        } else if (rawData is Map && rawData['result'] is List) {
+          items = rawData['result'];
+        } else if (rawData is Map && rawData['orders'] is List) {
+          items = rawData['orders'];
+        }
+        purchasesList.assignAll(items);
+      } else {
+        purchasesList.clear();
       }
     } catch (e) {
       Get.log("Error fetching purchases: $e");
+    } finally {
+      isActivityLoading.value = false;
     }
   }
 
@@ -212,10 +246,29 @@ class ProfileController extends GetxController {
 
   void changeTab(int index) {
     selectedTab.value = index;
+    if (index == 1) {
+      final userId = user.value.id.isNotEmpty 
+          ? user.value.id 
+          : SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+      if (userId.isNotEmpty) {
+        fetchPurchases(userId);
+        fetchNotifications();
+      }
+    }
   }
 
   void changeActivityFilter(int index) {
     selectedActivityFilter.value = index;
+    final userId = user.value.id.isNotEmpty 
+        ? user.value.id 
+        : SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+    if (userId.isNotEmpty) {
+      if (index == 1) {
+        fetchPurchases(userId);
+      } else {
+        fetchNotifications();
+      }
+    }
   }
 
   Future<void> logout() async {

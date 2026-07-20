@@ -9,6 +9,7 @@ import '../../../../data/helpers/shared_prefe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
 import '../../../../core/app_route.dart';
+import '../../messages/controller/messages_controller.dart';
 
 class MakeOfferController extends GetxController {
   final ApiClient _apiClient = Get.find<ApiClient>();
@@ -23,6 +24,10 @@ class MakeOfferController extends GetxController {
 
   final ImagePicker _picker = ImagePicker();
   final RxBool isCustomOffer = false.obs;
+
+  // Custom offer categories
+  final RxList<String> categories = <String>[].obs;
+  final RxMap<String, String> categoryNameToId = <String, String>{}.obs;
 
   // Custom offer form fields
   final customTitleController = TextEditingController();
@@ -51,6 +56,7 @@ class MakeOfferController extends GetxController {
       sellerProduct.assignAll(Map<String, dynamic>.from(Get.arguments));
     }
     fetchUserProducts();
+    fetchCategories();
   }
 
   Future<void> fetchUserProducts() async {
@@ -196,10 +202,12 @@ class MakeOfferController extends GetxController {
           }
         }
 
+        final String categoryId = categoryNameToId[customCategory.value] ?? customCategory.value;
+
         final requestBody = {
           "title": title,
           "description": "Custom trade offer item.",
-          "category": customCategory.value,
+          "category": categoryId,
           "condition": customCondition.value,
           "estValue": estVal,
           "buyNowPrice": estVal,
@@ -314,9 +322,27 @@ class MakeOfferController extends GetxController {
                   SizedBox(width: 12.w),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         Get.back(); // close dialog
                         Get.back(); // close make offer screen
+                        try {
+                          final mc = Get.put(MessagesController());
+                          final chatId = await mc.createChatRoom(receiverId);
+                          if (chatId != null && chatId.isNotEmpty) {
+                            Get.toNamed(
+                              AppRoute.messageDetails,
+                              arguments: {
+                                "chatId": chatId,
+                                "name": receiverName.startsWith('@') ? receiverName : "@$receiverName",
+                                "avatar": receiverAvatar,
+                              },
+                            );
+                            return;
+                          }
+                        } catch (e) {
+                          Get.log("Error creating chat room: $e");
+                        }
+                        // Fallback to mock room
                         Get.toNamed(
                           AppRoute.messageDetails,
                           arguments: {
@@ -356,6 +382,56 @@ class MakeOfferController extends GetxController {
       ),
       barrierDismissible: false,
     );
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      var response = await _apiClient.getData("/categories");
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        response = await _apiClient.getData(ApiUrl.category);
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        var decoded = jsonDecode(response.body);
+        List<dynamic> dataList = [];
+        
+        if (decoded is List) {
+          dataList = decoded;
+        } else if (decoded is Map) {
+          if (decoded['data'] is List) {
+            dataList = decoded['data'];
+          } else if (decoded['categories'] is List) {
+            dataList = decoded['categories'];
+          } else if (decoded['data'] is Map && decoded['data']['data'] is List) {
+            dataList = decoded['data']['data'];
+          }
+        }
+
+        categoryNameToId.clear();
+        final List<String> parsed = [];
+        for (var item in dataList) {
+          if (item is Map) {
+            final String name = item['name']?.toString() ?? item['title']?.toString() ?? "";
+            final String id = item['_id']?.toString() ?? item['id']?.toString() ?? "";
+            if (name.isNotEmpty && id.isNotEmpty) {
+              parsed.add(name);
+              categoryNameToId[name] = id;
+            }
+          }
+        }
+
+        if (parsed.isNotEmpty) {
+          categories.assignAll(parsed);
+          if (categories.contains(customCategory.value)) {
+            // Keep default
+          } else {
+            customCategory.value = parsed[0];
+          }
+        }
+      }
+    } catch (e) {
+      Get.log("Error fetching categories in MakeOfferController: $e");
+    }
   }
 
   @override

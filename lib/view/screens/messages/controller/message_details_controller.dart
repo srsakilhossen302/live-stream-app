@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../../data/services/api_client.dart';
 import '../../../../data/services/api_url.dart';
 import '../../../../data/helpers/shared_prefe.dart';
@@ -17,6 +19,9 @@ class MessageDetailsController extends GetxController {
   final isLoading = true.obs;
 
   final messages = <Map<String, dynamic>>[].obs;
+
+  // Trade info
+  final associatedTrades = <dynamic>[].obs;
 
   // Order info — only populated when this chat is linked to a real order
   final hasOrder = false.obs;
@@ -49,6 +54,7 @@ class MessageDetailsController extends GetxController {
     }
 
     if (chatId.value.isNotEmpty) {
+      fetchAssociatedTrades();
       fetchMessages(); // initial full load
       _setupSocketListener();
       _startPolling(); // fallback polling every 3s
@@ -133,6 +139,7 @@ class MessageDetailsController extends GetxController {
         'message': text,
         'time': _formatTime(msgMap['createdAt'] ?? ''),
         'isRead': msgMap['isRead'] == true,
+        'raw': msgMap,
       });
       _scrollToBottom();
     } catch (e) {
@@ -152,16 +159,25 @@ class MessageDetailsController extends GetxController {
 
   Future<void> _pollNewMessages() async {
     try {
+      fetchAssociatedTrades();
       final response = await _apiClient.getData('${ApiUrl.message}/${chatId.value}');
       if (response.statusCode != 200) return;
 
       final List data = jsonDecode(response.body)['data'] ?? [];
       if (data.isEmpty) return;
 
+      // Sort data oldest first (ascending chronological order)
+      final List sortedData = List.from(data);
+      sortedData.sort((a, b) {
+        final String timeA = a['createdAt'] ?? '';
+        final String timeB = b['createdAt'] ?? '';
+        return timeA.compareTo(timeB);
+      });
+
       final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
       bool hasNew = false;
 
-      for (var msg in data) {
+      for (var msg in sortedData) {
         final String msgId = msg['_id'] ?? msg['id'] ?? '';
         if (msgId.isEmpty || _knownMessageIds.contains(msgId)) continue;
 
@@ -199,6 +215,7 @@ class MessageDetailsController extends GetxController {
           'message': text,
           'time': _formatTime(msg['createdAt'] ?? ''),
           'isRead': msg['isRead'] == true,
+          'raw': msg,
         });
       }
 
@@ -224,13 +241,21 @@ class MessageDetailsController extends GetxController {
         final List<Map<String, dynamic>> parsedList = [];
         _knownMessageIds.clear();
 
-        if (data.isNotEmpty) {
+        // Sort data oldest first (ascending chronological order)
+        final List sortedData = List.from(data);
+        sortedData.sort((a, b) {
+          final String timeA = a['createdAt'] ?? '';
+          final String timeB = b['createdAt'] ?? '';
+          return timeA.compareTo(timeB);
+        });
+
+        if (sortedData.isNotEmpty) {
           parsedList.add({'isDate': true, 'message': 'TODAY'});
         }
 
         final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
 
-        for (var msg in data) {
+        for (var msg in sortedData) {
           final String msgId = msg['_id'] ?? msg['id'] ?? '';
           if (msgId.isNotEmpty) _knownMessageIds.add(msgId);
 
@@ -245,6 +270,7 @@ class MessageDetailsController extends GetxController {
             'message': msg['text'] ?? '',
             'time': _formatTime(msg['createdAt'] ?? ''),
             'isRead': msg['isRead'] == true,
+            'raw': msg,
           });
         }
 
@@ -401,5 +427,179 @@ class MessageDetailsController extends GetxController {
     chatInputController.dispose();
     scrollController.dispose();
     super.onClose();
+  }
+
+  // ─── TRADE OPERATIONS ────────────────────────────────────────────────────────
+  Future<void> fetchAssociatedTrades() async {
+    final userId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+    if (userId.isEmpty) return;
+
+    try {
+      final receivedResponse = await _apiClient.getData("${ApiUrl.tradeOffers}?userId=$userId&type=received");
+      final sentResponse = await _apiClient.getData("${ApiUrl.tradeOffers}?userId=$userId&type=sent");
+
+      List receivedData = [];
+      List sentData = [];
+
+      if (receivedResponse.statusCode == 200) {
+        receivedData = jsonDecode(receivedResponse.body)['data'] ?? [];
+      }
+      if (sentResponse.statusCode == 200) {
+        sentData = jsonDecode(sentResponse.body)['data'] ?? [];
+      }
+
+      associatedTrades.assignAll([...receivedData, ...sentData]);
+    } catch (e) {
+      Get.log("Error fetching associated trades: $e");
+    }
+  }
+
+  Future<void> handleAcceptTrade(String tradeId) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.postData("${ApiUrl.acceptTrade}/$tradeId", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar("Success", "Trade offer accepted successfully!", snackPosition: SnackPosition.BOTTOM);
+        await fetchAssociatedTrades();
+        await fetchMessages();
+      } else {
+        Get.snackbar("Error", "Failed to accept trade offer", snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An unexpected error occurred: $e", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> handleDeclineTrade(String tradeId) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.postData("${ApiUrl.declineTrade}/$tradeId", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar("Success", "Trade offer declined.", snackPosition: SnackPosition.BOTTOM);
+        await fetchAssociatedTrades();
+        await fetchMessages();
+      } else {
+        Get.snackbar("Error", "Failed to decline trade offer", snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An unexpected error occurred: $e", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> completeTradeOffer(String tradeId) async {
+    isLoading.value = true;
+    try {
+      final response = await _apiClient.postData("/trades/complete/$tradeId", {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = jsonDecode(response.body);
+        final success = body['success'] ?? false;
+        final data = body['data'];
+        
+        if (success) {
+          // 1. Native Stripe PaymentSheet Handler
+          if (data is Map && data.containsKey('clientSecret')) {
+            final clientSecret = data['clientSecret']?.toString() ?? '';
+            final ephemeralKey = data['ephemeralKey']?.toString() ?? '';
+            final customerId = data['customer']?.toString() ?? '';
+
+            if (clientSecret.isNotEmpty) {
+              try {
+                final pubKey = data['publishableKey'] ?? data['stripePublishableKey'] ?? data['pk'];
+                if (pubKey != null && pubKey.toString().isNotEmpty) {
+                  Stripe.publishableKey = pubKey.toString();
+                  await Stripe.instance.applySettings();
+                }
+
+                await Stripe.instance.initPaymentSheet(
+                  paymentSheetParameters: SetupPaymentSheetParameters(
+                    paymentIntentClientSecret: clientSecret,
+                    customerEphemeralKeySecret: ephemeralKey.isNotEmpty ? ephemeralKey : null,
+                    customerId: customerId.isNotEmpty ? customerId : null,
+                    merchantDisplayName: 'Culture Cards LLC',
+                    style: ThemeMode.dark,
+                    appearance: const PaymentSheetAppearance(
+                      colors: PaymentSheetAppearanceColors(
+                        primary: Color(0xFF8B9BFF),
+                        background: Color(0xFF161622),
+                        componentBackground: Color(0xFF1E1E2C),
+                        componentText: Colors.white,
+                        primaryText: Colors.white,
+                        secondaryText: Colors.white70,
+                      ),
+                    ),
+                  ),
+                );
+
+                await Stripe.instance.presentPaymentSheet();
+                Get.snackbar("Success", "Payment completed & trade finalized! ✅", snackPosition: SnackPosition.BOTTOM);
+                await fetchAssociatedTrades();
+                await fetchMessages();
+                return;
+              } on StripeException catch (e) {
+                Get.log("⚠️ Stripe Exception: ${e.error.localizedMessage}");
+                Get.snackbar("Stripe Payment", e.error.localizedMessage ?? "Payment was cancelled.", snackPosition: SnackPosition.BOTTOM);
+                return;
+              } catch (e) {
+                Get.log("❌ Stripe Error: $e");
+                Get.snackbar("Stripe Error", "$e", snackPosition: SnackPosition.BOTTOM);
+                return;
+              }
+            }
+          }
+
+          // 2. Fallback Checkout URL Handler
+          String? checkoutUrl;
+          if (data is Map) {
+            checkoutUrl = (data['url'] ?? data['checkoutUrl'] ?? data['paymentUrl'] ?? data['redirectUrl'] ?? data['sessionUrl'])?.toString();
+          } else if (data is String && data.startsWith('http')) {
+            checkoutUrl = data;
+          } else if (body['url'] != null) {
+            checkoutUrl = body['url'].toString();
+          }
+
+          if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
+            final uri = Uri.parse(checkoutUrl);
+            bool launched = false;
+            try {
+              launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+            } catch (_) {}
+            if (!launched) {
+              try {
+                launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+              } catch (_) {}
+            }
+            if (!launched) {
+              try {
+                launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } catch (_) {}
+            }
+
+            if (launched) {
+              Get.snackbar("Success", "Redirecting to Stripe checkout...", snackPosition: SnackPosition.BOTTOM);
+            } else {
+              Get.snackbar("Error", "Could not open Stripe checkout page.", snackPosition: SnackPosition.BOTTOM);
+            }
+          } else {
+            Get.snackbar("Success", "Trade completed successfully!", snackPosition: SnackPosition.BOTTOM);
+          }
+          await fetchAssociatedTrades();
+          await fetchMessages();
+          await fetchAssociatedTrades();
+          await fetchMessages();
+        } else {
+          Get.snackbar("Error", body['message'] ?? "Failed to complete trade", snackPosition: SnackPosition.BOTTOM);
+        }
+      } else {
+        Get.snackbar("Error", "Failed to complete trade offer. Status: ${response.statusCode}", snackPosition: SnackPosition.BOTTOM);
+      }
+    } catch (e) {
+      Get.snackbar("Error", "An unexpected error occurred: $e", snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

@@ -136,36 +136,7 @@ class HomeScreen extends GetView<HomeController> {
                 ),
               ),
 
-              SizedBox(height: 20.h),
-
-              // Search Bar
-              /*
-              GestureDetector(
-                onTap: () => Get.find<MainController>().changeIndex(2),
-                child: Container(
-                  height: 58.h,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF161622),
-                    borderRadius: BorderRadius.circular(18.r),
-                    border: Border.all(color: Colors.white.withOpacity(0.05)),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, color: Colors.white38, size: 24.sp),
-                      SizedBox(width: 14.w),
-                      Expanded(
-                        child: Text(
-                          "Search auctions, items...",
-                          style: TextStyle(color: Colors.white24, fontSize: 16.sp),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
               SizedBox(height: 28.h),
-              */
 
               // Category Chips
               SizedBox(
@@ -210,6 +181,9 @@ class HomeScreen extends GetView<HomeController> {
                   },
                 ),
               ),
+
+              // Dynamic spacing between Category Chips and content (prevents clutter when live shows are hidden)
+              Obx(() => SizedBox(height: controller.liveItems.isNotEmpty ? 0 : 36.h)),
 
               // Conditional Live Sections (Featured Card & Live Now Grid)
               Obx(() {
@@ -586,19 +560,7 @@ class HomeScreen extends GetView<HomeController> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: (item.image.isNotEmpty && item.image.startsWith('http'))
-                    ? Image.network(
-                        item.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: const Color(0xFF1E1E2C),
-                          child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 40.sp),
-                        ),
-                      )
-                    : Container(
-                        color: const Color(0xFF1E1E2C),
-                        child: Icon(Icons.videocam_outlined, color: Colors.white24, size: 40.sp),
-                      ),
+                child: _buildProductImage(item.image, fit: BoxFit.cover, fallbackIcon: Icons.videocam_outlined),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -743,17 +705,11 @@ class HomeScreen extends GetView<HomeController> {
             Expanded(
               child: Stack(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
+                  Positioned.fill(
+                    child: ClipRRect(
                       borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-                      color: const Color(0xFF1E1E2C),
-                      image: img.isNotEmpty
-                          ? DecorationImage(image: NetworkImage(img), fit: BoxFit.cover)
-                          : null,
+                      child: _buildProductImage(rawImg, fit: BoxFit.cover),
                     ),
-                    child: img.isEmpty
-                        ? Center(child: Icon(Icons.image_not_supported_outlined, color: Colors.white24, size: 28.sp))
-                        : null,
                   ),
                   if (isSold)
                     Center(
@@ -818,6 +774,80 @@ class HomeScreen extends GetView<HomeController> {
           color: const Color(0xFF8B9BFF),
           fontSize: 16.sp,
           fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductImage(String imgStr, {double? height, double? width, BoxFit fit = BoxFit.cover, IconData fallbackIcon = Icons.image_outlined}) {
+    if (imgStr.isEmpty) {
+      return _buildGradientPlaceholder(icon: fallbackIcon, height: height, width: width);
+    }
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final bytes = base64Decode(imgStr.split('base64,').last);
+        return Image.memory(
+          bytes,
+          height: height,
+          width: width,
+          fit: fit,
+          errorBuilder: (_, __, ___) => _buildGradientPlaceholder(icon: Icons.broken_image_outlined, height: height, width: width),
+        );
+      } catch (_) {
+        return _buildGradientPlaceholder(icon: Icons.broken_image_outlined, height: height, width: width);
+      }
+    }
+    final cleanUrl = imgStr.startsWith('http') ? imgStr : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+    return Image.network(
+      cleanUrl,
+      height: height,
+      width: width,
+      fit: fit,
+      errorBuilder: (_, __, ___) => _buildGradientPlaceholder(icon: fallbackIcon, height: height, width: width),
+    );
+  }
+
+  Widget _buildGradientPlaceholder({IconData? icon, String? subtitle, double iconSize = 32, double? height, double? width}) {
+    return Container(
+      height: height,
+      width: width,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF1E1C2E), // Deep indigo
+            Color(0xFF2C1E3C), // Cyber magenta
+            Color(0xFF0F0F1A), // Dark obsidian
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.r),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B9BFF).withOpacity(0.08),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF8B9BFF).withOpacity(0.15), width: 1.5),
+              ),
+              child: Icon(icon ?? Icons.image_outlined, color: const Color(0xFF8B9BFF), size: iconSize.sp),
+            ),
+            if (subtitle != null) ...[
+              SizedBox(height: 6.h),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white24,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

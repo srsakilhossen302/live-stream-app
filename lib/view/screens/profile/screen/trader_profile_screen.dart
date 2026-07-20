@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
 import '../../messages/controller/messages_controller.dart';
@@ -109,6 +110,11 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
       );
     }
 
+    final avatar = controller.displayAvatar;
+    final String resolvedAvatarUrl = (avatar.isNotEmpty && !avatar.startsWith('http') && !avatar.startsWith('data:image/'))
+        ? "${ApiUrl.imageBaseUrl}${avatar.startsWith('/') ? avatar : '/$avatar'}"
+        : avatar;
+
     return Column(
       children: [
         Stack(
@@ -123,15 +129,36 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
                 border: Border.all(
                     color: const Color(0xFF8B9BFF).withOpacity(0.4), width: 3),
               ),
-              child: CircleAvatar(
-                radius: 60.r,
-                backgroundColor: const Color(0xFF1E1E2C),
-                backgroundImage: controller.displayAvatar.isNotEmpty
-                    ? NetworkImage(controller.displayAvatar)
-                    : null,
-                child: controller.displayAvatar.isEmpty
-                    ? Icon(Icons.person, color: Colors.white38, size: 48.sp)
-                    : null,
+              child: ClipOval(
+                child: Container(
+                  color: const Color(0xFF1E1E2C),
+                  width: 120.r,
+                  height: 120.r,
+                  child: Builder(
+                    builder: (context) {
+                      if (resolvedAvatarUrl.isEmpty) {
+                        return Icon(Icons.person, color: Colors.white38, size: 48.sp);
+                      }
+                      if (resolvedAvatarUrl.startsWith('data:image/') && resolvedAvatarUrl.contains('base64,')) {
+                        try {
+                          final bytes = base64Decode(resolvedAvatarUrl.split('base64,').last);
+                          return Image.memory(
+                            bytes,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(Icons.person, color: Colors.white38, size: 48.sp),
+                          );
+                        } catch (_) {
+                          return Icon(Icons.person, color: Colors.white38, size: 48.sp);
+                        }
+                      }
+                      return Image.network(
+                        resolvedAvatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(Icons.person, color: Colors.white38, size: 48.sp),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
             if (controller.isVerified.value)
@@ -179,6 +206,19 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
                   Colors.white12),
           ],
         ),
+
+        Obx(() => controller.traderEmail.value.isNotEmpty
+            ? Padding(
+                padding: EdgeInsets.only(top: 8.h),
+                child: Text(
+                  controller.traderEmail.value,
+                  style: TextStyle(
+                      color: const Color(0xFF8B9BFF),
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700),
+                ),
+              )
+            : const SizedBox.shrink()),
 
         SizedBox(height: 14.h),
 
@@ -236,14 +276,14 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(color == Colors.white12 ? 1 : 0.15),
+        color: color == Colors.white12 ? Colors.white.withOpacity(0.08) : color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Text(
         text,
         style: TextStyle(
             color: color == Colors.white12
-                ? Colors.white38
+                ? Colors.white70
                 : const Color(0xFF8B9BFF),
             fontSize: 10.sp,
             fontWeight: FontWeight.w900,
@@ -269,48 +309,50 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
   // ─── STATS ROW ──────────────────────────────────────────────────────────────
 
   Widget _buildStatsRow() {
-    final stats = [
-      {
-        'value': controller.totalTrades.value > 0
-            ? controller.totalTrades.value.toString()
-            : '—',
-        'label': 'TRADES',
-        'icon': Icons.swap_horiz_rounded,
-      },
-      {
-        'value': controller.ratingDisplay,
-        'label': 'RATING',
-        'icon': Icons.star_rounded,
-      },
-      {
-        'value': controller.positiveDisplay,
-        'label': 'POSITIVE',
-        'icon': Icons.thumb_up_rounded,
-      },
-      {
-        'value': controller.followersCount.value.toString(),
-        'label': 'FOLLOWERS',
-        'icon': Icons.people_rounded,
-      },
-    ];
+    return Obx(() {
+      final stats = [
+        {
+          'value': controller.totalTrades.value > 0
+              ? controller.totalTrades.value.toString()
+              : '—',
+          'label': 'TRADES',
+          'icon': Icons.swap_horiz_rounded,
+        },
+        {
+          'value': controller.ratingDisplay,
+          'label': 'RATING',
+          'icon': Icons.star_rounded,
+        },
+        {
+          'value': controller.positiveDisplay,
+          'label': 'POSITIVE',
+          'icon': Icons.thumb_up_rounded,
+        },
+        {
+          'value': controller.followersCount.value.toString(),
+          'label': 'FOLLOWERS',
+          'icon': Icons.people_rounded,
+        },
+      ];
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Row(
-        children: stats
-            .map((s) => Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: _buildStatCard(
-                      s['value'] as String,
-                      s['label'] as String,
-                      s['icon'] as IconData,
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        child: Row(
+          children: stats
+              .map((s) => Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4.w),
+                      child: _buildStatCard(
+                        s['value'] as String,
+                        s['label'] as String,
+                        s['icon'] as IconData,
+                      ),
                     ),
-                  ),
-                ))
-            .toList(),
-      ),
-    );
+                  ))
+              .toList(),
+        ),
+      );
+    });
   }
 
   Widget _buildStatCard(String val, String label, IconData icon) {
@@ -400,7 +442,7 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
           SizedBox(width: 12.w),
 
           // Follow / Unfollow Button
-          Expanded(
+          Obx(() => Expanded(
             child: GestureDetector(
               onTap: () => controller.toggleFollow(),
               child: Container(
@@ -455,7 +497,7 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
                       ),
               ),
             ),
-          ),
+          )),
         ],
       ),
     );
@@ -637,20 +679,21 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
               child: Stack(
                 children: [
                   Container(
+                    width: double.infinity,
+                    height: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(20.r)),
                       color: const Color(0xFF1E1E2C),
-                      image: img.isNotEmpty
-                          ? DecorationImage(
-                              image: NetworkImage(img), fit: BoxFit.cover)
-                          : null,
                     ),
-                    child: img.isEmpty
-                        ? Center(
-                            child: Icon(Icons.image_not_supported_outlined,
-                                color: Colors.white24, size: 28.sp))
-                        : null,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: _buildDetailsProductImage(img, fit: BoxFit.cover),
+                      ),
+                    ),
                   ),
                   if (isSold)
                     Center(
@@ -939,6 +982,50 @@ class TraderProfileScreen extends GetView<TraderProfileController> {
         borderRadius:
             circle ? null : BorderRadius.circular(12.r),
         shape: circle ? BoxShape.circle : BoxShape.rectangle,
+      ),
+    );
+  }
+
+  Widget _buildDetailsProductImage(String imgStr, {BoxFit fit = BoxFit.cover}) {
+    if (imgStr.isEmpty) {
+      return Container(
+        color: const Color(0xFF1A1A2E),
+        child: Center(
+          child: Icon(Icons.image_outlined, color: Colors.white12, size: 32.sp),
+        ),
+      );
+    }
+    if (imgStr.startsWith('data:image/') && imgStr.contains('base64,')) {
+      try {
+        final bytes = base64Decode(imgStr.split('base64,').last);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          errorBuilder: (_, __, ___) => Container(
+            color: const Color(0xFF1A1A2E),
+            child: Center(
+              child: Icon(Icons.broken_image_outlined, color: Colors.white12, size: 32.sp),
+            ),
+          ),
+        );
+      } catch (_) {
+        return Container(
+          color: const Color(0xFF1A1A2E),
+          child: Center(
+            child: Icon(Icons.broken_image_outlined, color: Colors.white12, size: 32.sp),
+          ),
+        );
+      }
+    }
+    final cleanUrl = imgStr.startsWith('http') ? imgStr : "${ApiUrl.imageBaseUrl}${imgStr.startsWith('/') ? imgStr : '/$imgStr'}";
+    return Image.network(
+      cleanUrl,
+      fit: fit,
+      errorBuilder: (_, __, ___) => Container(
+        color: const Color(0xFF1A1A2E),
+        child: Center(
+          child: Icon(Icons.image_not_supported_outlined, color: Colors.white12, size: 32.sp),
+        ),
       ),
     );
   }

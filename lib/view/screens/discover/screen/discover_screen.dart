@@ -262,6 +262,8 @@ class DiscoverScreen extends GetView<DiscoverController> {
               controller: controller.searchController,
               onChanged: (val) => controller.searchQuery.value = val,
               style: TextStyle(color: Colors.white, fontSize: 16.sp),
+              cursorColor: const Color(0xFF8B9BFF),
+              cursorWidth: 2.w,
               decoration: InputDecoration(
                 hintText: "Search deals & more",
                 hintStyle: TextStyle(color: Colors.white38, fontSize: 16.sp, fontWeight: FontWeight.w500),
@@ -277,7 +279,7 @@ class DiscoverScreen extends GetView<DiscoverController> {
                   },
                   child: Icon(Icons.clear, color: Colors.white, size: 20.sp),
                 )
-              : Icon(Icons.tune_rounded, color: Colors.white, size: 22.sp)),
+              : const SizedBox.shrink()),
         ],
       ),
     );

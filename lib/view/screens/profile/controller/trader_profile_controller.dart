@@ -14,6 +14,7 @@ class TraderProfileController extends GetxController {
 
   final traderId = ''.obs;
   final traderName = ''.obs;
+  final traderEmail = ''.obs;
   final traderAvatar = ''.obs;
   final traderBio = ''.obs;
   final traderRole = ''.obs;
@@ -26,11 +27,16 @@ class TraderProfileController extends GetxController {
   final reviewCount = 0.obs;
   final positivePercent = 0.obs;
   final followersCount = 0.obs;
+  final followingCount = 0.obs;
   final totalOrders = 0.obs;
 
   // ─── Follow State ────────────────────────────────────────────────────────────
   final isFollowing = false.obs;
   final isFollowLoading = false.obs;
+  final isFollowersLoading = false.obs;
+  final followersList = <Map<String, dynamic>>[].obs;
+  final isFollowingLoading = false.obs;
+  final followingList = <Map<String, dynamic>>[].obs;
 
   // ─── Products (Trade Collection) ─────────────────────────────────────────────
   final isProductsLoading = true.obs;
@@ -58,6 +64,7 @@ class TraderProfileController extends GetxController {
     traderName.value = args['name'] ?? args['fullName'] ?? '';
     traderBio.value = args['bio'] ?? args['description'] ?? '';
     traderAvatar.value = args['avatar'] ?? args['image'] ?? '';
+    traderEmail.value = args['email'] ?? '';
 
     if (traderId.value.isNotEmpty) {
       _loadAll();
@@ -98,6 +105,7 @@ class TraderProfileController extends GetxController {
             data['image'] ??
             traderAvatar.value;
         traderRole.value = data['role'] ?? '';
+        traderEmail.value = data['email'] ?? '';
         isVerified.value = data['isVerified'] == true;
 
         // Member since
@@ -110,43 +118,42 @@ class TraderProfileController extends GetxController {
           } catch (_) {}
         }
 
-        // Stats block
+        // Stats block per culturecardsllc-server integration guide
         final stats = data['stats'] ?? {};
-        totalTrades.value =
-            (stats['totalTrades'] ?? data['totalTrades'] ?? 0) as int;
-        totalOrders.value =
-            (stats['totalOrders'] ?? data['totalOrders'] ?? 0) as int;
+        
+        final t = stats['trades'] ?? stats['totalTrades'] ?? data['totalTrades'] ?? data['trades'];
+        totalTrades.value = t != null ? (t as num).toInt() : 0;
+        
+        totalOrders.value = (stats['totalOrders'] ?? data['totalOrders'] ?? 0) as int;
 
         final r = stats['rating'] ?? data['rating'] ?? data['averageRating'];
         rating.value = r != null ? (r as num).toDouble() : 0.0;
 
-        reviewCount.value =
-            (stats['reviewCount'] ?? data['reviewCount'] ?? 0) as int;
+        reviewCount.value = (stats['reviewCount'] ?? data['reviewCount'] ?? 0) as int;
 
-        final pos =
-            stats['positivePercent'] ?? data['positivePercent'] ?? data['positiveRate'];
-        positivePercent.value =
-            pos != null ? (pos as num).toInt() : 0;
+        final pos = stats['positive'] ?? stats['positivePercent'] ?? data['positivePercent'] ?? data['positiveRate'];
+        positivePercent.value = pos != null ? (pos as num).toInt() : 0;
 
-        // Followers
-        final followers = data['followers'];
-        if (followers is List) {
-          followersCount.value = followers.length;
-        } else if (followers is int) {
-          followersCount.value = followers;
-        } else {
-          followersCount.value =
-              (data['followersCount'] ?? 0) as int;
-        }
+        // Followers & Following from stats
+        final fol = stats['followers'] ?? data['followersCount'] ?? (data['followers'] is List ? (data['followers'] as List).length : (data['followers'] is int ? data['followers'] : 0));
+        followersCount.value = fol != null ? (fol as num).toInt() : 0;
+
+        final fing = stats['following'] ?? data['followingCount'] ?? (data['following'] is List ? (data['following'] as List).length : (data['following'] is int ? data['following'] : 0));
+        followingCount.value = fing != null ? (fing as num).toInt() : 0;
 
         // Check if current user follows this trader
-        final currentUserId =
-            SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
-        if (followers is List) {
-          isFollowing.value = followers.any((f) =>
-              f == currentUserId ||
-              (f is Map &&
-                  (f['_id'] == currentUserId || f['id'] == currentUserId)));
+        if (data.containsKey('isFollowing')) {
+          isFollowing.value = data['isFollowing'] == true;
+        } else if (data.containsKey('isFollowed')) {
+          isFollowing.value = data['isFollowed'] == true;
+        } else {
+          final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey);
+          final followers = data['followers'];
+          if (followers is List) {
+            isFollowing.value = followers.any((f) =>
+                f == currentUserId ||
+                (f is Map && (f['_id'] == currentUserId || f['id'] == currentUserId)));
+          }
         }
 
         Get.log('✅ [TraderProfile] Loaded: ${traderName.value}');
@@ -246,22 +253,68 @@ class TraderProfileController extends GetxController {
   }
 
   // ─── FOLLOW / UNFOLLOW ──────────────────────────────────────────────────────
-  // Note: Backend has no /users/follow endpoint yet — works as local UI toggle
 
   Future<void> toggleFollow() async {
-    if (isFollowLoading.value) return;
+    if (isFollowLoading.value || traderId.value.isEmpty) return;
     isFollowLoading.value = true;
+    try {
+      final response = await _apiClient.postData('/follow/${traderId.value}', {});
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = jsonDecode(response.body);
+        final data = body['data'];
+        if (data is Map && data.containsKey('followed')) {
+          isFollowing.value = data['followed'] == true;
+        } else {
+          isFollowing.value = !isFollowing.value;
+        }
+        followersCount.value = isFollowing.value
+            ? followersCount.value + 1
+            : (followersCount.value - 1).clamp(0, 9999999);
+        Get.log('✅ [TraderProfile] Follow API success: isFollowing=${isFollowing.value}');
+      } else {
+        Get.snackbar('Error', 'Failed to update follow status (${response.statusCode})');
+      }
+    } catch (e) {
+      Get.log('❌ [TraderProfile] toggleFollow error: $e');
+    } finally {
+      isFollowLoading.value = false;
+    }
+  }
 
-    // Small delay for button animation feel
-    await Future.delayed(const Duration(milliseconds: 300));
+  // ─── FETCH FOLLOWERS & FOLLOWING LISTS ────────────────────────────────────
 
-    isFollowing.value = !isFollowing.value;
-    followersCount.value = isFollowing.value
-        ? followersCount.value + 1
-        : (followersCount.value - 1).clamp(0, 9999999);
+  Future<void> fetchFollowersList() async {
+    if (traderId.value.isEmpty) return;
+    isFollowersLoading.value = true;
+    try {
+      final response = await _apiClient.getData('/follow/${traderId.value}/followers?page=1&limit=20');
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final List list = body['data'] ?? body['followers'] ?? [];
+        followersList.assignAll(list.map((e) => Map<String, dynamic>.from(e)).toList());
+      }
+    } catch (e) {
+      Get.log("Error fetching followers list: $e");
+    } finally {
+      isFollowersLoading.value = false;
+    }
+  }
 
-    Get.log('✅ [TraderProfile] Follow toggled locally: ${isFollowing.value}');
-    isFollowLoading.value = false;
+  Future<void> fetchFollowingList() async {
+    if (traderId.value.isEmpty) return;
+    isFollowingLoading.value = true;
+    try {
+      final response = await _apiClient.getData('/follow/${traderId.value}/following?page=1&limit=20');
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final List list = body['data'] ?? body['following'] ?? [];
+        followingList.assignAll(list.map((e) => Map<String, dynamic>.from(e)).toList());
+      }
+    } catch (e) {
+      Get.log("Error fetching following list: $e");
+    } finally {
+      isFollowingLoading.value = false;
+    }
   }
 
 
