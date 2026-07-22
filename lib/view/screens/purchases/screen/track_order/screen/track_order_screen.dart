@@ -831,7 +831,11 @@ class TrackOrderScreen extends StatelessWidget {
                                 }
                               },
                         child: controller.isUpdatingStatus.value
-                            ? const CircularProgressIndicator(color: Colors.black)
+                            ? SizedBox(
+                                width: 22.r,
+                                height: 22.r,
+                                child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                              )
                             : Text("Update Tracking", style: TextStyle(color: Colors.black, fontSize: 16.sp, fontWeight: FontWeight.w800)),
                       ),
                     )),

@@ -175,7 +175,14 @@ class ProfileInformationScreen extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: controller.isSaving.value
-                        ? const CircularProgressIndicator(color: Colors.black)
+                        ? SizedBox(
+                            width: 24.w,
+                            height: 24.h,
+                            child: const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
                         : Text(
                             "Save Changes",
                             style: TextStyle(

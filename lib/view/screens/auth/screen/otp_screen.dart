@@ -126,6 +126,7 @@ class OtpScreen extends StatelessWidget {
                   onPressed: controller.isLoading.value ? null : () => controller.onVerify(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B9BFF),
+                    disabledBackgroundColor: const Color(0xFF8B9BFF).withOpacity(0.7),
                     foregroundColor: const Color(0xFF0F0B1E),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16.r),
@@ -137,7 +138,7 @@ class OtpScreen extends StatelessWidget {
                           width: 24.w,
                           height: 24.h,
                           child: const CircularProgressIndicator(
-                            color: Color(0xFF0F0B1E),
+                            color: Colors.white,
                             strokeWidth: 2.5,
                           ),
                         )

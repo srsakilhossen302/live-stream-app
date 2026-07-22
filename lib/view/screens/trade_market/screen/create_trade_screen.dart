@@ -718,6 +718,7 @@ class CreateTradeScreen extends GetView<CreateTradeController> {
               : () => controller.postTrade(),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF8B9BFF),
+            disabledBackgroundColor: const Color(0xFF8B9BFF).withOpacity(0.7),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(32.r),
             ),
@@ -728,7 +729,7 @@ class CreateTradeScreen extends GetView<CreateTradeController> {
                   width: 24.w,
                   height: 24.h,
                   child: const CircularProgressIndicator(
-                    color: Colors.black,
+                    color: Colors.white,
                     strokeWidth: 2.5,
                   ),
                 )

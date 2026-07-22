@@ -513,7 +513,7 @@ class MakeOfferScreen extends GetView<MakeOfferController> {
                             height: 24.r,
                             width: 24.r,
                             child: const CircularProgressIndicator(
-                              color: Colors.black,
+                              color: Colors.white,
                               strokeWidth: 2.5,
                             ),
                           )

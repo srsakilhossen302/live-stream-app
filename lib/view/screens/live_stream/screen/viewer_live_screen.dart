@@ -748,9 +748,9 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                     ),
                     child: isPaying.value
                         ? SizedBox(
-                            width: 20.r,
-                            height: 20.r,
-                            child: const CircularProgressIndicator(color: Color(0xFF0F0B1E), strokeWidth: 2),
+                            width: 22.r,
+                            height: 22.r,
+                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                           )
                         : Text(
                             "Pay \$${winningAmount.toStringAsFixed(0)} Now",

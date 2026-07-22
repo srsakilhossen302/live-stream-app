@@ -298,7 +298,7 @@ class TradeDetailsScreen extends GetView<TradeDetailsController> {
                               ),
                               alignment: Alignment.center,
                               child: controller.isOrdering.value
-                                  ? SizedBox(width: 20.r, height: 20.r, child: const CircularProgressIndicator(color: Color(0xFF0F172A), strokeWidth: 2))
+                                  ? SizedBox(width: 22.r, height: 22.r, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                                   : Text(
                                       "Buy Now \$$buyNowPriceVal",
                                       style: TextStyle(color: const Color(0xFF0F172A), fontSize: 16.sp, fontWeight: FontWeight.w900),

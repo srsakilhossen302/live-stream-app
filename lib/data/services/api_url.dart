@@ -1,6 +1,6 @@
 class ApiUrl {
-  static const String baseUrl = "http://10.10.26.173:5007/api/v1";
-  static const String imageBaseUrl = "http://10.10.26.173:5007";
+  static const String baseUrl = "http://10.10.26.208:5007/api/v1";
+  static const String imageBaseUrl = "http://10.10.26.208:5007";
 
   // Auth
   static const String login = "/auth/login";
