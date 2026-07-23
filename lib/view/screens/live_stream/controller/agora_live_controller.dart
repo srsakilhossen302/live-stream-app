@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../../data/helpers/shared_prefe.dart';
@@ -52,7 +53,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
   final RxString streamDescription = "".obs;
   final RxString sellerId = "".obs;
   final RxBool isFollowingHost = false.obs;
-  final RxString viewersCount = "64".obs;
+  final RxString viewersCount = "1".obs;
 
   // Analytics & Performance metrics
   final Rx<DateTime?> streamStartTime = Rx<DateTime?>(null);
@@ -81,6 +82,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
   final RxBool timerExtendedNotification = false.obs;
   final RxDouble reservePrice = 0.0.obs;
   final RxBool isUnsold = false.obs;
+  final RxString winningCheckoutUrl = "".obs;
   Timer? _countdownTimer;
 
   // Stream state
@@ -128,6 +130,7 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       const Color(0xFFFF5252),
       Colors.redAccent,
     ];
+    final radius = 20.r;
     final randomColor = colors[id.toInt() % colors.length];
     final randomAngle = (id.toInt() % 40 - 20) * (3.14159 / 180);
     final randomScale = 0.8 + (id.toInt() % 5) * 0.1;
@@ -254,6 +257,17 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       socketService.initSocket();
       socketService.joinChat(streamId.value);
       
+      final currentUserId = SharePrefsHelper.getString(SharePrefsHelper.userIdKey) ?? "";
+      socketService.emitEvent('join-stream', {
+        "streamId": streamId.value,
+        "userId": currentUserId,
+      });
+
+      socketService.on('viewer-count-update', _handleViewerCountUpdate);
+      socketService.on('new-bid', _handleNewBidEvent);
+      socketService.on('bid-error', _handleBidErrorEvent);
+      socketService.on('auction-won', _handleAuctionWonEvent);
+      socketService.on('auction-payment-received', _handleAuctionPaymentReceivedEvent);
       socketService.on('messageReceived', _handleSocketMessage);
       socketService.on('newMessage', _handleSocketMessage);
       socketService.on('new message', _handleSocketMessage);
@@ -264,6 +278,91 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       debugPrint("🔌 [AgoraLiveSocket] Joined stream room: ${streamId.value}");
     } catch (e) {
       debugPrint("❌ [AgoraLiveSocket] Setup error: $e");
+    }
+  }
+
+  void _handleViewerCountUpdate(dynamic data) {
+    if (data is Map) {
+      final String sId = data['streamId']?.toString() ?? '';
+      if (sId.isEmpty || sId == streamId.value) {
+        final count = data['viewersCount'] ?? data['count'];
+        if (count != null) {
+          viewersCount.value = count.toString();
+        }
+      }
+    }
+  }
+
+  void _handleNewBidEvent(dynamic data) {
+    if (data == null) return;
+    try {
+      final Map<String, dynamic> bMap = (data is String) ? Map<String, dynamic>.from(jsonDecode(data)) : Map<String, dynamic>.from(data as Map);
+      final String sId = bMap['streamId']?.toString() ?? '';
+      final String aId = bMap['auctionItemId']?.toString() ?? '';
+      if ((sId.isNotEmpty && sId == streamId.value) || (aId.isNotEmpty && aId == auctionItemId.value)) {
+        final bidAmt = double.tryParse(bMap['currentBid']?.toString() ?? '0') ?? 0.0;
+        final highestObj = bMap['highestBidder'];
+        final hId = (highestObj is Map) ? (highestObj['_id'] ?? highestObj['id'] ?? '').toString() : (bMap['highestBidderId']?.toString() ?? '');
+        final hName = (highestObj is Map) ? (highestObj['fullName'] ?? highestObj['username'] ?? highestObj['name'] ?? 'User').toString() : 'User';
+
+        if (bidAmt > 0) {
+          lastBidderId.value = hId;
+          lastBidderName.value = hName.replaceAll('@', '');
+          if (bidAmt > currentBidPrice.value) {
+            currentBidPrice.value = bidAmt;
+          }
+          if (bidTimer.value <= 10) {
+            extendTimerLocal();
+          }
+          final msg = "🔨 Placed bid: \$${bidAmt.toStringAsFixed(0)}";
+          final displayUser = hName.startsWith('@') ? hName : '@$hName';
+          if (!chatMessages.any((m) => m['msg'] == msg && m['user'] == displayUser)) {
+            chatMessages.add({
+              "user": displayUser,
+              "msg": msg,
+              "isBid": "true",
+              "userAvatar": (highestObj is Map) ? (highestObj['avatar'] ?? '') : '',
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("❌ [AgoraLiveSocket] new-bid parse error: $e");
+    }
+  }
+
+  void _handleBidErrorEvent(dynamic data) {
+    if (data is Map) {
+      final msg = data['message']?.toString() ?? 'Bid operation failed.';
+      Get.snackbar("Bid Error", msg, snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.redAccent, colorText: Colors.white);
+    }
+  }
+
+  void _handleAuctionWonEvent(dynamic data) {
+    if (data is Map) {
+      final rawUrl = data['checkoutUrl']?.toString() ?? '';
+      if (rawUrl.isNotEmpty) {
+        winningCheckoutUrl.value = rawUrl;
+      }
+      final winningBid = double.tryParse(data['winningBid']?.toString() ?? '0') ?? currentBidPrice.value;
+      if (winningBid > 0) currentBidPrice.value = winningBid;
+      showWinnerOverlay.value = true;
+    }
+  }
+
+  void _handleAuctionPaymentReceivedEvent(dynamic data) {
+    if (data is Map && isHost.value) {
+      final msg = data['message']?.toString() ?? 'Auction payment received!';
+      totalSalesRevenue.value += currentBidPrice.value;
+      totalItemsSold.value++;
+      Get.snackbar(
+        "Payment Confirmed! 💰",
+        "$msg\nPlease check orders to ship the item.",
+        backgroundColor: const Color(0xFF22C55E),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 8),
+        snackPosition: SnackPosition.TOP,
+      );
     }
   }
 
@@ -320,6 +419,11 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
     try {
       final socketService = Get.find<SocketService>();
       socketService.leaveChat(streamId.value);
+      socketService.off('viewer-count-update', _handleViewerCountUpdate);
+      socketService.off('new-bid', _handleNewBidEvent);
+      socketService.off('bid-error', _handleBidErrorEvent);
+      socketService.off('auction-won', _handleAuctionWonEvent);
+      socketService.off('auction-payment-received', _handleAuctionPaymentReceivedEvent);
       socketService.off('messageReceived', _handleSocketMessage);
       socketService.off('newMessage', _handleSocketMessage);
       socketService.off('new message', _handleSocketMessage);
@@ -531,7 +635,12 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       try {
         final res = await _apiClient.postData("/auctions/item/${auctionItemId.value}/complete", {});
         if (res.statusCode == 200 || res.statusCode == 201) {
-          debugPrint("✅ Auction item completed automatically via timeout");
+          final b = jsonDecode(res.body);
+          final url = b['data']?['checkoutUrl'] ?? b['checkoutUrl'] ?? '';
+          if (url.toString().isNotEmpty) {
+            winningCheckoutUrl.value = url.toString();
+          }
+          debugPrint("✅ Auction item completed automatically via timeout. Checkout URL: ${winningCheckoutUrl.value}");
         }
       } catch (e) {
         debugPrint("❌ Error completing auction item on timeout: $e");
@@ -682,8 +791,14 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
 
       final seller = activeStream['sellerId'];
       sellerId.value = seller is Map ? (seller['_id'] ?? seller['id'] ?? '').toString() : (seller?.toString() ?? '');
-      isFollowingHost.value = false;
-      viewersCount.value = activeStream['viewers']?.toString() ?? "64";
+      final vData = activeStream['viewersCount'] ?? activeStream['viewerCount'] ?? activeStream['viewers'];
+      if (vData is List) {
+        viewersCount.value = vData.length.toString();
+      } else if (vData != null && vData.toString().isNotEmpty) {
+        viewersCount.value = vData.toString();
+      } else {
+        viewersCount.value = "1";
+      }
 
       final incomingLikes = activeStream['likes'];
       if (incomingLikes is List) {
@@ -697,44 +812,8 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
 
       _setupSocket();
 
-      // Parse auction item info
-      final items = activeStream['auctionItems'];
-      if (items is List && items.isNotEmpty) {
-        final rawItem = items[0];
-        if (rawItem is Map) {
-          final item = Map<String, dynamic>.from(rawItem);
-          final prod = item['productId'];
-          if (prod is Map) {
-            currentProductId.value = prod['_id']?.toString() ?? prod['id']?.toString() ?? "";
-            currentProductTitle.value = prod['title']?.toString() ?? "Product";
-            final images = prod['images'];
-            if (images is List && images.isNotEmpty) currentProductImage.value = images[0]?.toString() ?? "";
-            await fetchProductReservePrice(currentProductId.value);
-          } else {
-            currentProductId.value = prod?.toString() ?? "";
-            currentProductTitle.value = "Product";
-            await fetchProductReservePrice(currentProductId.value);
-          }
-          currentBidPrice.value = double.tryParse(item['currentBid']?.toString() ?? item['startingBid']?.toString() ?? "0") ?? 0;
-          bidIncrement.value = double.tryParse(item['bidIncrement']?.toString() ?? "100") ?? 100.0;
-          final rawId = item['_id'] ?? item['id'];
-          auctionItemId.value = (rawId is Map) ? (rawId[r'$oid'] ?? rawId['_id'] ?? '').toString() : rawId?.toString() ?? '';
-          lastBidderId.value = item['highestBidder']?.toString() ?? "";
-          lastBidderName.value = "";
-          showWinnerOverlay.value = false;
-          auctionActive.value = true;
-          final duration = int.tryParse(item['timerDuration']?.toString() ?? "60") ?? 60;
-          startCountdown(duration);
-          debugPrint("Auction Item: ${auctionItemId.value} price=${currentBidPrice.value}");
-        } else {
-          // rawItem is a plain string ObjectId
-          auctionItemId.value = rawItem.toString();
-          auctionActive.value = true;
-          debugPrint("auctionItemId from string: ${auctionItemId.value}");
-        }
-      } else {
-        debugPrint("No auction items found. keys=${activeStream.keys.toList()}");
-      }
+      // Extract & set product details for viewers
+      _extractAndSetProductInfo(activeStream, streamData);
 
       final agoraOk = await _initAgora(isHost: false, channel: channel);
       isLive.value = true;
@@ -743,6 +822,102 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
       Get.snackbar("Error", "Failed to join stream: $e", snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void _extractAndSetProductInfo(Map<String, dynamic> activeStream, Map<String, dynamic> fallbackStreamData) {
+    try {
+      final items = activeStream['auctionItems'] ?? fallbackStreamData['auctionItems'];
+      if (items is List && items.isNotEmpty) {
+        final rawItem = items[0];
+        if (rawItem is Map) {
+          final item = Map<String, dynamic>.from(rawItem);
+          final rawId = item['_id'] ?? item['id'] ?? item['auctionItemId'];
+          auctionItemId.value = (rawId is Map) ? (rawId[r'$oid'] ?? rawId['_id'] ?? '').toString() : rawId?.toString() ?? '';
+
+          final prod = item['productId'] ?? item['product'];
+          if (prod is Map) {
+            currentProductId.value = prod['_id']?.toString() ?? prod['id']?.toString() ?? "";
+            currentProductTitle.value = prod['title']?.toString() ?? prod['name']?.toString() ?? "Product";
+            final images = prod['images'];
+            if (images is List && images.isNotEmpty) {
+              currentProductImage.value = images[0]?.toString() ?? "";
+            } else if (prod['image'] != null) {
+              currentProductImage.value = prod['image'].toString();
+            }
+            if (prod['category'] != null) {
+              final cat = prod['category'];
+              currentProductCategory.value = (cat is Map) ? (cat['name'] ?? cat['title'] ?? '').toString() : cat.toString();
+            }
+          } else if (prod != null) {
+            currentProductId.value = prod.toString();
+          }
+
+          final sBid = double.tryParse(item['currentBid']?.toString() ?? item['startingBid']?.toString() ?? "0") ?? 0.0;
+          if (sBid > 0 || currentBidPrice.value == 0) {
+            currentBidPrice.value = sBid;
+          }
+          bidIncrement.value = double.tryParse(item['bidIncrement']?.toString() ?? "100") ?? 100.0;
+          lastBidderId.value = item['highestBidder']?.toString() ?? "";
+          auctionActive.value = true;
+          final duration = int.tryParse(item['timerDuration']?.toString() ?? "60") ?? 60;
+          startCountdown(duration);
+          debugPrint("Auction Item parsed: ID=${auctionItemId.value} title=${currentProductTitle.value} price=${currentBidPrice.value}");
+          return;
+        } else if (rawItem != null) {
+          auctionItemId.value = rawItem.toString();
+          auctionActive.value = true;
+        }
+      }
+
+      // Direct product object in stream
+      final prodObj = activeStream['productId'] ?? activeStream['product'] ?? fallbackStreamData['productId'] ?? fallbackStreamData['product'];
+      if (prodObj is Map) {
+        final pMap = Map<String, dynamic>.from(prodObj);
+        currentProductId.value = pMap['_id']?.toString() ?? pMap['id']?.toString() ?? "";
+        currentProductTitle.value = pMap['title']?.toString() ?? pMap['name']?.toString() ?? "Product";
+        final images = pMap['images'];
+        if (images is List && images.isNotEmpty) {
+          currentProductImage.value = images[0]?.toString() ?? "";
+        } else if (pMap['image'] != null) {
+          currentProductImage.value = pMap['image'].toString();
+        }
+        if (pMap['category'] != null) {
+          final cat = pMap['category'];
+          currentProductCategory.value = (cat is Map) ? (cat['name'] ?? cat['title'] ?? '').toString() : cat.toString();
+        }
+        auctionActive.value = true;
+      }
+
+      // Check titles & images directly
+      if (currentProductTitle.value.isEmpty) {
+        final titleStr = activeStream['productTitle'] ?? fallbackStreamData['productTitle'] ?? activeStream['title'] ?? fallbackStreamData['title'];
+        if (titleStr != null && titleStr.toString().isNotEmpty) {
+          currentProductTitle.value = titleStr.toString();
+          auctionActive.value = true;
+        }
+      }
+
+      if (currentProductImage.value.isEmpty) {
+        final imgStr = activeStream['productImage'] ?? fallbackStreamData['productImage'] ?? activeStream['image'] ?? fallbackStreamData['image'] ?? activeStream['coverImage'];
+        if (imgStr != null && imgStr.toString().isNotEmpty) {
+          currentProductImage.value = imgStr.toString();
+        }
+      }
+
+      final sBid = activeStream['startingBid'] ?? activeStream['currentBid'] ?? fallbackStreamData['startingBid'] ?? fallbackStreamData['currentBid'];
+      if (sBid != null) {
+        final parsed = double.tryParse(sBid.toString()) ?? 0.0;
+        if (parsed > 0 && currentBidPrice.value == 0) {
+          currentBidPrice.value = parsed;
+        }
+      }
+
+      if (currentProductTitle.value.isNotEmpty) {
+        auctionActive.value = true;
+      }
+    } catch (e) {
+      debugPrint("Error extracting product info: $e");
     }
   }
 
@@ -818,7 +993,16 @@ class AgoraLiveController extends GetxController with WidgetsBindingObserver {
         Get.snackbar("Bid Placed!", "Your bid of \$${amount.toStringAsFixed(0)} is live!", snackPosition: SnackPosition.BOTTOM);
         bool extended = false;
         if (bidTimer.value <= 10) { extended = true; extendTimerLocal(); }
-        try { final s = Get.find<SocketService>(); s.emitEvent("new message", {"chat": streamId.value, "chatId": streamId.value, "content": msgText, "sender": {"_id": bidderId, "fullName": usernameStr, "avatar": avatarUrl}, "senderId": bidderId, "role": "viewer", "isBid": true, "bidAmount": amount, "isExtendTimer": extended, "isLiveStream": true}); } catch (e) { debugPrint("Socket bid failed: $e"); }
+        try {
+          final s = Get.find<SocketService>();
+          s.emitEvent("place-bid", {
+            "streamId": streamId.value,
+            "auctionItemId": auctionItemId.value,
+            "bidAmount": amount,
+            "bidderId": bidderId,
+          });
+          s.emitEvent("new message", {"chat": streamId.value, "chatId": streamId.value, "content": msgText, "sender": {"_id": bidderId, "fullName": usernameStr, "avatar": avatarUrl}, "senderId": bidderId, "role": "viewer", "isBid": true, "bidAmount": amount, "isExtendTimer": extended, "isLiveStream": true});
+        } catch (e) { debugPrint("Socket bid failed: $e"); }
         if (engine != null && _dataStreamId != null) {
           try { final payload = jsonEncode({"type": "bid", "username": usernameStr, "avatar": avatarUrl, "amount": amount, "senderId": bidderId, "extendTimer": extended}); await engine!.sendStreamMessage(streamId: _dataStreamId!, data: Uint8List.fromList(utf8.encode(payload)), length: payload.length); } catch (e) { debugPrint("Stream bid failed: $e"); }
         }

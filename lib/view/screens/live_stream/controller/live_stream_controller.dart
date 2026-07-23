@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+import 'agora_live_controller.dart';
 
 class LiveStreamModel {
   final String videoUrl;
@@ -152,13 +153,12 @@ class LiveStreamController extends GetxController {
     currentCustomBid.value = (current + amount).toString();
   }
 
-  void placeBid() {
+  void placeBid([double? customAmount]) {
     if (currentIdx < streams.length) {
-      // Parse current price (remove $ and commas)
       double currentPrice = double.tryParse(streams[currentIdx].productPrice.value.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
-      double newBid = double.tryParse(currentCustomBid.value) ?? 0;
+      double newBid = customAmount ?? double.tryParse(currentCustomBid.value) ?? 0;
 
-      if (newBid <= currentPrice) {
+      if (newBid <= currentPrice && customAmount == null) {
         Get.snackbar(
           "Invalid Bid", 
           "Your bid must be higher than the current highest price (\$${currentPrice.toStringAsFixed(0)})", 
@@ -170,13 +170,44 @@ class LiveStreamController extends GetxController {
         return;
       }
 
-      streams[currentIdx].productPrice.value = "\$${currentCustomBid.value}";
-      Get.back();
-      Get.snackbar("Success", "Bid placed successfully!", 
-        backgroundColor: Colors.green.withOpacity(0.7),
+      streams[currentIdx].productPrice.value = "\$${newBid.toStringAsFixed(0)}";
+      
+      // Connect to real backend/socket via AgoraLiveController if available
+      if (Get.isRegistered<AgoraLiveController>()) {
+        try {
+          final agoraCtrl = Get.find<AgoraLiveController>();
+          agoraCtrl.placeBid(newBid);
+        } catch (e) {
+          debugPrint("AgoraLiveController placeBid error: $e");
+        }
+      }
+
+      if (Get.isBottomSheetOpen == true) Get.back();
+      Get.snackbar("Bid Placed!", "Your bid of \$${newBid.toStringAsFixed(0)} is live!", 
+        backgroundColor: Colors.green.withOpacity(0.8),
         colorText: Colors.white,
         snackPosition: SnackPosition.TOP);
     }
+  }
+
+  Future<void> sendCustomOffer({required double offerPrice, String message = ""}) async {
+    if (Get.isRegistered<AgoraLiveController>()) {
+      try {
+        final agoraCtrl = Get.find<AgoraLiveController>();
+        await agoraCtrl.sendCustomOffer(offerPrice: offerPrice, message: message);
+        return;
+      } catch (e) {
+        debugPrint("AgoraLiveController sendCustomOffer error: $e");
+      }
+    }
+    if (Get.isBottomSheetOpen == true) Get.back();
+    Get.snackbar(
+      "Custom Offer Sent! 🤝",
+      "Your offer of \$${offerPrice.toStringAsFixed(0)} has been sent to the host!",
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: const Color(0xFFBD8BFF),
+      colorText: Colors.white,
+    );
   }
 
   void addLike(LiveStreamModel stream) {

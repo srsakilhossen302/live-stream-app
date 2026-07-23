@@ -278,12 +278,35 @@ class LiveStreamScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          SizedBox(width: 8.w),
+                          SizedBox(width: 6.w),
+                          // Custom Offer Button
+                          GestureDetector(
+                            onTap: () => _showCustomOfferSheet(context, controller, stream),
+                            child: Container(
+                              height: 52.h,
+                              padding: EdgeInsets.symmetric(horizontal: 10.w),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF8B9BFF), Color(0xFFBD8BFF)],
+                                ),
+                                borderRadius: BorderRadius.circular(26.r),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.handshake_rounded, color: Colors.white, size: 14.sp),
+                                  SizedBox(width: 4.w),
+                                  Text("Offer", style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 6.w),
                           GestureDetector(
                             onTap: () => _showCustomBidSheet(context, controller, stream),
                             child: Container(
                               height: 52.h,
-                              width: 52.h,
+                              width: 46.h,
                               decoration: const BoxDecoration(
                                   color: Color(0xFF1A1A1A),
                                   shape: BoxShape.circle),
@@ -291,18 +314,18 @@ class LiveStreamScreen extends StatelessWidget {
                                   child: Text("Custom",
                                       style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 10.sp,
+                                          fontSize: 9.sp,
                                           fontWeight: FontWeight.bold))),
                             ),
                           ),
-                          SizedBox(width: 8.w),
-                          Obx(() => _buildBidButton(controller.streams[index])),
+                          SizedBox(width: 6.w),
+                          Obx(() => _buildBidButton(controller, controller.streams[index])),
                         ],
                       ),
                     ],
                   ),
                 ),
-                 SizedBox(width: 12.w),
+                SizedBox(width: 12.w),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -497,46 +520,154 @@ class LiveStreamScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold)),
       );
 
-  Widget _buildBidButton(LiveStreamModel stream) {
-    return Container(
-      height: 52.h,
-      padding: EdgeInsets.symmetric(horizontal: 4.w),
-      decoration: BoxDecoration(
-          color: const Color(0xFFA6B4FF),
-          borderRadius: BorderRadius.circular(26.r)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(width: 14.w),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("BID",
-                  style: TextStyle(
-                      color: Colors.black45,
-                      fontSize: 8.sp,
-                      fontWeight: FontWeight.w900)),
-              Text(stream.productPrice.value.split('.')[0],
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w900)),
-            ],
-          ),
-          SizedBox(width: 12.w),
-          Container(
-            padding: EdgeInsets.all(8.r),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.1),
-              shape: BoxShape.circle,
+  Widget _buildBidButton(LiveStreamController controller, LiveStreamModel stream) {
+    return GestureDetector(
+      onTap: () {
+        double currentPrice = double.tryParse(stream.productPrice.value.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+        controller.placeBid(currentPrice + 50);
+      },
+      child: Container(
+        height: 52.h,
+        padding: EdgeInsets.symmetric(horizontal: 4.w),
+        decoration: BoxDecoration(
+            color: const Color(0xFFA6B4FF),
+            borderRadius: BorderRadius.circular(26.r)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(width: 10.w),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("BID",
+                    style: TextStyle(
+                        color: Colors.black45,
+                        fontSize: 8.sp,
+                        fontWeight: FontWeight.w900)),
+                Text(stream.productPrice.value.split('.')[0],
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w900)),
+              ],
             ),
-            child: Icon(Icons.arrow_forward_rounded,
-                color: Colors.black, size: 18.sp),
-          ),
-          SizedBox(width: 2.w),
-        ],
+            SizedBox(width: 8.w),
+            Container(
+              padding: EdgeInsets.all(6.r),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_forward_rounded,
+                  color: Colors.black, size: 16.sp),
+            ),
+            SizedBox(width: 2.w),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showCustomOfferSheet(BuildContext context, LiveStreamController controller, LiveStreamModel stream) {
+    final offerCtrl = TextEditingController();
+    final noteCtrl = TextEditingController();
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2.r)),
+              ),
+            ),
+            SizedBox(height: 20.h),
+            Row(
+              children: [
+                Icon(Icons.handshake_rounded, color: const Color(0xFFBD8BFF), size: 24.sp),
+                SizedBox(width: 8.w),
+                Text("Make a Custom Offer", style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            SizedBox(height: 6.h),
+            Text("Send a direct offer to the host for ${stream.productTitle}", style: TextStyle(color: Colors.white38, fontSize: 12.sp)),
+            SizedBox(height: 20.h),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF262626),
+                borderRadius: BorderRadius.circular(14.r),
+              ),
+              child: TextField(
+                controller: offerCtrl,
+                keyboardType: TextInputType.number,
+                style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  hintText: "Enter offer amount",
+                  hintStyle: TextStyle(color: Colors.white24, fontSize: 15.sp),
+                  border: InputBorder.none,
+                  prefixText: "\$",
+                  prefixStyle: TextStyle(color: const Color(0xFFBD8BFF), fontSize: 18.sp, fontWeight: FontWeight.bold),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF262626),
+                borderRadius: BorderRadius.circular(14.r),
+              ),
+              child: TextField(
+                controller: noteCtrl,
+                style: TextStyle(color: Colors.white, fontSize: 13.sp),
+                decoration: InputDecoration(
+                  hintText: "Add note for host (optional)",
+                  hintStyle: TextStyle(color: Colors.white24, fontSize: 13.sp),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                ),
+              ),
+            ),
+            SizedBox(height: 24.h),
+            SizedBox(
+              width: double.infinity,
+              height: 52.h,
+              child: ElevatedButton(
+                onPressed: () {
+                  final text = offerCtrl.text.trim();
+                  if (text.isEmpty) {
+                    Get.snackbar("Error", "Please enter an offer amount.", snackPosition: SnackPosition.BOTTOM);
+                    return;
+                  }
+                  final amount = double.tryParse(text.replaceAll('\$', '').replaceAll(',', ''));
+                  if (amount == null || amount <= 0) {
+                    Get.snackbar("Error", "Invalid offer amount.", snackPosition: SnackPosition.BOTTOM);
+                    return;
+                  }
+                  controller.sendCustomOffer(offerPrice: amount, message: noteCtrl.text.trim());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFBD8BFF),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26.r)),
+                ),
+                child: Text("SEND CUSTOM OFFER", style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            SizedBox(height: 16.h),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
     );
   }
 

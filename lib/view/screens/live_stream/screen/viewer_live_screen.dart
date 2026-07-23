@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../data/services/api_url.dart';
 import '../controller/agora_live_controller.dart';
 import '../../../../core/app_route.dart';
@@ -241,7 +242,7 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                                 _buildChat(),
                                 SizedBox(height: 12.h),
                                 Obx(() {
-                                  if (!ctrl.auctionActive.value) return const SizedBox.shrink();
+                                  if (!ctrl.auctionActive.value && ctrl.currentProductTitle.value.isEmpty) return const SizedBox.shrink();
                                   return _buildProductCard();
                                 }),
                               ],
@@ -472,7 +473,17 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _showCheckoutDialog(finalPrice),
+                        onPressed: () async {
+                          final url = ctrl.winningCheckoutUrl.value;
+                          if (url.isNotEmpty) {
+                            final uri = Uri.parse(url);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              return;
+                            }
+                          }
+                          _showCheckoutDialog(finalPrice);
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber,
                           foregroundColor: const Color(0xFF0F0B1E),
@@ -1225,8 +1236,11 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                       return Icon(Icons.image, color: Colors.white24, size: 22.sp);
                     }
                   }
+                  final fullUrl = img.startsWith('http')
+                      ? img
+                      : "${ApiUrl.imageBaseUrl}${img.startsWith('/') ? img : '/$img'}";
                   return Image.network(
-                    img.startsWith('http') ? img : "${ApiUrl.imageBaseUrl}$img",
+                    fullUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 22.sp),
                   );
@@ -1276,28 +1290,19 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                   ],
                 ),
                 SizedBox(height: 6.h),
-                Obx(() => RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: "\$ ",
-                        style: TextStyle(
-                          color: const Color(0xFF8B9BFF),
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextSpan(
-                        text: ctrl.currentBidPrice.value.toStringAsFixed(0),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
+                Obx(() => Row(
+                  children: [
+                    Text(
+                      "Last Bid: ",
+                      style: TextStyle(color: Colors.white60, fontSize: 11.sp, fontWeight: FontWeight.w700),
+                    ),
+                    Text(
+                      "\$${ctrl.currentBidPrice.value.toStringAsFixed(0)}",
+                      style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 14.sp, fontWeight: FontWeight.w900),
+                    ),
+                  ],
                 )),
+
               ],
             ),
           ),
@@ -1343,27 +1348,6 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
         )),
         SizedBox(height: 12.h),
 
-        // Hype Reactions Bar
-        Container(
-          padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 4.w),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.35),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: Column(
-            children: ['🔥', '👏', '🎉', '💎'].map((emoji) {
-              return GestureDetector(
-                onTap: () => ctrl.sendHypeReaction(emoji),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 3.h),
-                  child: Text(emoji, style: TextStyle(fontSize: 18.sp)),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        SizedBox(height: 12.h),
 
         Obx(() {
           final count = ctrl.likeCount.value;
@@ -1520,7 +1504,7 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
 
         Obx(() {
           final currentBid = ctrl.currentBidPrice.value;
-          final nextBid = currentBid + ctrl.bidIncrement.value;
+          final nextBid = currentBid > 0 ? (currentBid + ctrl.bidIncrement.value) : ctrl.bidIncrement.value;
           return GestureDetector(
             onTap: () => ctrl.placeBid(nextBid),
             child: Container(
@@ -1540,7 +1524,7 @@ class _ViewerLiveScreenState extends State<ViewerLiveScreen> {
                       Text(
                         "BID",
                         style: TextStyle(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withOpacity(0.6),
                           fontSize: 9.sp,
                           fontWeight: FontWeight.w900,
                           height: 1.0,

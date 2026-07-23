@@ -275,7 +275,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                                   )),
                                   SizedBox(height: 4.h),
                                   Obx(() => Text(
-                                    "Current Bid: \$${ctrl.currentBidPrice.value.toStringAsFixed(0)}",
+                                    "Last Bid: \$${ctrl.currentBidPrice.value.toStringAsFixed(0)}",
                                     style: TextStyle(color: const Color(0xFF8B9BFF), fontSize: 13.sp, fontWeight: FontWeight.w800),
                                   )),
                                 ],
@@ -294,7 +294,7 @@ class _HostLiveScreenState extends State<HostLiveScreen> {
                                   Icon(Icons.remove_red_eye_outlined, color: Colors.white60, size: 14.sp),
                                   SizedBox(width: 4.w),
                                   Obx(() => Text(
-                                    ctrl.remoteJoined.value ? "1" : "0",
+                                    ctrl.viewersCount.value,
                                     style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w700),
                                   )),
                                 ],

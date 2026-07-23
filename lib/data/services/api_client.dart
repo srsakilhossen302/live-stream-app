@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'api_url.dart';
+import 'socket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -295,7 +296,7 @@ class ApiClient {
     }
   }
 
-  // Interceptor to handle expired tokens and retry requests
+  // Interceptor to handle expired tokens, permission errors, and retry requests
   Future<http.Response> _checkAndRefreshToken(
     String uri,
     http.Response response,
@@ -306,8 +307,11 @@ class ApiClient {
       final isExpired = bodyStr.contains("expired") || 
                         bodyStr.contains("Expired") || 
                         bodyStr.contains("Token") || 
+                        bodyStr.contains("token") || 
                         bodyStr.contains("unauthorized") ||
-                        bodyStr.contains("Unauthorized");
+                        bodyStr.contains("Unauthorized") ||
+                        bodyStr.contains("permission") ||
+                        bodyStr.contains("Permission");
       
       if (isExpired) {
         final success = await _refreshToken();
@@ -315,26 +319,31 @@ class ApiClient {
           // Token refresh succeeded, retry request with new headers
           return await retryAction();
         } else {
-          // Refresh failed, log out user
-          await _logoutUser();
+          // Refresh failed, log out user and redirect to Login
+          await _logoutUser(message: "Your session has expired. Please log in again.");
         }
       } else {
         // Other 401 triggers logout
-        await _logoutUser();
+        await _logoutUser(message: "Unauthorized access. Please log in again.");
       }
     } else if (response.statusCode == 403) {
       try {
         final Map<String, dynamic> body = jsonDecode(response.body);
-        final String message = body['message'] ?? "";
+        final String message = (body['message'] ?? body['error'] ?? body['msg'] ?? "").toString();
         if (message.toLowerCase().contains("not verified") || 
             message.toLowerCase().contains("admin approval") ||
             message.toLowerCase().contains("seller account")) {
           _showVerificationPendingDialog(message);
+        } else {
+          // Permission denied / forbidden / expired token -> logout and redirect to Login screen
+          await _logoutUser(
+            message: message.isNotEmpty 
+                ? message 
+                : "Permission denied or session expired. Please log in again.",
+          );
         }
       } catch (e) {
-        if (kDebugMode) {
-          print("Error parsing 403 response: $e");
-        }
+        await _logoutUser(message: "Permission denied. Please log in again.");
       }
     }
     return response;
@@ -393,18 +402,22 @@ class ApiClient {
   }
 
   // Clear preferences and navigate back to Login
-  Future<void> _logoutUser() async {
+  Future<void> _logoutUser({String? message}) async {
     if (kDebugMode) {
       print("🚨 [API CLIENT] Redirecting to Login screen...");
     }
+    try {
+      Get.find<SocketService>().disconnectSocket();
+    } catch (_) {}
     await SharePrefsHelper.clear();
     Get.offAllNamed(AppRoute.login);
     Get.snackbar(
       "Session Expired",
-      "Your session has expired. Please log in again.",
+      message ?? "Your session has expired. Please log in again.",
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: const Color(0xFFFF6B35),
       colorText: Colors.white,
+      duration: const Duration(seconds: 4),
     );
   }
 

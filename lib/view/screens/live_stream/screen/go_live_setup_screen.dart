@@ -67,10 +67,12 @@ class _GoLiveSetupScreenState extends State<GoLiveSetupScreen> {
     setState(() => _isStarting = true);
 
     final pTitle = _selectedProduct?['title']?.toString() ?? "";
-    final images = _selectedProduct?['images'];
+    final rawImgs = _selectedProduct?['images'] ?? _selectedProduct?['image'] ?? _selectedProduct?['coverImage'];
     String pImage = "";
-    if (images is List && images.isNotEmpty) {
-      pImage = images[0]?.toString() ?? "";
+    if (rawImgs is List && rawImgs.isNotEmpty) {
+      pImage = rawImgs[0]?.toString() ?? "";
+    } else if (rawImgs != null) {
+      pImage = rawImgs.toString();
     }
 
     final ctrl = Get.put(AgoraLiveController(), permanent: true);
@@ -192,8 +194,13 @@ class _GoLiveSetupScreenState extends State<GoLiveSetupScreen> {
                             itemBuilder: (context, i) {
                               final p = _myProducts[i];
                               final isSelected = _selectedProduct?['_id'] == p['_id'];
-                              final imgList = p['images'] as List?;
-                              final imgUrl = imgList != null && imgList.isNotEmpty ? imgList[0].toString() : "";
+                              final rawImgs = p['images'] ?? p['image'] ?? p['coverImage'];
+                              String imgUrl = "";
+                              if (rawImgs is List && rawImgs.isNotEmpty) {
+                                imgUrl = rawImgs[0]?.toString() ?? "";
+                              } else if (rawImgs != null) {
+                                imgUrl = rawImgs.toString();
+                              }
 
                               return GestureDetector(
                                 onTap: () => setState(() => _selectedProduct = p),
@@ -220,15 +227,27 @@ class _GoLiveSetupScreenState extends State<GoLiveSetupScreen> {
                                           color: Colors.black26,
                                           borderRadius: BorderRadius.circular(12.r),
                                         ),
-                                        child: imgUrl.isNotEmpty
-                                            ? Image.network(
-                                                imgUrl.startsWith('http')
-                                                    ? imgUrl
-                                                    : "${ApiUrl.imageBaseUrl}$imgUrl",
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 24.sp),
-                                              )
-                                            : Icon(Icons.image, color: Colors.white24, size: 24.sp),
+                                        child: () {
+                                          if (imgUrl.isEmpty) {
+                                            return Icon(Icons.image, color: Colors.white24, size: 24.sp);
+                                          }
+                                          if (imgUrl.startsWith('data:image/') && imgUrl.contains('base64,')) {
+                                            try {
+                                              final bytes = base64Decode(imgUrl.split('base64,').last);
+                                              return Image.memory(bytes, fit: BoxFit.cover);
+                                            } catch (_) {
+                                              return Icon(Icons.image, color: Colors.white24, size: 24.sp);
+                                            }
+                                          }
+                                          final fullUrl = imgUrl.startsWith('http')
+                                              ? imgUrl
+                                              : "${ApiUrl.imageBaseUrl}${imgUrl.startsWith('/') ? imgUrl : '/$imgUrl'}";
+                                          return Image.network(
+                                            fullUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Icon(Icons.image, color: Colors.white24, size: 24.sp),
+                                          );
+                                        }(),
                                       ),
                                       SizedBox(height: 8.h),
                                       Padding(

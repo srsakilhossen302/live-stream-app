@@ -12,19 +12,20 @@ class CustomBottomNavbar extends StatelessWidget {
     final controller = Get.find<MainController>();
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return SizedBox(
-      height: 145.h + bottomPadding,
+      height: 165.h + bottomPadding,
       child: Stack(
         alignment: Alignment.topCenter,
         clipBehavior: Clip.none,
         children: [
           // Invisible spacer to expand hit-test area
-          SizedBox(height: 145.h + bottomPadding, width: double.infinity),
+          SizedBox(height: 165.h + bottomPadding, width: double.infinity),
           // Navbar Background (Moved down to accommodate the spacer)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
+              
               height: 100.h + bottomPadding,
               width: double.infinity,
               decoration: BoxDecoration(
@@ -35,7 +36,7 @@ class CustomBottomNavbar extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.6),
                     blurRadius: 30.r,
                     offset: const Offset(0, -10),
                   ),
@@ -71,7 +72,7 @@ class CustomBottomNavbar extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF8B9BFF).withOpacity(0.5),
+                      color: const Color(0xFF8B9BFF).withValues(alpha: 0.5),
                       blurRadius: 25.r,
                       offset: const Offset(0, 10),
                     ),

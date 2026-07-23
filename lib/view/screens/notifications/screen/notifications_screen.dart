@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../core/app_route.dart';
 import '../../../../global/widgets/custom_background.dart';
+import '../../live_stream/controller/agora_live_controller.dart';
 import '../controller/notification_controller.dart';
 import '../model/notification_model.dart';
 
@@ -310,7 +311,14 @@ class NotificationsScreen extends GetView<NotificationController> {
             icon: Icons.play_circle_fill_rounded,
             onTap: () {
               controller.markAsRead(item.id);
-              Get.toNamed(AppRoute.liveStream);
+              Map<String, dynamic> activeStream = {};
+              if (Get.isRegistered<AgoraLiveController>()) {
+                final agoraCtrl = Get.find<AgoraLiveController>();
+                if (agoraCtrl.liveStreamsList.isNotEmpty) {
+                  activeStream = agoraCtrl.liveStreamsList.first;
+                }
+              }
+              Get.toNamed(AppRoute.viewerLive, arguments: activeStream);
             },
           ),
         ],
@@ -377,7 +385,14 @@ class NotificationsScreen extends GetView<NotificationController> {
             "Bid Now",
             onTap: () {
               controller.markAsRead(item.id);
-              Get.toNamed(AppRoute.liveStream);
+              Map<String, dynamic> activeStream = {};
+              if (Get.isRegistered<AgoraLiveController>()) {
+                final agoraCtrl = Get.find<AgoraLiveController>();
+                if (agoraCtrl.liveStreamsList.isNotEmpty) {
+                  activeStream = agoraCtrl.liveStreamsList.first;
+                }
+              }
+              Get.toNamed(AppRoute.viewerLive, arguments: activeStream);
             },
           ),
         ],
